@@ -107,6 +107,22 @@ typedef struct {
     size_t bytes;
 } TransferEntry;
 
+typedef struct {
+    Allocation allocations[MAX_ALLOCS];
+    ModuleEntry modules[MAX_MODULES];
+    KernelEntry kernels[MAX_KERNELS];
+    StreamEntry streams[MAX_STREAMS];
+    EventEntry events[MAX_EVENTS];
+    TransferEntry transfers[MAX_TRANSFERS];
+
+    uint64_t next_alloc_id;
+    uint64_t next_module_id;
+    uint64_t next_kernel_id;
+    uint64_t next_stream_id;
+    uint64_t next_event_id;
+    uint64_t next_transfer_id;
+} ServerSession;
+
 typedef union {
     CUdeviceptr ptr;
     int32_t i32;
@@ -115,22 +131,19 @@ typedef union {
     double force_alignment;
 } KernelArgStorage;
 
-static Allocation allocations[MAX_ALLOCS];
-static ModuleEntry modules[MAX_MODULES];
-static KernelEntry kernels[MAX_KERNELS];
-static StreamEntry streams[MAX_STREAMS];
-static EventEntry events[MAX_EVENTS];
-static TransferEntry transfers[MAX_TRANSFERS];
-
-static uint64_t next_alloc_id  = 1;
-static uint64_t next_module_id = 1;
-static uint64_t next_kernel_id = 1;
-static uint64_t next_stream_id = 1;
-static uint64_t next_event_id = 1;
-static uint64_t next_transfer_id = 1;
-
 static CUcontext g_ctx = NULL;
 static CUdevice g_device = 0;
+
+static void server_session_init(ServerSession *session)
+{
+    memset(session, 0, sizeof(*session));
+    session->next_alloc_id = 1;
+    session->next_module_id = 1;
+    session->next_kernel_id = 1;
+    session->next_stream_id = 1;
+    session->next_event_id = 1;
+    session->next_transfer_id = 1;
+}
 
 /* ============================================================
  * Socket helpers
@@ -214,96 +227,96 @@ static int send_response(
  * ============================================================
  */
 
-static Allocation *find_allocation(uint64_t id)
+static Allocation *find_allocation(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_ALLOCS; ++i) {
-        if (allocations[i].used && allocations[i].id == id)
-            return &allocations[i];
+        if (session->allocations[i].used && session->allocations[i].id == id)
+            return &session->allocations[i];
     }
 
     return NULL;
 }
 
-static Allocation *new_allocation_slot(void)
+static Allocation *new_allocation_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_ALLOCS; ++i) {
-        if (!allocations[i].used) {
-            memset(&allocations[i], 0, sizeof(allocations[i]));
-            allocations[i].used = 1;
-            allocations[i].id = next_alloc_id++;
-            return &allocations[i];
+        if (!session->allocations[i].used) {
+            memset(&session->allocations[i], 0, sizeof(session->allocations[i]));
+            session->allocations[i].used = 1;
+            session->allocations[i].id = session->next_alloc_id++;
+            return &session->allocations[i];
         }
     }
 
     return NULL;
 }
 
-static ModuleEntry *find_module(uint64_t id)
+static ModuleEntry *find_module(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_MODULES; ++i) {
-        if (modules[i].used && modules[i].id == id)
-            return &modules[i];
+        if (session->modules[i].used && session->modules[i].id == id)
+            return &session->modules[i];
     }
 
     return NULL;
 }
 
-static ModuleEntry *new_module_slot(void)
+static ModuleEntry *new_module_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_MODULES; ++i) {
-        if (!modules[i].used) {
-            memset(&modules[i], 0, sizeof(modules[i]));
-            modules[i].used = 1;
-            modules[i].id = next_module_id++;
-            return &modules[i];
+        if (!session->modules[i].used) {
+            memset(&session->modules[i], 0, sizeof(session->modules[i]));
+            session->modules[i].used = 1;
+            session->modules[i].id = session->next_module_id++;
+            return &session->modules[i];
         }
     }
 
     return NULL;
 }
 
-static KernelEntry *find_kernel(uint64_t id)
+static KernelEntry *find_kernel(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_KERNELS; ++i) {
-        if (kernels[i].used && kernels[i].id == id)
-            return &kernels[i];
+        if (session->kernels[i].used && session->kernels[i].id == id)
+            return &session->kernels[i];
     }
 
     return NULL;
 }
 
-static KernelEntry *new_kernel_slot(void)
+static KernelEntry *new_kernel_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_KERNELS; ++i) {
-        if (!kernels[i].used) {
-            memset(&kernels[i], 0, sizeof(kernels[i]));
-            kernels[i].used = 1;
-            kernels[i].id = next_kernel_id++;
-            return &kernels[i];
+        if (!session->kernels[i].used) {
+            memset(&session->kernels[i], 0, sizeof(session->kernels[i]));
+            session->kernels[i].used = 1;
+            session->kernels[i].id = session->next_kernel_id++;
+            return &session->kernels[i];
         }
     }
 
     return NULL;
 }
 
-static StreamEntry *find_stream(uint64_t id)
+static StreamEntry *find_stream(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_STREAMS; ++i) {
-        if (streams[i].used && streams[i].id == id)
-            return &streams[i];
+        if (session->streams[i].used && session->streams[i].id == id)
+            return &session->streams[i];
     }
 
     return NULL;
 }
 
-static StreamEntry *new_stream_slot(void)
+static StreamEntry *new_stream_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_STREAMS; ++i) {
-        if (!streams[i].used) {
-            memset(&streams[i], 0, sizeof(streams[i]));
-            streams[i].used = 1;
-            streams[i].id = next_stream_id++;
-            return &streams[i];
+        if (!session->streams[i].used) {
+            memset(&session->streams[i], 0, sizeof(session->streams[i]));
+            session->streams[i].used = 1;
+            session->streams[i].id = session->next_stream_id++;
+            return &session->streams[i];
         }
     }
 
@@ -311,35 +324,35 @@ static StreamEntry *new_stream_slot(void)
 }
 
 
-static EventEntry *find_event(uint64_t id)
+static EventEntry *find_event(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_EVENTS; ++i) {
-        if (events[i].used && events[i].id == id)
-            return &events[i];
+        if (session->events[i].used && session->events[i].id == id)
+            return &session->events[i];
     }
 
     return NULL;
 }
 
-static TransferEntry *find_transfer(uint64_t id)
+static TransferEntry *find_transfer(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_TRANSFERS; ++i) {
-        if (transfers[i].used &&
-            transfers[i].id == id)
-            return &transfers[i];
+        if (session->transfers[i].used &&
+            session->transfers[i].id == id)
+            return &session->transfers[i];
     }
 
     return NULL;
 }
 
-static TransferEntry *new_transfer_slot(void)
+static TransferEntry *new_transfer_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_TRANSFERS; ++i) {
-        if (!transfers[i].used) {
-            memset(&transfers[i], 0, sizeof(transfers[i]));
-            transfers[i].used = 1;
-            transfers[i].id = next_transfer_id++;
-            return &transfers[i];
+        if (!session->transfers[i].used) {
+            memset(&session->transfers[i], 0, sizeof(session->transfers[i]));
+            session->transfers[i].used = 1;
+            session->transfers[i].id = session->next_transfer_id++;
+            return &session->transfers[i];
         }
     }
 
@@ -439,33 +452,35 @@ static int lifetime_stream_barrier(
 
 
 
-static EventEntry *new_event_slot(void)
+static EventEntry *new_event_slot(ServerSession *session)
 {
     for (int i = 0; i < MAX_EVENTS; ++i) {
-        if (!events[i].used) {
-            memset(&events[i], 0, sizeof(events[i]));
-            events[i].used = 1;
-            events[i].id = next_event_id++;
-            return &events[i];
+        if (!session->events[i].used) {
+            memset(&session->events[i], 0, sizeof(session->events[i]));
+            session->events[i].used = 1;
+            session->events[i].id = session->next_event_id++;
+            return &session->events[i];
         }
     }
 
     return NULL;
 }
 
-static void invalidate_module_kernels(uint64_t module_id)
+static void invalidate_module_kernels(
+    ServerSession *session,
+    uint64_t module_id)
 {
     for (int i = 0; i < MAX_KERNELS; ++i) {
-        if (!kernels[i].used || kernels[i].module_id != module_id)
+        if (!session->kernels[i].used || session->kernels[i].module_id != module_id)
             continue;
 
         printf(
             "invalidate kernel_id=%llu module_id=%llu name=%s\n",
-            (unsigned long long)kernels[i].id,
+            (unsigned long long)session->kernels[i].id,
             (unsigned long long)module_id,
-            kernels[i].name);
+            session->kernels[i].name);
 
-        memset(&kernels[i], 0, sizeof(kernels[i]));
+        memset(&session->kernels[i], 0, sizeof(session->kernels[i]));
     }
 }
 
@@ -474,7 +489,7 @@ static void invalidate_module_kernels(uint64_t module_id)
  * ============================================================
  */
 
-static void cleanup_session(void)
+static void cleanup_session(ServerSession *session)
 {
     /*
      * Gate 5E cleanup order:
@@ -487,14 +502,14 @@ static void cleanup_session(void)
      * 5. Release allocations/kernels/modules.
      */
     for (int i = 0; i < MAX_STREAMS; ++i) {
-        if (!streams[i].used)
+        if (!session->streams[i].used)
             continue;
 
-        CUresult sr = cuStreamSynchronize(streams[i].stream);
+        CUresult sr = cuStreamSynchronize(session->streams[i].stream);
 
         printf(
             "cleanup stream_id=%llu sync_rc=%d\n",
-            (unsigned long long)streams[i].id,
+            (unsigned long long)session->streams[i].id,
             (int)sr);
     }
 
@@ -506,53 +521,53 @@ static void cleanup_session(void)
      * destroying user Event/Stream objects.
      */
     for (int i = 0; i < MAX_TRANSFERS; ++i) {
-        if (!transfers[i].used)
+        if (!session->transfers[i].used)
             continue;
 
         CUresult tr =
             cuEventSynchronize(
-                transfers[i].done_event);
+                session->transfers[i].done_event);
 
         printf(
             "cleanup transfer_id=%llu "
             "kind=%s sync_rc=%d bytes=%zu\n",
-            (unsigned long long)transfers[i].id,
-            transfers[i].kind == TRANSFER_KIND_H2D
+            (unsigned long long)session->transfers[i].id,
+            session->transfers[i].kind == TRANSFER_KIND_H2D
                 ? "H2D"
                 : "D2H",
             (int)tr,
-            transfers[i].bytes);
+            session->transfers[i].bytes);
 
         release_transfer(
-            &transfers[i]);
+            &session->transfers[i]);
     }
 
     for (int i = 0; i < MAX_EVENTS; ++i) {
-        if (!events[i].used)
+        if (!session->events[i].used)
             continue;
 
-        CUresult er = cuEventDestroy(events[i].event);
+        CUresult er = cuEventDestroy(session->events[i].event);
 
         printf(
             "cleanup event_id=%llu destroy_rc=%d\n",
-            (unsigned long long)events[i].id,
+            (unsigned long long)session->events[i].id,
             (int)er);
 
-        memset(&events[i], 0, sizeof(events[i]));
+        memset(&session->events[i], 0, sizeof(session->events[i]));
     }
 
     for (int i = 0; i < MAX_STREAMS; ++i) {
-        if (!streams[i].used)
+        if (!session->streams[i].used)
             continue;
 
-        CUresult dr = cuStreamDestroy(streams[i].stream);
+        CUresult dr = cuStreamDestroy(session->streams[i].stream);
 
         printf(
             "cleanup stream_id=%llu destroy_rc=%d\n",
-            (unsigned long long)streams[i].id,
+            (unsigned long long)session->streams[i].id,
             (int)dr);
 
-        memset(&streams[i], 0, sizeof(streams[i]));
+        memset(&session->streams[i], 0, sizeof(session->streams[i]));
     }
 
     if (g_ctx) {
@@ -561,48 +576,51 @@ static void cleanup_session(void)
     }
 
     for (int i = 0; i < MAX_ALLOCS; ++i) {
-        if (!allocations[i].used)
+        if (!session->allocations[i].used)
             continue;
 
         printf(
             "cleanup allocation_id=%llu\n",
-            (unsigned long long)allocations[i].id);
+            (unsigned long long)session->allocations[i].id);
 
-        if (allocations[i].ptr)
-            cuMemFree(allocations[i].ptr);
+        if (session->allocations[i].ptr)
+            cuMemFree(session->allocations[i].ptr);
 
-        memset(&allocations[i], 0, sizeof(allocations[i]));
+        memset(&session->allocations[i], 0, sizeof(session->allocations[i]));
     }
 
     for (int i = 0; i < MAX_KERNELS; ++i) {
-        if (!kernels[i].used)
+        if (!session->kernels[i].used)
             continue;
 
         printf(
             "cleanup kernel_id=%llu module_id=%llu name=%s\n",
-            (unsigned long long)kernels[i].id,
-            (unsigned long long)kernels[i].module_id,
-            kernels[i].name);
+            (unsigned long long)session->kernels[i].id,
+            (unsigned long long)session->kernels[i].module_id,
+            session->kernels[i].name);
 
-        memset(&kernels[i], 0, sizeof(kernels[i]));
+        memset(&session->kernels[i], 0, sizeof(session->kernels[i]));
     }
 
     for (int i = 0; i < MAX_MODULES; ++i) {
-        if (!modules[i].used)
+        if (!session->modules[i].used)
             continue;
 
         printf(
             "cleanup module_id=%llu name=%s\n",
-            (unsigned long long)modules[i].id,
-            modules[i].name);
+            (unsigned long long)session->modules[i].id,
+            session->modules[i].name);
 
-        if (modules[i].module)
-            cuModuleUnload(modules[i].module);
+        if (session->modules[i].module)
+            cuModuleUnload(session->modules[i].module);
 
-        free(modules[i].image);
+        free(session->modules[i].image);
 
-        memset(&modules[i], 0, sizeof(modules[i]));
+        memset(&session->modules[i], 0, sizeof(session->modules[i]));
     }
+
+    server_session_init(session);
+    printf("SESSION_CLEANUP_EMPTY=YES\n");
 }
 
 /* ============================================================
@@ -611,6 +629,7 @@ static void cleanup_session(void)
  */
 
 static int handle_alloc(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -624,7 +643,7 @@ static int handle_alloc(
     if (size64 == 0 || size64 > (uint64_t)SIZE_MAX)
         return send_response(fd, OP_ALLOC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    Allocation *slot = new_allocation_slot();
+    Allocation *slot = new_allocation_slot(session);
 
     if (!slot)
         return send_response(fd, OP_ALLOC, req_id, ST_NO_RESOURCE, NULL, 0);
@@ -656,6 +675,7 @@ static int handle_alloc(
 }
 
 static int handle_h2d(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -673,7 +693,7 @@ static int handle_h2d(
         24ULL + bytes64 != (uint64_t)len)
         return send_response(fd, OP_H2D, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    Allocation *a = find_allocation(allocation_id);
+    Allocation *a = find_allocation(session, allocation_id);
 
     if (!a)
         return send_response(fd, OP_H2D, req_id, ST_NOT_FOUND, NULL, 0);
@@ -701,6 +721,7 @@ static int handle_h2d(
 }
 
 static int handle_d2h(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -717,7 +738,7 @@ static int handle_d2h(
     if (bytes64 > UINT32_MAX)
         return send_response(fd, OP_D2H, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    Allocation *a = find_allocation(allocation_id);
+    Allocation *a = find_allocation(session, allocation_id);
 
     if (!a)
         return send_response(fd, OP_D2H, req_id, ST_NOT_FOUND, NULL, 0);
@@ -764,6 +785,7 @@ static int handle_d2h(
 }
 
 static int handle_free(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -773,7 +795,7 @@ static int handle_free(
         return send_response(fd, OP_FREE, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t allocation_id = corex_protocol_read_u64(payload);
-    Allocation *a = find_allocation(allocation_id);
+    Allocation *a = find_allocation(session, allocation_id);
 
     if (!a)
         return send_response(fd, OP_FREE, req_id, ST_NOT_FOUND, NULL, 0);
@@ -820,11 +842,13 @@ static int handle_free(
 }
 
 static int handle_sync(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
     uint32_t len)
 {
+    (void)session;
     (void)payload;
 
     if (len != 0)
@@ -846,6 +870,7 @@ static int handle_sync(
  */
 
 static int handle_upload_module(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -944,7 +969,7 @@ static int handle_upload_module(
         return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_CUDA_ERROR, NULL, 0);
     }
 
-    ModuleEntry *slot = new_module_slot();
+    ModuleEntry *slot = new_module_slot(session);
 
     if (!slot) {
         cuModuleUnload(module);
@@ -982,6 +1007,7 @@ static int handle_upload_module(
 }
 
 static int handle_get_kernel(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1002,7 +1028,7 @@ static int handle_get_kernel(
     memset(name, 0, sizeof(name));
     memcpy(name, payload + 12, name_len);
 
-    ModuleEntry *m = find_module(module_id);
+    ModuleEntry *m = find_module(session, module_id);
 
     if (!m)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1029,7 +1055,7 @@ static int handle_get_kernel(
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NOT_FOUND, NULL, 0);
 
-    KernelEntry *slot = new_kernel_slot();
+    KernelEntry *slot = new_kernel_slot(session);
 
     if (!slot)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NO_RESOURCE, NULL, 0);
@@ -1066,6 +1092,7 @@ static int handle_get_kernel(
 }
 
 static int handle_unload_module(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1075,7 +1102,7 @@ static int handle_unload_module(
         return send_response(fd, OP_UNLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t module_id = corex_protocol_read_u64(payload);
-    ModuleEntry *m = find_module(module_id);
+    ModuleEntry *m = find_module(session, module_id);
 
     if (!m)
         return send_response(fd, OP_UNLOAD_MODULE, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1099,7 +1126,7 @@ static int handle_unload_module(
             0);
     }
 
-    invalidate_module_kernels(module_id);
+    invalidate_module_kernels(session, module_id);
 
     CUresult r = cuModuleUnload(m->module);
 
@@ -1118,7 +1145,7 @@ static int handle_unload_module(
     return send_response(fd, OP_UNLOAD_MODULE, req_id, ST_OK, NULL, 0);
 }
 
-static int resolve_stream_id(uint64_t stream_id, CUstream *stream_out);
+static int resolve_stream_id(ServerSession *session, uint64_t stream_id, CUstream *stream_out);
 
 /* ============================================================
  * Gate 5B Stream handlers
@@ -1126,6 +1153,7 @@ static int resolve_stream_id(uint64_t stream_id, CUstream *stream_out);
  */
 
 static int handle_create_stream(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1139,7 +1167,7 @@ static int handle_create_stream(
     if (flags != CU_STREAM_DEFAULT)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    StreamEntry *slot = new_stream_slot();
+    StreamEntry *slot = new_stream_slot(session);
 
     if (!slot)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_NO_RESOURCE, NULL, 0);
@@ -1169,6 +1197,7 @@ static int handle_create_stream(
 }
 
 static int handle_stream_query(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1179,7 +1208,7 @@ static int handle_stream_query(
 
     uint64_t stream_id = corex_protocol_read_u64(payload);
     CUstream stream = 0;
-    if (resolve_stream_id(stream_id, &stream) != 0)
+    if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_QUERY, req_id, ST_NOT_FOUND, NULL, 0);
 
     CUresult r = cuStreamQuery(stream);
@@ -1217,6 +1246,7 @@ static int handle_stream_query(
 }
 
 static int handle_stream_sync(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1227,7 +1257,7 @@ static int handle_stream_sync(
 
     uint64_t stream_id = corex_protocol_read_u64(payload);
     CUstream stream = 0;
-    if (resolve_stream_id(stream_id, &stream) != 0)
+    if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_SYNC, req_id, ST_NOT_FOUND, NULL, 0);
 
     CUresult r = cuStreamSynchronize(stream);
@@ -1244,6 +1274,7 @@ static int handle_stream_sync(
 }
 
 static int handle_destroy_stream(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1253,7 +1284,7 @@ static int handle_destroy_stream(
         return send_response(fd, OP_DESTROY_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t stream_id = corex_protocol_read_u64(payload);
-    StreamEntry *entry = find_stream(stream_id);
+    StreamEntry *entry = find_stream(session, stream_id);
 
     if (!entry)
         return send_response(fd, OP_DESTROY_STREAM, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1303,6 +1334,7 @@ static int handle_destroy_stream(
  */
 
 static int resolve_stream_id(
+    ServerSession *session,
     uint64_t stream_id,
     CUstream *stream_out)
 {
@@ -1311,7 +1343,7 @@ static int resolve_stream_id(
         return 0;
     }
 
-    StreamEntry *entry = find_stream(stream_id);
+    StreamEntry *entry = find_stream(session, stream_id);
 
     if (!entry)
         return -1;
@@ -1321,6 +1353,7 @@ static int resolve_stream_id(
 }
 
 static int handle_create_event(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1334,7 +1367,7 @@ static int handle_create_event(
     if (flags != CU_EVENT_DEFAULT)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    EventEntry *slot = new_event_slot();
+    EventEntry *slot = new_event_slot(session);
 
     if (!slot)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_NO_RESOURCE, NULL, 0);
@@ -1364,6 +1397,7 @@ static int handle_create_event(
 }
 
 static int handle_event_record(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1375,14 +1409,14 @@ static int handle_event_record(
     uint64_t event_id = corex_protocol_read_u64(payload);
     uint64_t stream_id = corex_protocol_read_u64(payload + 8);
 
-    EventEntry *event_entry = find_event(event_id);
+    EventEntry *event_entry = find_event(session, event_id);
 
     if (!event_entry)
         return send_response(fd, OP_EVENT_RECORD, req_id, ST_NOT_FOUND, NULL, 0);
 
     CUstream stream = 0;
 
-    if (resolve_stream_id(stream_id, &stream) != 0)
+    if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_EVENT_RECORD, req_id, ST_NOT_FOUND, NULL, 0);
 
     CUresult r = cuEventRecord(event_entry->event, stream);
@@ -1400,6 +1434,7 @@ static int handle_event_record(
 }
 
 static int handle_event_query(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1409,7 +1444,7 @@ static int handle_event_query(
         return send_response(fd, OP_EVENT_QUERY, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t event_id = corex_protocol_read_u64(payload);
-    EventEntry *entry = find_event(event_id);
+    EventEntry *entry = find_event(session, event_id);
 
     if (!entry)
         return send_response(fd, OP_EVENT_QUERY, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1449,6 +1484,7 @@ static int handle_event_query(
 }
 
 static int handle_event_sync(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1458,7 +1494,7 @@ static int handle_event_sync(
         return send_response(fd, OP_EVENT_SYNC, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t event_id = corex_protocol_read_u64(payload);
-    EventEntry *entry = find_event(event_id);
+    EventEntry *entry = find_event(session, event_id);
 
     if (!entry)
         return send_response(fd, OP_EVENT_SYNC, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1477,6 +1513,7 @@ static int handle_event_sync(
 }
 
 static int handle_stream_wait_event(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1494,10 +1531,10 @@ static int handle_stream_wait_event(
 
     CUstream stream = 0;
 
-    if (resolve_stream_id(stream_id, &stream) != 0)
+    if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_NOT_FOUND, NULL, 0);
 
-    EventEntry *event_entry = find_event(event_id);
+    EventEntry *event_entry = find_event(session, event_id);
 
     if (!event_entry)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1517,6 +1554,7 @@ static int handle_stream_wait_event(
 }
 
 static int handle_destroy_event(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1526,7 +1564,7 @@ static int handle_destroy_event(
         return send_response(fd, OP_DESTROY_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint64_t event_id = corex_protocol_read_u64(payload);
-    EventEntry *entry = find_event(event_id);
+    EventEntry *entry = find_event(session, event_id);
 
     if (!entry)
         return send_response(fd, OP_DESTROY_EVENT, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1662,6 +1700,7 @@ static void release_raw_kernel_args(void **raw_args, uint32_t argc)
  */
 
 static int handle_launch_generic(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1689,7 +1728,7 @@ static int handle_launch_generic(
     if (argc > MAX_ARGS)
         return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    KernelEntry *k = find_kernel(kernel_id);
+    KernelEntry *k = find_kernel(session, kernel_id);
     if (!k)
         return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_NOT_FOUND, NULL, 0);
     if (!k->metadata_valid)
@@ -1706,7 +1745,7 @@ static int handle_launch_generic(
 
     CUstream launch_stream = 0;
     if (stream_id != 0) {
-        StreamEntry *stream_entry = find_stream(stream_id);
+        StreamEntry *stream_entry = find_stream(session, stream_id);
         if (!stream_entry) {
             fprintf(stderr,
                     "LAUNCH_GENERIC stream_not_found stream_id=%llu\n",
@@ -1810,7 +1849,7 @@ static int handle_launch_generic(
         case ARG_REMOTE_PTR: {
             uint64_t allocation_id = corex_protocol_read_u64(payload + pos);
             uint64_t offset64      = corex_protocol_read_u64(payload + pos + 8);
-            Allocation *a = find_allocation(allocation_id);
+            Allocation *a = find_allocation(session, allocation_id);
 
             if (!a) {
                 fail_status = ST_NOT_FOUND;
@@ -1935,6 +1974,7 @@ fail:
  *   TransferID (or session cleanup runs).
  */
 static int handle_h2d_async_submit(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -1967,6 +2007,7 @@ static int handle_h2d_async_submit(
 
     Allocation *a =
         find_allocation(
+            session,
             allocation_id);
 
     if (!a)
@@ -1991,6 +2032,7 @@ static int handle_h2d_async_submit(
     CUstream stream = 0;
 
     if (resolve_stream_id(
+            session,
             stream_id,
             &stream) != 0)
         return send_response(
@@ -2002,7 +2044,7 @@ static int handle_h2d_async_submit(
             0);
 
     TransferEntry *entry =
-        new_transfer_slot();
+        new_transfer_slot(session);
 
     if (!entry)
         return send_response(
@@ -2151,6 +2193,7 @@ static int handle_h2d_async_submit(
  * owned by TransferID until TRANSFER_WAIT.
  */
 static int handle_d2h_async_submit(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -2183,6 +2226,7 @@ static int handle_d2h_async_submit(
 
     Allocation *a =
         find_allocation(
+            session,
             allocation_id);
 
     if (!a)
@@ -2207,6 +2251,7 @@ static int handle_d2h_async_submit(
     CUstream stream = 0;
 
     if (resolve_stream_id(
+            session,
             stream_id,
             &stream) != 0)
         return send_response(
@@ -2218,7 +2263,7 @@ static int handle_d2h_async_submit(
             0);
 
     TransferEntry *entry =
-        new_transfer_slot();
+        new_transfer_slot(session);
 
     if (!entry)
         return send_response(
@@ -2352,6 +2397,7 @@ static int handle_d2h_async_submit(
  *   u32 READY/PENDING
  */
 static int handle_transfer_query(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -2372,6 +2418,7 @@ static int handle_transfer_query(
 
     TransferEntry *entry =
         find_transfer(
+            session,
             transfer_id);
 
     if (!entry)
@@ -2442,6 +2489,7 @@ static int handle_transfer_query(
  * The TransferID becomes stale immediately after this call.
  */
 static int handle_transfer_wait(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
@@ -2462,6 +2510,7 @@ static int handle_transfer_wait(
 
     TransferEntry *entry =
         find_transfer(
+            session,
             transfer_id);
 
     if (!entry)
@@ -2550,11 +2599,13 @@ static int g8c_query_attr(
 }
 
 static int handle_get_device_info(
+    ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
     uint32_t payload_len)
 {
+    (void)session;
     if (!payload || payload_len != sizeof(uint32_t))
         return send_response(
             fd,
@@ -2834,7 +2885,7 @@ static int handle_get_device_info(
 }
 
 
-static int serve_session(int fd)
+static int serve_session(ServerSession *session, int fd)
 {
     for (;;) {
         unsigned char h[CRX_REQUEST_HEADER_BYTES];
@@ -2888,11 +2939,11 @@ static int serve_session(int fd)
 
         switch (opcode) {
         case OP_ALLOC:
-            rc = handle_alloc(fd, req_id, payload, payload_len);
+            rc = handle_alloc(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_H2D:
-            rc = handle_h2d(fd, req_id, payload, payload_len);
+            rc = handle_h2d(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_LAUNCH:
@@ -2901,15 +2952,15 @@ static int serve_session(int fd)
             break;
 
         case OP_SYNC:
-            rc = handle_sync(fd, req_id, payload, payload_len);
+            rc = handle_sync(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_D2H:
-            rc = handle_d2h(fd, req_id, payload, payload_len);
+            rc = handle_d2h(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_FREE:
-            rc = handle_free(fd, req_id, payload, payload_len);
+            rc = handle_free(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_CLOSE:
@@ -2922,79 +2973,79 @@ static int serve_session(int fd)
             break;
 
         case OP_UPLOAD_MODULE:
-            rc = handle_upload_module(fd, req_id, payload, payload_len);
+            rc = handle_upload_module(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_GET_KERNEL:
-            rc = handle_get_kernel(fd, req_id, payload, payload_len);
+            rc = handle_get_kernel(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_UNLOAD_MODULE:
-            rc = handle_unload_module(fd, req_id, payload, payload_len);
+            rc = handle_unload_module(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_LAUNCH_GENERIC:
-            rc = handle_launch_generic(fd, req_id, payload, payload_len);
+            rc = handle_launch_generic(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_CREATE_STREAM:
-            rc = handle_create_stream(fd, req_id, payload, payload_len);
+            rc = handle_create_stream(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_DESTROY_STREAM:
-            rc = handle_destroy_stream(fd, req_id, payload, payload_len);
+            rc = handle_destroy_stream(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_STREAM_QUERY:
-            rc = handle_stream_query(fd, req_id, payload, payload_len);
+            rc = handle_stream_query(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_STREAM_SYNC:
-            rc = handle_stream_sync(fd, req_id, payload, payload_len);
+            rc = handle_stream_sync(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_CREATE_EVENT:
-            rc = handle_create_event(fd, req_id, payload, payload_len);
+            rc = handle_create_event(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_DESTROY_EVENT:
-            rc = handle_destroy_event(fd, req_id, payload, payload_len);
+            rc = handle_destroy_event(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_EVENT_RECORD:
-            rc = handle_event_record(fd, req_id, payload, payload_len);
+            rc = handle_event_record(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_EVENT_QUERY:
-            rc = handle_event_query(fd, req_id, payload, payload_len);
+            rc = handle_event_query(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_EVENT_SYNC:
-            rc = handle_event_sync(fd, req_id, payload, payload_len);
+            rc = handle_event_sync(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_STREAM_WAIT_EVENT:
-            rc = handle_stream_wait_event(fd, req_id, payload, payload_len);
+            rc = handle_stream_wait_event(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_H2D_ASYNC_SUBMIT:
-            rc = handle_h2d_async_submit(fd, req_id, payload, payload_len);
+            rc = handle_h2d_async_submit(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_D2H_ASYNC_SUBMIT:
-            rc = handle_d2h_async_submit(fd, req_id, payload, payload_len);
+            rc = handle_d2h_async_submit(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_TRANSFER_QUERY:
-            rc = handle_transfer_query(fd, req_id, payload, payload_len);
+            rc = handle_transfer_query(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_TRANSFER_WAIT:
-            rc = handle_transfer_wait(fd, req_id, payload, payload_len);
+            rc = handle_transfer_wait(session, fd, req_id, payload, payload_len);
             break;
 
         case OP_GET_DEVICE_INFO:
-            rc = handle_get_device_info(
+            rc = handle_get_device_info(session,
                 fd,
                 req_id,
                 payload,
@@ -3129,19 +3180,29 @@ int main(void)
             break;
         }
 
+        ServerSession *session = (ServerSession *)malloc(sizeof(*session));
+        if (!session) {
+            fprintf(stderr, "SESSION_ALLOC_FAILED\n");
+            close(fd);
+            continue;
+        }
+        server_session_init(session);
+
         printf("SESSION_START\n");
+        printf("SESSION_IDS next_allocation_id=%llu next_stream_id=%llu\n",
+               (unsigned long long)session->next_alloc_id,
+               (unsigned long long)session->next_stream_id);
         fflush(stdout);
 
-        (void)serve_session(fd);
+        (void)serve_session(session, fd);
 
-        cleanup_session();
+        cleanup_session(session);
+        free(session);
         close(fd);
         fflush(stdout);
     }
 
     close(listen_fd);
-
-    cleanup_session();
 
     if (g_ctx) {
         cuCtxDestroy(g_ctx);

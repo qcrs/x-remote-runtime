@@ -1,0 +1,2 @@
+BASELINE_COMMIT=10056f4c7d9ccfd4d289ffc46f21de29eda3826d
+SLICE_COMMIT=m1/s4: establish explicit server session ownership (evidence committed atomically)

@@ -1,0 +1,12 @@
+server/runtime_server.c
+scripts/verify-scope.py
+scripts/run-server-session-isolation.sh
+tests/integration/server_session_isolation.py
+tests/integration/session_lifecycle.cu
+docs/PROJECT_STATE.md
+evidence/m1/s4/20260922-140429/*
+
+SEMANTIC_SCOPE=explicit per-connection server object ownership
+CLIENT_SOURCE_CHANGE=TEST_ONLY
+PUBLIC_ABI_CHANGE=NONE
+WIRE_CHANGE=NONE

@@ -51,6 +51,13 @@ int main(int argc, char **argv)
     failures += expect("stream-generation-1",
                        cudaStreamCreate(&old_stream),
                        cudaSuccess);
+    failures += expect("live-transfer-at-shutdown",
+                       cudaMemcpyAsync(old_ptr,
+                                       &host_value,
+                                       sizeof(host_value),
+                                       cudaMemcpyHostToDevice,
+                                       old_stream),
+                       cudaSuccess);
     failures += expect("event-generation-1",
                        cudaEventCreate(&old_event),
                        cudaSuccess);

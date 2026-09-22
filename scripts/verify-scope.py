@@ -32,6 +32,12 @@ checks = [
     ("server_driver_only",
      "#include <cuda.h>" in server and
      "cuda_runtime" not in server),
+    ("server_session_owns_objects",
+     "typedef struct {\n    Allocation allocations[MAX_ALLOCS];" in server and
+     "static void cleanup_session(ServerSession *session)" in server and
+     "static Allocation allocations[MAX_ALLOCS]" not in server and
+     "static ModuleEntry modules[MAX_MODULES]" not in server and
+     "static KernelEntry kernels[MAX_KERNELS]" not in server),
     ("client_vendor_abi_adapter",
      "#include <cuda_runtime_api.h>" in api and
      "sizeof(*prop)" in api),

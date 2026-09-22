@@ -1,0 +1,7 @@
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+COREX_REMOTE_PORT=50051 stdbuf -oL ./dist/bin/runtime_server
+OUT=/tmp/m1s4-final-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m1s4-transfer-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m1s4-baseline SERVER_LOG=/tmp/m1s4-final-server.log ./scripts/run-integration.sh
+OUT=/tmp/m1s4-multithread ./scripts/run-multithread-integration.sh
+git diff --check
