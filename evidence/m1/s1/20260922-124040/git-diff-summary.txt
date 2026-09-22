@@ -1,0 +1,11 @@
+TRACKED_FILES_CHANGED=2
+TRACKED_FILE=scripts/build.sh
+TRACKED_FILE=src/corex_remote_cuda.c
+NEW_FILE=include/internal/corex_runtime_context.h
+NEW_FILE=src/corex_runtime_context.c
+NEW_FILE=tests/integration/multithread_runtime.cu
+NEW_FILE=scripts/run-multithread-integration.sh
+SERVER_FILES_CHANGED=NO
+PUBLIC_ABI_FILES_CHANGED=NO
+PROTOCOL_FILES_CHANGED=NO
+GIT_DIFF_CHECK=PASS

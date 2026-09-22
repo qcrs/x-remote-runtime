@@ -4,6 +4,7 @@
 #include "corex_fatbin_runtime.h"
 #include "corex_metadata.h"
 #include "corex_device_info.h"
+#include "corex_runtime_context.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -56,16 +57,6 @@ static int remote_server_port(void)
 #define G6A_VA_ARENA_BYTES   (64ULL * 1024ULL * 1024ULL * 1024ULL)
 #define G6A_VA_ALIGNMENT     (64ULL * 1024ULL)
 #define G6A_VA_GUARD_BYTES   (64ULL * 1024ULL)
-#define G6A_MAX_ALLOCS       1024
-#define G6C_MAX_STREAM_HANDLES 1024
-#define G6E_FRONTIER_SLOTS (G6C_MAX_STREAM_HANDLES + 1)
-#define G6E_DEFAULT_STREAM_SLOT G6C_MAX_STREAM_HANDLES
-#define G6C_MAX_EVENT_HANDLES  1024
-#define G6C_MAX_HIDDEN_TRANSFERS 2048
-#define G6D_MAX_MODULE_HANDLES 128
-#define G6D_MAX_KERNEL_HANDLES 512
-#define G6D_MAX_KERNEL_ARGS    32
-#define G7C_MAX_FATBIN_REGISTRATIONS 128
 #define G7C_REG_COOKIE 0x4737435245473031ULL /* G7CREG01 */
 #define G6A_COPY_CHUNK       (16ULL * 1024ULL * 1024ULL)
 
@@ -122,13 +113,6 @@ enum {
     STREAM_STATE_PENDING = 1,
 };
 
-typedef struct {
-    int live;
-    uintptr_t virtual_base;
-    size_t size;
-    uint64_t allocation_id;
-} VirtualAllocation;
-
 typedef enum {
     RESOLVE_OK = 0,
     RESOLVE_INVALID,
@@ -140,143 +124,44 @@ typedef struct {
     uint64_t byte_offset;
 } ResolvedRemotePtr;
 
-struct corexCudaStreamHandle {
-    uint64_t cookie;
-    uint64_t stream_id;
-    int live;
-    size_t slot_index;
-    uint64_t next_transfer_seq;
-    uint64_t *frontier;
-};
-
-struct corexCudaEventHandle {
-    uint64_t cookie;
-    uint64_t event_id;
-    int live;
-    int recorded;
-    uint64_t *frontier;
-};
-
-struct corexRemoteModuleHandle {
-    uint64_t cookie;
-    uint64_t module_id;
-    int live;
-};
-
-typedef enum {
-    G7D_KERNEL_ORIGIN_CONTROLLED = 1,
-    G7D_KERNEL_ORIGIN_COMPILER = 2,
-} G7DKernelOrigin;
-
-typedef enum {
-    G7D_ABI_UNKNOWN = 0,
-    G7D_ABI_READY = 1,
-    G7D_ABI_FAILED = 2,
-} G7DAbiState;
-
-typedef struct corexRemoteKernelHandle {
-    uint64_t cookie;
-    uint64_t kernel_id;
-    uint64_t module_id;
-    int live;
-
-    G7DKernelOrigin origin;
-    G7DAbiState abi_state;
-
-    /*
-     * Compiler host-function identity is local-only. It is never sent over the
-     * wire and is used only as an alternate lookup key for cudaLaunchKernel.
-     */
-    const void *host_fun;
-    uint64_t registration_generation;
-
-    size_t argc;
-    corexRemoteKernelArgDesc args[G6D_MAX_KERNEL_ARGS];
-    char name[128];
-} corexRemoteKernelHandle;
-
-
-typedef enum {
-    G7C_REG_EMPTY = 0,
-    G7C_REG_REGISTERING,
-    G7C_REG_REMOTE_READY,
-    G7C_REG_LIVE,
-    G7C_REG_FAILED,
-    G7C_REG_UNLOAD_FAILED,
-    G7C_REG_DEAD,
-} G7CRegistrationState;
-
-typedef struct {
-    uint64_t cookie;
-    uint64_t generation;
-    G7CRegistrationState state;
-
-    const void *compiler_wrapper;
-    const unsigned char *fatbin_ptr;
-    size_t fatbin_size;
-    const unsigned char *image_ptr;
-    size_t image_size;
-    size_t image_offset;
-
-    corexRemoteModule_t remote_module;
-    uint64_t module_id_snapshot;
-
-    cudaError_t registration_error;
-    int extraction_error;
-    unsigned function_registration_calls;
-} G7CFatbinRegistration;
-
-typedef enum {
-    HIDDEN_TRANSFER_H2D = 1,
-    HIDDEN_TRANSFER_D2H = 2,
-} HiddenTransferKind;
-
-typedef struct {
-    int live;
-    uint64_t transfer_id;
-    HiddenTransferKind kind;
-    uint64_t allocation_id;
-    size_t origin_stream_slot;
-    uint64_t origin_stream_seq;
-    uint64_t submit_order;
-    void *host_dst;
-    size_t bytes;
-} HiddenTransfer;
-
 #define G6C_STREAM_COOKIE 0x5354524d47364331ULL /* STRMG6C1 */
 #define G6C_EVENT_COOKIE  0x45564e5447364331ULL /* EVNTG6C1 */
 #define G6D_MODULE_COOKIE 0x4d4f444c47364431ULL /* MODLG6D1 */
 #define G6D_KERNEL_COOKIE 0x4b45524e47364431ULL /* KERNG6D1 */
 
-static int g_fd = -1;
-static uint32_t g_next_req_id = 1;
 static _Thread_local int g_current_device = 0;
 static _Thread_local cudaError_t g_last_error = cudaSuccess;
 static _Thread_local uint32_t g_last_remote_status = ST_OK;
 static _Thread_local int g_last_rpc_transport_error = 0;
 
-static unsigned char *g_va_arena = NULL;
-static size_t g_va_next = 0;
-static VirtualAllocation g_allocs[G6A_MAX_ALLOCS];
-static struct corexCudaStreamHandle g_stream_handles[G6C_MAX_STREAM_HANDLES];
-static struct corexCudaEventHandle g_event_handles[G6C_MAX_EVENT_HANDLES];
-static HiddenTransfer g_hidden_transfers[G6C_MAX_HIDDEN_TRANSFERS];
-static struct corexRemoteModuleHandle g_module_handles[G6D_MAX_MODULE_HANDLES];
-static corexRemoteKernelHandle g_kernel_handles[G6D_MAX_KERNEL_HANDLES];
-static G7CFatbinRegistration g_g7c_registrations[G7C_MAX_FATBIN_REGISTRATIONS];
-static size_t g_stream_handle_next = 0;
-static size_t g_event_handle_next = 0;
-static size_t g_module_handle_next = 0;
-static size_t g_kernel_handle_next = 0;
-static size_t g_g7c_registration_next = 0;
-static uint64_t g_g7c_generation_next = 1;
-static uint64_t g_transfer_submit_order = 0;
-static uint64_t *g_default_frontier = NULL;
-static uint64_t g_default_next_transfer_seq = 0;
-static int g_shutdown_registered = 0;
+/* M1-S1 aliases: all non-TLS client state is owned by the singleton context. */
+#define g_fd                         (corex_runtime_context_get()->fd)
+#define g_next_req_id                (corex_runtime_context_get()->next_req_id)
+#define g_va_arena                   (corex_runtime_context_get()->va_arena)
+#define g_va_next                    (corex_runtime_context_get()->va_next)
+#define g_allocs                     (corex_runtime_context_get()->allocs)
+#define g_stream_handles             (corex_runtime_context_get()->stream_handles)
+#define g_event_handles              (corex_runtime_context_get()->event_handles)
+#define g_hidden_transfers           (corex_runtime_context_get()->hidden_transfers)
+#define g_module_handles             (corex_runtime_context_get()->module_handles)
+#define g_kernel_handles             (corex_runtime_context_get()->kernel_handles)
+#define g_g7c_registrations          (corex_runtime_context_get()->registrations)
+#define g_stream_handle_next         (corex_runtime_context_get()->stream_handle_next)
+#define g_event_handle_next          (corex_runtime_context_get()->event_handle_next)
+#define g_module_handle_next         (corex_runtime_context_get()->module_handle_next)
+#define g_kernel_handle_next         (corex_runtime_context_get()->kernel_handle_next)
+#define g_g7c_registration_next      (corex_runtime_context_get()->registration_next)
+#define g_g7c_generation_next        (corex_runtime_context_get()->registration_generation_next)
+#define g_transfer_submit_order      (corex_runtime_context_get()->transfer_submit_order)
+#define g_default_frontier           (corex_runtime_context_get()->default_frontier)
+#define g_default_next_transfer_seq  (corex_runtime_context_get()->default_next_transfer_seq)
+#define g_shutdown_registered        (corex_runtime_context_get()->shutdown_registered)
 
-static cudaError_t ensure_runtime(void);
+static cudaError_t ensure_runtime_locked(void);
 static cudaError_t map_last_rpc_error(cudaError_t fallback);
+
+/* All callers of this helper are inside a locked RuntimeContext entry path. */
+#define ensure_runtime ensure_runtime_locked
 
 static uint64_t to_be64(uint64_t v)
 {
@@ -1781,7 +1666,7 @@ static cudaError_t ensure_runtime(void)
     return cudaSuccess;
 }
 
-int corexRemoteGetDeviceInfoInternal(
+static int corexRemoteGetDeviceInfoInternal_locked(
     uint32_t logical_device,
     CorexRemoteDeviceInfo *info_out)
 {
@@ -1807,7 +1692,7 @@ int corexRemoteRecordErrorInternal(int error_code)
     return (int)record_error((cudaError_t)error_code);
 }
 
-cudaError_t cudaGetDeviceCount(int *count)
+static cudaError_t cudaGetDeviceCount_locked(int *count)
 {
     if (!count)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -1821,7 +1706,7 @@ cudaError_t cudaGetDeviceCount(int *count)
     return cudaSuccess;
 }
 
-cudaError_t cudaGetDevice(int *device)
+static cudaError_t cudaGetDevice_locked(int *device)
 {
     if (!device)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -1834,7 +1719,7 @@ cudaError_t cudaGetDevice(int *device)
     return cudaSuccess;
 }
 
-cudaError_t cudaSetDevice(int device)
+static cudaError_t cudaSetDevice_locked(int device)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -1847,7 +1732,7 @@ cudaError_t cudaSetDevice(int device)
     return cudaSuccess;
 }
 
-cudaError_t cudaMalloc(void **devPtr, size_t size)
+static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
 {
     if (!devPtr || size == 0)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -1899,7 +1784,7 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
     return cudaSuccess;
 }
 
-cudaError_t cudaFree(void *devPtr)
+static cudaError_t cudaFree_locked(void *devPtr)
 {
     if (!devPtr)
         return cudaSuccess;
@@ -1950,7 +1835,7 @@ static cudaError_t map_resolve_error(ResolveResult result)
     G6E_RETURN(cudaErrorInvalidDevicePointer);
 }
 
-cudaError_t cudaMemcpy(
+static cudaError_t cudaMemcpy_locked(
     void *dst,
     const void *src,
     size_t count,
@@ -2030,7 +1915,7 @@ cudaError_t cudaMemcpy(
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }
 
-cudaError_t cudaMemcpyAsync(
+static cudaError_t cudaMemcpyAsync_locked(
     void *dst,
     const void *src,
     size_t count,
@@ -2176,7 +2061,7 @@ cudaError_t cudaMemcpyAsync(
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }
 
-cudaError_t cudaDeviceSynchronize(void)
+static cudaError_t cudaDeviceSynchronize_locked(void)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2193,7 +2078,7 @@ cudaError_t cudaDeviceSynchronize(void)
     return cudaSuccess;
 }
 
-cudaError_t cudaStreamCreate(cudaStream_t *pStream)
+static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
 {
     if (!pStream)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -2234,7 +2119,7 @@ cudaError_t cudaStreamCreate(cudaStream_t *pStream)
     return cudaSuccess;
 }
 
-cudaError_t cudaStreamDestroy(cudaStream_t stream)
+static cudaError_t cudaStreamDestroy_locked(cudaStream_t stream)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2272,7 +2157,7 @@ cudaError_t cudaStreamDestroy(cudaStream_t stream)
     return cudaSuccess;
 }
 
-cudaError_t cudaStreamSynchronize(cudaStream_t stream)
+static cudaError_t cudaStreamSynchronize_locked(cudaStream_t stream)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2306,7 +2191,7 @@ cudaError_t cudaStreamSynchronize(cudaStream_t stream)
     return cudaSuccess;
 }
 
-cudaError_t cudaStreamQuery(cudaStream_t stream)
+static cudaError_t cudaStreamQuery_locked(cudaStream_t stream)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2342,7 +2227,7 @@ cudaError_t cudaStreamQuery(cudaStream_t stream)
     return cudaSuccess;
 }
 
-cudaError_t cudaEventCreate(cudaEvent_t *event)
+static cudaError_t cudaEventCreate_locked(cudaEvent_t *event)
 {
     if (!event)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -2381,7 +2266,7 @@ cudaError_t cudaEventCreate(cudaEvent_t *event)
     return cudaSuccess;
 }
 
-cudaError_t cudaEventDestroy(cudaEvent_t event)
+static cudaError_t cudaEventDestroy_locked(cudaEvent_t event)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2418,7 +2303,7 @@ cudaError_t cudaEventDestroy(cudaEvent_t event)
     return cudaSuccess;
 }
 
-cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream)
+static cudaError_t cudaEventRecord_locked(cudaEvent_t event, cudaStream_t stream)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2449,7 +2334,7 @@ cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream)
     return cudaSuccess;
 }
 
-cudaError_t cudaEventSynchronize(cudaEvent_t event)
+static cudaError_t cudaEventSynchronize_locked(cudaEvent_t event)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2472,7 +2357,7 @@ cudaError_t cudaEventSynchronize(cudaEvent_t event)
     return cudaSuccess;
 }
 
-cudaError_t cudaEventQuery(cudaEvent_t event)
+static cudaError_t cudaEventQuery_locked(cudaEvent_t event)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2507,7 +2392,7 @@ cudaError_t cudaEventQuery(cudaEvent_t event)
     return cudaSuccess;
 }
 
-cudaError_t cudaStreamWaitEvent(
+static cudaError_t cudaStreamWaitEvent_locked(
     cudaStream_t stream,
     cudaEvent_t event,
     unsigned int flags)
@@ -2544,7 +2429,7 @@ cudaError_t cudaStreamWaitEvent(
 }
 
 
-cudaError_t corexRemoteModuleLoad(
+static cudaError_t corexRemoteModuleLoad_locked(
     const char *cubin_path,
     corexRemoteModule_t *module_out)
 {
@@ -2591,7 +2476,7 @@ cudaError_t corexRemoteModuleLoad(
     return cudaSuccess;
 }
 
-cudaError_t corexRemoteModuleUnload(corexRemoteModule_t module)
+static cudaError_t corexRemoteModuleUnload_locked(corexRemoteModule_t module)
 {
     cudaError_t init = ensure_runtime();
     if (init != cudaSuccess)
@@ -2676,7 +2561,7 @@ static cudaError_t bind_kernel_identity_after_runtime(
     return cudaSuccess;
 }
 
-cudaError_t corexRemoteRegisterKernel(
+static cudaError_t corexRemoteRegisterKernel_locked(
     corexRemoteModule_t module,
     const char *kernel_name,
     const corexRemoteKernelArgDesc *args,
@@ -2940,7 +2825,7 @@ static cudaError_t g7e_attach_compiler_abi_from_metadata(
  * CoreX metadata parser and attaches normalized DEVICE_PTR/BY_VALUE descriptors
  * to the same existing kernel handle.
  */
-void **__cudaRegisterFatBinary(void *fatCubin)
+static void **__cudaRegisterFatBinary_locked(void *fatCubin)
 {
     if (g_g7c_registration_next >= G7C_MAX_FATBIN_REGISTRATIONS) {
         fprintf(stderr,
@@ -3070,7 +2955,7 @@ void **__cudaRegisterFatBinary(void *fatCubin)
     return (void **)reg;
 }
 
-void __cudaRegisterFunction(
+static void __cudaRegisterFunction_locked(
     void **fatCubinHandle,
     const char *hostFun,
     char *deviceFun,
@@ -3219,7 +3104,7 @@ void __cudaRegisterFunction(
     }
 }
 
-void __cudaRegisterFatBinaryEnd(void **fatCubinHandle)
+static void __cudaRegisterFatBinaryEnd_locked(void **fatCubinHandle)
 {
     G7CFatbinRegistration *reg =
         g7c_resolve_registration(fatCubinHandle);
@@ -3242,7 +3127,7 @@ void __cudaRegisterFatBinaryEnd(void **fatCubinHandle)
            reg->function_registration_calls);
 }
 
-void __cudaUnregisterFatBinary(void **fatCubinHandle)
+static void __cudaUnregisterFatBinary_locked(void **fatCubinHandle)
 {
     G7CFatbinRegistration *reg =
         g7c_resolve_registration(fatCubinHandle);
@@ -3363,7 +3248,7 @@ static void g7c_finalize_registrations_after_session_close(void)
 
 
 
-cudaError_t cudaLaunchKernel(
+static cudaError_t cudaLaunchKernel_locked(
     const void *func,
     dim3 gridDim,
     dim3 blockDim,
@@ -3538,12 +3423,12 @@ const char *cudaGetErrorString(cudaError_t error)
     }
 }
 
-size_t corexRemoteDebugLiveTransfers(void)
+static size_t corexRemoteDebugLiveTransfers_locked(void)
 {
     return live_hidden_transfer_count();
 }
 
-void corexRemoteRuntimeShutdown(void)
+static void corexRemoteRuntimeShutdown_locked(void)
 {
     /*
      * Compiler registrations normally unregister before this atexit handler.
@@ -3601,4 +3486,336 @@ void corexRemoteRuntimeShutdown(void)
     g_module_handle_next = 0;
     g_kernel_handle_next = 0;
     g_transfer_submit_order = 0;
+}
+
+/*
+ * Public/shared entry boundaries.  The implementation bodies above use the
+ * `_locked` convention and never acquire the RuntimeContext mutex themselves.
+ * This keeps one non-recursive lock acquisition around each operation and the
+ * complete RPC/local semantic transaction.
+ */
+
+int corexRemoteGetDeviceInfoInternal(
+    uint32_t logical_device,
+    CorexRemoteDeviceInfo *info_out)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    int result = corexRemoteGetDeviceInfoInternal_locked(
+        logical_device,
+        info_out);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaGetDeviceCount(int *count)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaGetDeviceCount_locked(count);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaGetDevice(int *device)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaGetDevice_locked(device);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaSetDevice(int device)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaSetDevice_locked(device);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMalloc(void **devPtr, size_t size)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaMalloc_locked(devPtr, size);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaFree(void *devPtr)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaFree_locked(devPtr);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemcpy(
+    void *dst,
+    const void *src,
+    size_t count,
+    cudaMemcpyKind kind)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaMemcpy_locked(dst, src, count, kind);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemcpyAsync(
+    void *dst,
+    const void *src,
+    size_t count,
+    cudaMemcpyKind kind,
+    cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaMemcpyAsync_locked(
+        dst,
+        src,
+        count,
+        kind,
+        stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaDeviceSynchronize(void)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceSynchronize_locked();
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamCreate(cudaStream_t *pStream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamCreate_locked(pStream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamDestroy(cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamDestroy_locked(stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamSynchronize(cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamSynchronize_locked(stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamQuery(cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamQuery_locked(stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaEventCreate(cudaEvent_t *event)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventCreate_locked(event);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaEventDestroy(cudaEvent_t event)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventDestroy_locked(event);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventRecord_locked(event, stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaEventSynchronize(cudaEvent_t event)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventSynchronize_locked(event);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaEventQuery(cudaEvent_t event)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventQuery_locked(event);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamWaitEvent(
+    cudaStream_t stream,
+    cudaEvent_t event,
+    unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamWaitEvent_locked(
+        stream,
+        event,
+        flags);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t corexRemoteModuleLoad(
+    const char *cubin_path,
+    corexRemoteModule_t *module_out)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = corexRemoteModuleLoad_locked(cubin_path, module_out);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t corexRemoteModuleUnload(corexRemoteModule_t module)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = corexRemoteModuleUnload_locked(module);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t corexRemoteRegisterKernel(
+    corexRemoteModule_t module,
+    const char *kernel_name,
+    const corexRemoteKernelArgDesc *args,
+    size_t argc,
+    const void **func_out)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = corexRemoteRegisterKernel_locked(
+        module,
+        kernel_name,
+        args,
+        argc,
+        func_out);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+void **__cudaRegisterFatBinary(void *fatCubin)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    void **result = __cudaRegisterFatBinary_locked(fatCubin);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+void __cudaRegisterFunction(
+    void **fatCubinHandle,
+    const char *hostFun,
+    char *deviceFun,
+    const char *deviceName,
+    int thread_limit,
+    void *tid,
+    void *bid,
+    void *bDim,
+    void *gDim,
+    int *wSize)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    __cudaRegisterFunction_locked(
+        fatCubinHandle,
+        hostFun,
+        deviceFun,
+        deviceName,
+        thread_limit,
+        tid,
+        bid,
+        bDim,
+        gDim,
+        wSize);
+    corex_runtime_context_unlock(context);
+}
+
+void __cudaRegisterFatBinaryEnd(void **fatCubinHandle)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    __cudaRegisterFatBinaryEnd_locked(fatCubinHandle);
+    corex_runtime_context_unlock(context);
+}
+
+void __cudaUnregisterFatBinary(void **fatCubinHandle)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    __cudaUnregisterFatBinary_locked(fatCubinHandle);
+    corex_runtime_context_unlock(context);
+}
+
+cudaError_t cudaLaunchKernel(
+    const void *func,
+    dim3 gridDim,
+    dim3 blockDim,
+    void **args,
+    size_t sharedMem,
+    cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaLaunchKernel_locked(
+        func,
+        gridDim,
+        blockDim,
+        args,
+        sharedMem,
+        stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+size_t corexRemoteDebugLiveTransfers(void)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    size_t result = corexRemoteDebugLiveTransfers_locked();
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+void corexRemoteRuntimeShutdown(void)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    corexRemoteRuntimeShutdown_locked();
+    corex_runtime_context_unlock(context);
 }

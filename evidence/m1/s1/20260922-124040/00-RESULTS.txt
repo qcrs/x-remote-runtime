@@ -1,0 +1,10 @@
+M1_S1_BUILD=PASS
+M1_S1_ABI=PASS
+M1_S1_BASELINE=PASS
+M1_S1_MULTITHREAD=PASS
+M1_S1_PROTOCOL_UNCHANGED=PASS
+M1_S1_RESULT=PASS
+
+BUILD_COMMAND=COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+BASELINE_COMMAND=OUT=/tmp/corex-m1-s1-baseline-final SERVER_LOG=/tmp/corex-remote-m1-s1-server-optimized.log ./scripts/run-integration.sh
+MULTITHREAD_COMMAND=OUT=/tmp/corex-m1-s1-multithread-final ./scripts/run-multithread-integration.sh

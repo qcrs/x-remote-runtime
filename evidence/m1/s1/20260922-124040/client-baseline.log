@@ -1,0 +1,47 @@
+G7C_REGISTER_FATBINARY handle=0xffffbee48db0 generation=1 wrapper=0xaaaadcb54010
+G7C_FATBIN_SPAN handle=0xffffbee48db0 generation=1 bytes=6686 object=<main>
+G7C_IMAGE_EXTRACT handle=0xffffbee48db0 generation=1 offset=51 bytes=2952 result=PASS
+G6A_VA_ARENA base=0xffefbec00000 bytes=68719476736 protection=PROT_NONE
+G6E_REMOTE_SESSION=CONNECTED host=127.0.0.1 port=50051 protocol=CRX9 version=3 default_stream=LEGACY
+G7C_MODULE_AUTO_LOAD handle=0xffffbee48db0 generation=1 module_handle=0xffffbee101b0 module_id=1 bytes=2952 result=PASS
+G7D_FUNCTION_BIND handle=0xffffbee48db0 generation=1 module_id=1 host_fun=0xaaaadcb40e54 kernel_handle=0xffffbee10db0 kernel_id=1 name=g8c_identity_kernel abi=UNKNOWN result=PASS
+G7E_ABI_ARG kernel_id=1 name=g8c_identity_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=1 name=g8c_identity_kernel arg=1 meta_kind=global_buffer offset=8 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=1 name=g8c_identity_kernel arg=2 meta_kind=by_value offset=16 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=1 name=g8c_identity_kernel arg=3 meta_kind=by_value offset=20 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=1 module_id=1 kernel_id=1 name=g8c_identity_kernel argc=4 kernarg_size=24 kernarg_align=8 abi=READY result=PASS
+G7C_REGISTER_FATBINARY_END handle=0xffffbee48db0 generation=1 state=LIVE module_id=1 function_registrations=1
+G8C_DEVICE_PROPERTIES device=0 name=Iluvatar MR-V100 total=34359738368 cc=7.1 sm=16 warp=64 result=PASS
+G8C_APP_PROPERTIES rc=0 name=Iluvatar MR-V100 total=34359738368 shared=131072 regs=262144 warp=64 maxThreads=4096 cc=7.1 sm=16 memClock=1600000 bus=2048 l2=16777216
+G8C_INVALID_DEVICE rc=101 expected=101
+G8C_INVALID_DEVICE_LAST_ERROR rc=101 expected=101
+G8C_LAST_ERROR_CLEARED rc=0 expected=0
+G8C_MEM_INFO free=34145828864 total=34359738368 result=PASS
+G8C_MEM_BEFORE rc=0 free=34145828864 total=34359738368
+G6A_CUDA_MALLOC ptr=0xffefbec00000 allocation_id=1 bytes=4096 span=131072 result=PASS
+G6A_CUDA_MALLOC ptr=0xffefbec20000 allocation_id=2 bytes=4096 span=131072 result=PASS
+G8C_MEM_INFO free=34078720000 total=34359738368 result=PASS
+G8C_MEM_AFTER_ALLOC rc=0 free=34078720000 total=34359738368 delta=67108864
+G6A_PTR_RESOLVE ptr=0xffefbec00000 allocation_id=1 offset=0 bytes=4096
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=4096 result=PASS
+G8A_PUSH_CONFIG depth=1 grid=(4,1,1) block=(256,1,1) shared=0 stream=(nil) result=PASS
+G8A_POP_CONFIG depth=0 grid=(4,1,1) block=(256,1,1) shared=0 stream=(nil) result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbec20000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=2 offset=0
+G6A_PTR_RESOLVE ptr=0xffefbec00000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=1 kind=REMOTE_PTR allocation_id=1 offset=0
+G6D_LAUNCH_ARG arg=2 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=3 kind=RAW_VALUE bytes=4
+G6E_CUDA_LAUNCH_KERNEL token=0xaaaadcb40e54 kernel_id=1 stream_id=0 grid=(4,1,1) block=(256,1,1) shared=0 argc=4 submit=PASS
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbec20000 allocation_id=2 offset=0 bytes=4096
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4096 result=PASS
+G8C_NUMERICAL failures=0
+G6A_CUDA_FREE ptr=0xffefbec20000 allocation_id=2 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefbec00000 allocation_id=1 result=PASS tombstone=YES
+G8C_DEVICE_IDENTITY_RESULT=PASS
+G7C_UNREGISTER_FATBINARY handle=0xffffbee48db0 generation=1 module_id=1 state=LIVE
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffbee10db0 host_fun=0xaaaadcb40e54 kernel_id=1 module_id=1 name=g8c_identity_kernel origin=COMPILER
+G6D_MODULE_UNLOAD handle=0xffffbee101b0 module_id=1 result=PASS tombstone=YES
+G7C_MODULE_AUTO_UNLOAD handle=0xffffbee48db0 generation=1 module_id=1 result=PASS
+G7C_REGISTRATION_TOMBSTONE handle=0xffffbee48db0 generation=1 state=DEAD

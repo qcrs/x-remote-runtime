@@ -63,6 +63,12 @@ echo "GXX=$GXX"
 
 "$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC \
     -I"$INTERNAL" \
+    -c "$SRC/corex_runtime_context.c" \
+    -o "$OBJ/corex_runtime_context.o" \
+    -pthread
+
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC \
+    -I"$INTERNAL" \
     -c "$SRC/corex_launch_config.c" \
     -o "$OBJ/corex_launch_config.o"
 
@@ -87,6 +93,7 @@ echo "GXX=$GXX"
     -Wl,-soname,"$SONAME" \
     -Wl,--version-script="$PACKAGING/corex_remote_cudart.map" \
     "$OBJ/corex_remote_cuda.o" \
+    "$OBJ/corex_runtime_context.o" \
     "$OBJ/corex_launch_config.o" \
     "$OBJ/corex_device_api.o" \
     "$OBJ/corex_fatbin_runtime.o" \
@@ -132,6 +139,22 @@ fi
     -lcorex_remote_cudart \
     -Wl,-rpath,'$ORIGIN/../lib' \
     -o "$DIST/bin/device_identity_app"
+
+"$CXX" -x ivcore \
+    --cuda-path="$COREX" \
+    -I"$COREX/include" \
+    "${EXTRA[@]}" \
+    -pthread \
+    -c "$TESTS/multithread_runtime.cu" \
+    -o "$OBJ/multithread_runtime.o"
+
+"$GXX" \
+    "$OBJ/multithread_runtime.o" \
+    -L"$DIST/lib" \
+    -lcorex_remote_cudart \
+    -Wl,-rpath,'$ORIGIN/../lib' \
+    -pthread \
+    -o "$DIST/bin/multithread_runtime_app"
 
 readelf -dW "$DIST/bin/device_identity_app" >"$BUILD/app-readelf-dynamic.txt"
 
