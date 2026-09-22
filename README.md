@@ -1,139 +1,86 @@
-# Gate 8C-B — Remote Device Discovery / Runtime Identity
+# CoreX Remote CUDA-compatible Runtime
 
-## Prerequisite
+This repository contains the CoreX Remote CUDA-compatible Runtime for an
+Iluvatar MR-V100 on CoreX 4.4.0. A CUDA-style client runtime translates the
+application-facing calls into CRX9/V3 requests. The Runtime Server owns the
+remote CoreX objects and uses the CoreX Driver API to access the device.
 
-```text
-Gate 8C-A
-Device Identity / cudaDeviceProp Ground Truth
-= PASS
-```
-
-Measured pinned CoreX 4.4 ABI:
-
-```text
-sizeof(cudaDeviceProp)=712
-alignof(cudaDeviceProp)=8
-```
-
-MR-V100 ground truth includes:
-
-```text
-name                    Iluvatar MR-V100
-totalGlobalMem          34359738368
-sharedMemPerBlock       131072
-regsPerBlock            262144
-warpSize                64
-maxThreadsPerBlock      4096
-maxThreadsDim           4096,4096,256
-maxGridSize             2147483647,65535,65535
-clockRate               1500000
-totalConstMem           16384
-compute capability      7.1
-multiProcessorCount     16
-memoryClockRate         1600000
-memoryBusWidth          2048
-l2CacheSize             16777216
-maxThreadsPerMP         8192
-asyncEngineCount        1
-unifiedAddressing       1
-```
-
-## What Gate 8C-B adds
-
-```text
-cudaGetDeviceProperties
-cudaMemGetInfo
-```
-
-through:
-
-```text
-OP_GET_DEVICE_INFO = 26
-CRX9 / VERSION 3
-```
-
-No raw host struct is sent over the wire.
+The current validated baseline supports allocation and copies, streams and
+events, asynchronous transfers, automatic compiler registration, kernel ABI
+acquisition, ordinary `kernel<<<...>>>` launches, device identity queries, a
+versioned shared library, and an installable SDK.
 
 ## Build
 
-```bash
-cd /home/lvtong/corex-feasibility
-
-unzip G8C-B-IMPL-01-Remote-Device-Identity.zip
-cd G8C-B-IMPL-01-Remote-Device-Identity
-
-chmod +x build_g8c_b.sh run_g8c_b.sh verify_g8c_scope.py verify_g8c_abi.py
-
-COREX=/usr/local/corex-4.4.0 \
-./build_g8c_b.sh
-```
-
-Expected:
-
-```text
-G8C_ABI_SURFACE=PASS
-G8C_SCOPE_AUDIT=PASS
-
-G8C_PROTOCOL=CRX9/V3
-G8C_ABI_VERSION=COREX_REMOTE_CUDART_1.1
-G8C_LIBRARY_LIBCUDART_DEPENDENCY=ABSENT
-G8C_APP_LIBCUDART_DEPENDENCY=ABSENT
-G8C_BUILD=PASS
-```
-
-## Start the new V3 server
-
-Stop the older `runtime_server_g6e` first.
+From this directory:
 
 ```bash
-cd /home/lvtong/corex-feasibility/G8C-B-IMPL-01-Remote-Device-Identity
-
-stdbuf -oL ./dist/bin/runtime_server_g8c \
-  | tee g8c-server.log
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+./scripts/build-consumer.sh
 ```
 
-Expected startup:
+The scripts produce ignored outputs in `build/`, `dist/`, `sdk-install/`, and
+`clean-consumer/`. `COREX`, `CC`, `CXX`, `GXX`, `PREFIX`, and `WORK` can be
+overridden through the environment.
 
-```text
-GPU=Iluvatar MR-V100
-protocol=CRX9 version=3
-SERVER_READY
-```
+## Local client/server run
 
-## Run
-
-In another terminal:
+Build first, then use two terminals on `server310p`:
 
 ```bash
-cd /home/lvtong/corex-feasibility/G8C-B-IMPL-01-Remote-Device-Identity
-
-./run_g8c_b.sh
+# Terminal A
+./dev/local-remote/start-server.sh
 ```
 
-Expected final:
+```bash
+# Terminal B
+./dev/local-remote/run-client.sh
+```
+
+The default endpoint is `127.0.0.1:50051`. Set `COREX_REMOTE_HOST` and
+`COREX_REMOTE_PORT` to override the client endpoint; the server reads
+`COREX_REMOTE_PORT` and binds its loopback listener on that port.
+
+The integration runner records a validation bundle below
+`evidence/gate8d/runs/` when no `OUT` is supplied. These generated runs are
+ignored by Git.
+
+## Layout
 
 ```text
-device_identity_app_exit=0
-client_mem_info_count=2
-
-server_device_info_count=3
-server_get_kernel_count=1
-server_launch_generic_count=1
-server_abi_validate_pass_count=1
-server_session_count=1
-
-G8C_B_RESULT=PASS
+src/                 client runtime implementation
+include/             public and internal headers
+server/              Runtime Server and CoreX backend boundary
+tests/integration/   compiler and clean-consumer integration inputs
+scripts/              build, install, verify, and run entrypoints
+packaging/           ABI map, exported symbol list, and SDK metadata
+dev/local-remote/    two-terminal localhost development helpers
+docs/                current architecture, state, and Gate 8 history
+evidence/             preserved validation evidence and evidence policy
 ```
 
-Why three device-info RPCs:
+## Validation
 
-```text
-cudaGetDeviceProperties
-cudaMemGetInfo before allocations
-cudaMemGetInfo after allocations
+`scripts/build.sh` runs the ABI and scope verifiers and builds the compiler
+integration application. With a Runtime Server running, the existing
+integration checks can be run with:
+
+```bash
+./scripts/run-integration.sh
 ```
 
-The invalid-device properties request is rejected locally and must not create a
-fourth RPC.
+The clean external consumer check is run with:
 
-Upload the generated evidence archive for closure review.
+```bash
+./scripts/run-clean-consumer.sh
+```
+
+## Current limits and next work
+
+This project is a CoreX-targeted CUDA compatibility layer. It does not claim
+to be a full CUDA replacement, PyTorch support, production readiness, WSL
+deployment, or cross-host x86_64-to-aarch64 validation.
+
+The next work area is Runtime hardening: multi-host-thread behavior, DSO
+lifecycle, failure and session semantics, and further CUDA API compatibility.
+No new API or Gate 9 work is part of the repository migration.

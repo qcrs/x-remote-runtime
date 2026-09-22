@@ -1,0 +1,6 @@
+/build/
+/dist/
+/sdk-install/
+/clean-consumer/
+/evidence/gate8d/runs/*
+!/evidence/gate8d/runs/.gitkeep
