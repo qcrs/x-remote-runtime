@@ -4,6 +4,8 @@ static CorexRuntimeContext g_runtime_context = {
     .mutex = PTHREAD_MUTEX_INITIALIZER,
     .fd = -1,
     .next_req_id = 1,
+    .lifecycle = COREX_RUNTIME_UNINITIALIZED,
+    .next_session_generation = 1,
     .registration_generation_next = 1,
 };
 

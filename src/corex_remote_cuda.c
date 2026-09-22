@@ -137,6 +137,9 @@ static _Thread_local int g_last_rpc_transport_error = 0;
 /* M1-S1 aliases: all non-TLS client state is owned by the singleton context. */
 #define g_fd                         (corex_runtime_context_get()->fd)
 #define g_next_req_id                (corex_runtime_context_get()->next_req_id)
+#define g_lifecycle                  (corex_runtime_context_get()->lifecycle)
+#define g_active_session_generation  (corex_runtime_context_get()->active_session_generation)
+#define g_next_session_generation    (corex_runtime_context_get()->next_session_generation)
 #define g_va_arena                   (corex_runtime_context_get()->va_arena)
 #define g_va_next                    (corex_runtime_context_get()->va_next)
 #define g_allocs                     (corex_runtime_context_get()->allocs)
@@ -1108,7 +1111,9 @@ static VirtualAllocation *find_exact_live_base(const void *ptr)
     uintptr_t value = (uintptr_t)ptr;
 
     for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
-        if (g_allocs[i].live && g_allocs[i].virtual_base == value)
+        if (g_allocs[i].live &&
+            g_allocs[i].session_generation == g_active_session_generation &&
+            g_allocs[i].virtual_base == value)
             return &g_allocs[i];
     }
 
@@ -1124,7 +1129,8 @@ static ResolveResult resolve_remote_ptr(
 
     for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
         const VirtualAllocation *a = &g_allocs[i];
-        if (!a->live)
+        if (!a->live ||
+            a->session_generation != g_active_session_generation)
             continue;
 
         uintptr_t base = a->virtual_base;
@@ -1164,7 +1170,8 @@ static struct corexCudaStreamHandle *resolve_stream_handle(cudaStream_t stream)
         struct corexCudaStreamHandle *h = &g_stream_handles[i];
         if ((cudaStream_t)h != stream)
             continue;
-        if (h->cookie != G6C_STREAM_COOKIE || !h->live)
+        if (h->cookie != G6C_STREAM_COOKIE || !h->live ||
+            h->session_generation != g_active_session_generation)
             return NULL;
         return h;
     }
@@ -1181,7 +1188,8 @@ static struct corexCudaEventHandle *resolve_event_handle(cudaEvent_t event)
         struct corexCudaEventHandle *h = &g_event_handles[i];
         if ((cudaEvent_t)h != event)
             continue;
-        if (h->cookie != G6C_EVENT_COOKIE || !h->live)
+        if (h->cookie != G6C_EVENT_COOKIE || !h->live ||
+            h->session_generation != g_active_session_generation)
             return NULL;
         return h;
     }
@@ -1198,7 +1206,8 @@ static struct corexRemoteModuleHandle *resolve_module_handle(corexRemoteModule_t
         struct corexRemoteModuleHandle *h = &g_module_handles[i];
         if ((corexRemoteModule_t)h != module)
             continue;
-        if (h->cookie != G6D_MODULE_COOKIE || !h->live)
+        if (h->cookie != G6D_MODULE_COOKIE || !h->live ||
+            h->session_generation != g_active_session_generation)
             return NULL;
         return h;
     }
@@ -1213,7 +1222,8 @@ static corexRemoteKernelHandle *resolve_kernel_reference(const void *func)
     for (size_t i = 0; i < g_kernel_handle_next; ++i) {
         corexRemoteKernelHandle *h = &g_kernel_handles[i];
 
-        if (h->cookie != G6D_KERNEL_COOKIE || !h->live)
+        if (h->cookie != G6D_KERNEL_COOKIE || !h->live ||
+            h->session_generation != g_active_session_generation)
             continue;
 
         if ((const void *)h == func)
@@ -1236,7 +1246,8 @@ static corexRemoteKernelHandle *find_live_compiler_kernel_by_host_fun(
     for (size_t i = 0; i < g_kernel_handle_next; ++i) {
         corexRemoteKernelHandle *h = &g_kernel_handles[i];
 
-        if (h->cookie != G6D_KERNEL_COOKIE || !h->live)
+        if (h->cookie != G6D_KERNEL_COOKIE || !h->live ||
+            h->session_generation != g_active_session_generation)
             continue;
         if (h->origin != G7D_KERNEL_ORIGIN_COMPILER)
             continue;
@@ -1276,6 +1287,9 @@ static G7CFatbinRegistration *g7c_resolve_registration(void **handle)
         if ((void **)reg != handle)
             continue;
         if (reg->cookie != G7C_REG_COOKIE)
+            return NULL;
+        if (reg->session_generation != 0 &&
+            reg->session_generation != g_active_session_generation)
             return NULL;
         return reg;
     }
@@ -1330,6 +1344,7 @@ static cudaError_t module_load_bytes_after_runtime(
         &g_module_handles[g_module_handle_next++];
     memset(h, 0, sizeof(*h));
     h->cookie = G6D_MODULE_COOKIE;
+    h->session_generation = g_active_session_generation;
     h->module_id = module_id;
     h->live = 1;
 
@@ -1636,8 +1651,14 @@ static void shutdown_atexit(void)
 
 static cudaError_t ensure_runtime(void)
 {
-    if (g_fd >= 0)
+    if (g_lifecycle == COREX_RUNTIME_ACTIVE && g_fd >= 0)
         return cudaSuccess;
+
+    if (g_lifecycle == COREX_RUNTIME_SHUTTING_DOWN)
+        G6E_RETURN(cudaErrorInitializationError);
+
+    if (g_next_session_generation == 0)
+        G6E_RETURN(cudaErrorInitializationError);
 
     if (ensure_arena() != 0)
         G6E_RETURN(cudaErrorMemoryAllocation);
@@ -1650,15 +1671,21 @@ static cudaError_t ensure_runtime(void)
     }
 
     g_fd = connect_server();
-    if (g_fd < 0)
+    if (g_fd < 0) {
+        g_lifecycle = COREX_RUNTIME_DISCONNECTED;
         G6E_RETURN(cudaErrorInitializationError);
+    }
+
+    g_active_session_generation = g_next_session_generation++;
+    g_lifecycle = COREX_RUNTIME_ACTIVE;
 
     if (!g_shutdown_registered) {
         if (atexit(shutdown_atexit) == 0)
             g_shutdown_registered = 1;
     }
 
-    printf("G6E_REMOTE_SESSION=CONNECTED host=%s port=%d protocol=CRX9 version=%u default_stream=LEGACY\n",
+    printf("G6E_REMOTE_SESSION=CONNECTED generation=%llu host=%s port=%d protocol=CRX9 version=%u default_stream=LEGACY\n",
+           (unsigned long long)g_active_session_generation,
            remote_server_host(),
            remote_server_port(),
            VERSION);
@@ -1768,6 +1795,7 @@ static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
     /* Commit local identity only after the remote AllocationID exists. */
     memset(slot, 0, sizeof(*slot));
     slot->live = 1;
+    slot->session_generation = g_active_session_generation;
     slot->virtual_base = base;
     slot->size = size;
     slot->allocation_id = allocation_id;
@@ -1969,6 +1997,7 @@ static cudaError_t cudaMemcpyAsync_locked(
             uint64_t seq = (*sv.next_transfer_seq) + 1;
             memset(slot, 0, sizeof(*slot));
             slot->live = 1;
+            slot->session_generation = g_active_session_generation;
             slot->transfer_id = transfer_id;
             slot->kind = HIDDEN_TRANSFER_H2D;
             slot->allocation_id = remote.allocation_id;
@@ -2025,6 +2054,7 @@ static cudaError_t cudaMemcpyAsync_locked(
             uint64_t seq = (*sv.next_transfer_seq) + 1;
             memset(slot, 0, sizeof(*slot));
             slot->live = 1;
+            slot->session_generation = g_active_session_generation;
             slot->transfer_id = transfer_id;
             slot->kind = HIDDEN_TRANSFER_D2H;
             slot->allocation_id = remote.allocation_id;
@@ -2105,6 +2135,7 @@ static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
     struct corexCudaStreamHandle *h = &g_stream_handles[g_stream_handle_next];
     memset(h, 0, sizeof(*h));
     h->cookie = G6C_STREAM_COOKIE;
+    h->session_generation = g_active_session_generation;
     h->stream_id = stream_id;
     h->live = 1;
     h->slot_index = g_stream_handle_next;
@@ -2254,6 +2285,7 @@ static cudaError_t cudaEventCreate_locked(cudaEvent_t *event)
     struct corexCudaEventHandle *h = &g_event_handles[g_event_handle_next++];
     memset(h, 0, sizeof(*h));
     h->cookie = G6C_EVENT_COOKIE;
+    h->session_generation = g_active_session_generation;
     h->event_id = event_id;
     h->live = 1;
     h->recorded = 0;
@@ -2548,6 +2580,7 @@ static cudaError_t bind_kernel_identity_after_runtime(
     corexRemoteKernelHandle *kh = &g_kernel_handles[g_kernel_handle_next++];
     memset(kh, 0, sizeof(*kh));
     kh->cookie = G6D_KERNEL_COOKIE;
+    kh->session_generation = g_active_session_generation;
     kh->kernel_id = kernel_id;
     kh->module_id = mh->module_id;
     kh->live = 1;
@@ -2943,6 +2976,7 @@ static void **__cudaRegisterFatBinary_locked(void *fatCubin)
     }
 
     reg->module_id_snapshot = module_handle->module_id;
+    reg->session_generation = g_active_session_generation;
     reg->state = G7C_REG_REMOTE_READY;
 
     printf("G7C_MODULE_AUTO_LOAD handle=%p generation=%llu module_handle=%p module_id=%llu bytes=%zu result=PASS\n",
@@ -3430,6 +3464,16 @@ static size_t corexRemoteDebugLiveTransfers_locked(void)
 
 static void corexRemoteRuntimeShutdown_locked(void)
 {
+    if (g_lifecycle != COREX_RUNTIME_ACTIVE || g_fd < 0) {
+        g_lifecycle = COREX_RUNTIME_DISCONNECTED;
+        g_active_session_generation = 0;
+        printf("M1_S2_RUNTIME_SHUTDOWN state=DISCONNECTED action=NOOP result=PASS\n");
+        return;
+    }
+
+    uint64_t closing_generation = g_active_session_generation;
+    g_lifecycle = COREX_RUNTIME_SHUTTING_DOWN;
+
     /*
      * Compiler registrations normally unregister before this atexit handler.
      * This explicit cleanup also makes a user-invoked RuntimeShutdown safe.
@@ -3457,6 +3501,16 @@ static void corexRemoteRuntimeShutdown_locked(void)
         g_event_handles[i].recorded = 0;
     }
 
+    for (size_t i = 0; i < g_module_handle_next; ++i) {
+        g_module_handles[i].live = 0;
+        g_module_handles[i].module_id = 0;
+    }
+    for (size_t i = 0; i < g_kernel_handle_next; ++i) {
+        g_kernel_handles[i].live = 0;
+        g_kernel_handles[i].kernel_id = 0;
+        g_kernel_handles[i].module_id = 0;
+    }
+
     if (g_fd >= 0) {
         (void)rpc(g_fd, OP_CLOSE, NULL, 0, NULL, NULL);
         close(g_fd);
@@ -3470,22 +3524,24 @@ static void corexRemoteRuntimeShutdown_locked(void)
      */
     g7c_finalize_registrations_after_session_close();
 
-    if (g_va_arena) {
-        munmap(g_va_arena, (size_t)G6A_VA_ARENA_BYTES);
-        g_va_arena = NULL;
-        g_va_next = 0;
-    }
+    /*
+     * Keep the PROT_NONE arena and its cursor for the process lifetime.
+     * Session shutdown tombstones mappings, but never permits an old fake VA
+     * to become the address of an unrelated allocation in a later generation.
+     * Exhaustion is therefore deliberate and reported as allocation failure.
+     */
     free(g_default_frontier);
     g_default_frontier = NULL;
     g_default_next_transfer_seq = 0;
 
     memset(g_allocs, 0, sizeof(g_allocs));
     memset(g_hidden_transfers, 0, sizeof(g_hidden_transfers));
-    memset(g_module_handles, 0, sizeof(g_module_handles));
-    memset(g_kernel_handles, 0, sizeof(g_kernel_handles));
-    g_module_handle_next = 0;
-    g_kernel_handle_next = 0;
     g_transfer_submit_order = 0;
+
+    g_active_session_generation = 0;
+    g_lifecycle = COREX_RUNTIME_DISCONNECTED;
+    printf("M1_S2_RUNTIME_SHUTDOWN generation=%llu state=DISCONNECTED result=PASS\n",
+           (unsigned long long)closing_generation);
 }
 
 /*

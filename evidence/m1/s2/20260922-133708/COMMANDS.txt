@@ -1,0 +1,7 @@
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+COREX_REMOTE_PORT=50051 SERVER_LOG=/tmp/m1s2-server.log ./dev/local-remote/start-server.sh
+OUT=/tmp/m1s2-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m1s2-baseline SERVER_LOG=/tmp/m1s2-server.log ./scripts/run-integration.sh
+OUT=/tmp/m1s2-multithread ./scripts/run-multithread-integration.sh
+readelf -dW dist/bin/session_lifecycle_app
+git diff --check

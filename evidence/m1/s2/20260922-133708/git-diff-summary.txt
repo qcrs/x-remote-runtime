@@ -1,0 +1,13 @@
+docs/PROJECT_STATE.md
+include/internal/corex_runtime_context.h
+scripts/build.sh
+scripts/run-lifecycle-integration.sh
+src/corex_remote_cuda.c
+src/corex_runtime_context.c
+tests/integration/session_lifecycle.cu
+evidence/m1/s2/20260922-133708/*
+
+SEMANTIC_SCOPE=client lifecycle generation, monotonic stale-safe identities, lifecycle integration coverage
+SERVER_SOURCE_CHANGE=NONE
+PUBLIC_ABI_CHANGE=NONE
+WIRE_CHANGE=NONE

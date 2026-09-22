@@ -24,6 +24,7 @@ extern "C" {
 
 typedef struct {
     int live;
+    uint64_t session_generation;
     uintptr_t virtual_base;
     size_t size;
     uint64_t allocation_id;
@@ -31,6 +32,7 @@ typedef struct {
 
 struct corexCudaStreamHandle {
     uint64_t cookie;
+    uint64_t session_generation;
     uint64_t stream_id;
     int live;
     size_t slot_index;
@@ -40,6 +42,7 @@ struct corexCudaStreamHandle {
 
 struct corexCudaEventHandle {
     uint64_t cookie;
+    uint64_t session_generation;
     uint64_t event_id;
     int live;
     int recorded;
@@ -48,6 +51,7 @@ struct corexCudaEventHandle {
 
 struct corexRemoteModuleHandle {
     uint64_t cookie;
+    uint64_t session_generation;
     uint64_t module_id;
     int live;
 };
@@ -65,6 +69,7 @@ typedef enum {
 
 typedef struct corexRemoteKernelHandle {
     uint64_t cookie;
+    uint64_t session_generation;
     uint64_t kernel_id;
     uint64_t module_id;
     int live;
@@ -93,6 +98,7 @@ typedef enum {
 typedef struct {
     uint64_t cookie;
     uint64_t generation;
+    uint64_t session_generation;
     G7CRegistrationState state;
 
     const void *compiler_wrapper;
@@ -117,6 +123,7 @@ typedef enum {
 
 typedef struct {
     int live;
+    uint64_t session_generation;
     uint64_t transfer_id;
     HiddenTransferKind kind;
     uint64_t allocation_id;
@@ -126,6 +133,13 @@ typedef struct {
     void *host_dst;
     size_t bytes;
 } HiddenTransfer;
+
+typedef enum {
+    COREX_RUNTIME_UNINITIALIZED = 0,
+    COREX_RUNTIME_ACTIVE,
+    COREX_RUNTIME_SHUTTING_DOWN,
+    COREX_RUNTIME_DISCONNECTED,
+} CorexRuntimeLifecycle;
 
 /*
  * One process owns one client RuntimeContext in M1-S1.  The fields below are
@@ -137,6 +151,9 @@ typedef struct CorexRuntimeContext {
 
     int fd;
     uint32_t next_req_id;
+    CorexRuntimeLifecycle lifecycle;
+    uint64_t active_session_generation;
+    uint64_t next_session_generation;
 
     unsigned char *va_arena;
     size_t va_next;

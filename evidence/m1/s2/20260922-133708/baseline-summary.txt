@@ -1,0 +1,6 @@
+device_identity_app_exit=0
+device_query=PASS
+malloc_h2d_launch_sync_d2h_free=PASS
+ordinary_compiler_registration=PASS
+kernel_abi_validation=PASS
+G8C_B_RESULT=PASS

@@ -156,6 +156,37 @@ fi
     -pthread \
     -o "$DIST/bin/multithread_runtime_app"
 
+"$CXX" -x ivcore \
+    --cuda-path="$COREX" \
+    --cuda-device-only \
+    -I"$COREX/include" \
+    -I"$ROOT/include" \
+    "${EXTRA[@]}" \
+    -c "$TESTS/session_lifecycle.cu" \
+    -o "$BUILD/session_lifecycle.cubin"
+
+"$CXX" -x ivcore \
+    --cuda-path="$COREX" \
+    -I"$COREX/include" \
+    -I"$ROOT/include" \
+    "${EXTRA[@]}" \
+    -c "$TESTS/session_lifecycle.cu" \
+    -o "$OBJ/session_lifecycle.o"
+
+# This white-box lifecycle executable links the Runtime objects directly so it
+# can invoke the intentionally non-public shutdown test hook without changing
+# the version-script-controlled public ABI.
+"$GXX" \
+    "$OBJ/session_lifecycle.o" \
+    "$OBJ/corex_remote_cuda.o" \
+    "$OBJ/corex_runtime_context.o" \
+    "$OBJ/corex_launch_config.o" \
+    "$OBJ/corex_device_api.o" \
+    "$OBJ/corex_fatbin_runtime.o" \
+    "$OBJ/corex_metadata.o" \
+    -ldl -lm -pthread \
+    -o "$DIST/bin/session_lifecycle_app"
+
 readelf -dW "$DIST/bin/device_identity_app" >"$BUILD/app-readelf-dynamic.txt"
 
 if grep -qi 'libcudart' "$BUILD/app-readelf-dynamic.txt"; then

@@ -1,0 +1,2 @@
+BASELINE_COMMIT=159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c
+SLICE_COMMIT=m1/s2: harden client session lifecycle (evidence committed atomically)
