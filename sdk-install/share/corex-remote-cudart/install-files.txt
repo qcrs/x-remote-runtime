@@ -1,0 +1,9 @@
+bin/corex-remote-runtime-server
+include/corex_remote_cudart_ext.h
+lib/libcorex_remote_cudart.so
+lib/libcorex_remote_cudart.so.1
+lib/libcorex_remote_cudart.so.1.1.0
+lib/pkgconfig/corex-remote-cudart.pc
+share/corex-remote-cudart/ABI-SURFACE-v1.1.txt
+share/corex-remote-cudart/install-files.txt
+share/corex-remote-cudart/manifest.txt

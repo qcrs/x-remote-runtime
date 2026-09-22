@@ -1,0 +1,1 @@
+-L/home/lvtong/corex-feasibility/G8D-IMPL-01-Installable-SDK-Clean-Consumer-v2/sdk-install/lib -lcorex_remote_cudart

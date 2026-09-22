@@ -1,0 +1,16 @@
+G8D_REQUIRED_FILES=PASS
+G8D_SHELL_SYNTAX=PASS
+G8D_INHERITED_SCOPE_AUDIT=PASS
+G8D_TOP_LEVEL_FILE_COUNT=39
+client_protocol_v3=PASS
+server_protocol_v3=PASS
+client_opcode_26=PASS
+server_opcode_26=PASS
+server_no_cudaDeviceProp=PASS
+server_driver_only=PASS
+client_vendor_abi_adapter=PASS
+client_fieldwise_prop_population=PASS
+client_no_raw_dto_memcpy_to_prop=PASS
+meminfo_uses_remote_dto=PASS
+abi_1_1=PASS
+G8C_SCOPE_AUDIT=PASS

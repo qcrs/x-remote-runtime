@@ -1,0 +1,37 @@
+$ gcc -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC -I /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity -c /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/corex_remote_cuda_g8c.c -o /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/_local/runtime.o -pthread
+exit=0
+
+$ gcc -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC -I /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity -c /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/corex_launch_config_g8c.c -o /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/_local/launch.o
+exit=0
+
+$ gcc -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC -fvisibility=hidden -I /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity -c /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/g7c_corex_fatbin_runtime.c -o /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/_local/fatbin.o
+exit=0
+
+$ gcc -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC -fvisibility=hidden -I /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity -c /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/corex_metadata.c -o /mnt/data/G8C-B-IMPL-01-Remote-Device-Identity/_local/metadata.o
+exit=0
+
+client_protocol_v3=PASS
+server_protocol_v3=PASS
+client_opcode_26=PASS
+server_opcode_26=PASS
+server_no_cudaDeviceProp=PASS
+server_driver_only=PASS
+client_vendor_abi_adapter=PASS
+client_no_raw_dto_memcpy_to_prop=PASS
+meminfo_uses_remote_dto=PASS
+abi_1_1=PASS
+G8C_SCOPE_AUDIT=PASS
+Spreadsheet runtime warmup failed during python startup
+Traceback (most recent call last):
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/patches/warm_spreadsheet_runtime_on_startup.py", line 26, in warm_spreadsheet_runtime_on_startup
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/spreadsheet_warmup.py", line 785, in warm_spreadsheet_runtime
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/spreadsheet_warmup.py", line 720, in _warm_feature_flows
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/spreadsheet_warmup.py", line 704, in _warm_collaboration_flows
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/generated/interface/models.py", line 32317, in hydrate_crdt_from_proto
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/rpc/remote.py", line 749, in __call__
+  File "/tmp/tmp.L2TH2Y5coc/artifact_tool_v2-2.8.22/artifact_tool/rpc/client.py", line 150, in call
+artifact_tool.rpc.client.RemoteError: hydrateCrdtFromProto requires an empty collaborative document.
+scope_exit=0
+
+G8C_PORTABLE_CLIENT_CORE=PASS
+NOTE=server/device ABI adapter require CoreX headers and are validated on server310p
