@@ -1,0 +1,31 @@
+SESSION_START
+UPLOAD_METADATA version=1.0 kernel_count=1
+UPLOAD_MODULE request=1 module_id=1 name=g7c-auto-1.cubin size=2904 magic=7f454c46
+GET_KERNEL_METADATA name=g8d_external_kernel argc=3 kernarg_size=20 kernarg_align=8
+GET_KERNEL request=2 module_id=1 kernel_id=1 name=g8d_external_kernel
+GET_DEVICE_INFO request=3 device=0 name=Iluvatar MR-V100 free=34145828864 total=34359738368 cc=7.1 sm=16 warp=64 result=PASS
+GET_DEVICE_INFO request=4 device=0 name=Iluvatar MR-V100 free=34145828864 total=34359738368 cc=7.1 sm=16 warp=64 result=PASS
+ALLOC request=5 allocation_id=1 size=1024
+ALLOC request=6 allocation_id=2 size=1024
+H2D request=7 allocation_id=1 offset=0 bytes=1024
+LAUNCH_STREAM_RESOLVE request=8 kernel_id=1 stream_id=0 mode=DEFAULT
+LAUNCH_GENERIC request=8 kernel_id=1 kernel=g8d_external_kernel stream_id=0 grid=(1,1,1) block=(256,1,1) shared=0 argc=3
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=g8d_external_kernel argc=3 result=PASS
+LAUNCH_GENERIC submit=PASS
+SYNC request=9
+D2H request=10 allocation_id=2 offset=0 bytes=1024
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=11 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=12 allocation_id=1
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=g8d_external_kernel
+UNLOAD_MODULE request=13 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
