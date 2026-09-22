@@ -1,0 +1,13 @@
+include/internal/corex_protocol.h
+scripts/build.sh
+scripts/verify-scope.py
+server/runtime_server.c
+src/corex_remote_cuda.c
+tests/protocol/protocol_golden.c
+docs/PROJECT_STATE.md
+evidence/m1/s3/20260922-135005/*
+
+SEMANTIC_SCOPE=definition ownership only
+PUBLIC_ABI_CHANGE=NONE
+WIRE_CHANGE=NONE
+PROTOCOL_VERSION_CHANGE=NONE

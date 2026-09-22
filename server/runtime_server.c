@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <cuda.h>
 #include "corex_metadata.h"
+#include "corex_protocol.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -12,8 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define MAGIC   0x43525839u  /* CRX9 */
-#define VERSION 3u
 #define PORT    50051
 
 static int configured_port(void)
@@ -45,54 +44,6 @@ static int configured_port(void)
 
 #define TRANSFER_KIND_H2D 1u
 #define TRANSFER_KIND_D2H 2u
-
-enum {
-    ST_OK             = 0,
-    ST_BAD_REQUEST    = 1,
-    ST_NOT_FOUND      = 2,
-    ST_CUDA_ERROR     = 3,
-    ST_INTERNAL       = 4,
-    ST_NO_RESOURCE    = 5,
-    ST_ABI_MISMATCH   = 6,
-    ST_METADATA_ERROR = 7,
-};
-
-enum {
-    OP_ALLOC          = 1,
-    OP_H2D            = 2,
-    OP_LAUNCH         = 3,  /* legacy Gate-2 opcode; not used by Gate 5B */
-    OP_SYNC           = 4,
-    OP_D2H            = 5,
-    OP_FREE           = 6,
-    OP_CLOSE          = 7,
-    OP_UPLOAD_MODULE  = 8,
-    OP_GET_KERNEL     = 9,
-    OP_UNLOAD_MODULE  = 10,
-    OP_LAUNCH_GENERIC = 11,
-    OP_CREATE_STREAM  = 12,
-    OP_DESTROY_STREAM = 13,
-    OP_STREAM_QUERY   = 14,
-    OP_STREAM_SYNC    = 15,
-    OP_CREATE_EVENT   = 16,
-    OP_DESTROY_EVENT  = 17,
-    OP_EVENT_RECORD   = 18,
-    OP_EVENT_QUERY    = 19,
-    OP_EVENT_SYNC     = 20,
-    OP_STREAM_WAIT_EVENT = 21,
-    OP_H2D_ASYNC_SUBMIT = 22,
-    OP_D2H_ASYNC_SUBMIT = 23,
-    OP_TRANSFER_QUERY   = 24,
-    OP_TRANSFER_WAIT    = 25,
-    OP_GET_DEVICE_INFO  = 26,
-};
-
-enum {
-    ARG_REMOTE_PTR = 1,
-    ARG_I32        = 2,
-    ARG_U64        = 3,
-    ARG_F32        = 4,
-    ARG_RAW_VALUE  = 5,
-};
 
 typedef struct {
     int used;
@@ -182,60 +133,6 @@ static CUcontext g_ctx = NULL;
 static CUdevice g_device = 0;
 
 /* ============================================================
- * Byte order
- * ============================================================
- */
-
-static uint64_t to_be64(uint64_t v)
-{
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return ((uint64_t)htonl((uint32_t)(v & 0xffffffffULL)) << 32) |
-           htonl((uint32_t)(v >> 32));
-#else
-    return v;
-#endif
-}
-
-static uint64_t from_be64(uint64_t v)
-{
-    return to_be64(v);
-}
-
-static uint32_t read_u32(const unsigned char *p)
-{
-    uint32_t v;
-    memcpy(&v, p, sizeof(v));
-    return ntohl(v);
-}
-
-static uint64_t read_u64(const unsigned char *p)
-{
-    uint64_t v;
-    memcpy(&v, p, sizeof(v));
-    return from_be64(v);
-}
-
-static void g8c_put_u32(
-    unsigned char *buf,
-    size_t *pos,
-    uint32_t value)
-{
-    uint32_t wire = htonl(value);
-    memcpy(buf + *pos, &wire, sizeof(wire));
-    *pos += sizeof(wire);
-}
-
-static void g8c_put_u64(
-    unsigned char *buf,
-    size_t *pos,
-    uint64_t value)
-{
-    uint64_t wire = to_be64(value);
-    memcpy(buf + *pos, &wire, sizeof(wire));
-    *pos += sizeof(wire);
-}
-
-/* ============================================================
  * Socket helpers
  * ============================================================
  */
@@ -294,14 +191,13 @@ static int send_response(
     const void *payload,
     uint32_t payload_len)
 {
-    uint32_t h[6];
-
-    h[0] = htonl(MAGIC);
-    h[1] = htonl(VERSION);
-    h[2] = htonl(opcode);
-    h[3] = htonl(req_id);
-    h[4] = htonl(status);
-    h[5] = htonl(payload_len);
+    unsigned char h[CRX_RESPONSE_HEADER_BYTES];
+    corex_protocol_encode_response_header(
+        h,
+        opcode,
+        req_id,
+        status,
+        payload_len);
 
     if (send_all(fd, h, sizeof(h)) != 0)
         return -1;
@@ -723,7 +619,7 @@ static int handle_alloc(
     if (len != 8)
         return send_response(fd, OP_ALLOC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t size64 = read_u64(payload);
+    uint64_t size64 = corex_protocol_read_u64(payload);
 
     if (size64 == 0 || size64 > (uint64_t)SIZE_MAX)
         return send_response(fd, OP_ALLOC, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -742,7 +638,7 @@ static int handle_alloc(
 
     slot->size = (size_t)size64;
 
-    uint64_t wire_id = to_be64(slot->id);
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
     printf(
         "ALLOC request=%u allocation_id=%llu size=%zu\n",
@@ -769,9 +665,9 @@ static int handle_h2d(
     if (len < 24)
         return send_response(fd, OP_H2D, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t allocation_id = read_u64(payload + 0);
-    uint64_t offset64      = read_u64(payload + 8);
-    uint64_t bytes64       = read_u64(payload + 16);
+    uint64_t allocation_id = corex_protocol_read_u64(payload + 0);
+    uint64_t offset64      = corex_protocol_read_u64(payload + 8);
+    uint64_t bytes64       = corex_protocol_read_u64(payload + 16);
 
     if (bytes64 > UINT32_MAX ||
         24ULL + bytes64 != (uint64_t)len)
@@ -814,9 +710,9 @@ static int handle_d2h(
     if (len != 24)
         return send_response(fd, OP_D2H, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t allocation_id = read_u64(payload + 0);
-    uint64_t offset64      = read_u64(payload + 8);
-    uint64_t bytes64       = read_u64(payload + 16);
+    uint64_t allocation_id = corex_protocol_read_u64(payload + 0);
+    uint64_t offset64      = corex_protocol_read_u64(payload + 8);
+    uint64_t bytes64       = corex_protocol_read_u64(payload + 16);
 
     if (bytes64 > UINT32_MAX)
         return send_response(fd, OP_D2H, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -876,7 +772,7 @@ static int handle_free(
     if (len != 8)
         return send_response(fd, OP_FREE, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t allocation_id = read_u64(payload);
+    uint64_t allocation_id = corex_protocol_read_u64(payload);
     Allocation *a = find_allocation(allocation_id);
 
     if (!a)
@@ -965,7 +861,7 @@ static int handle_upload_module(
     if (len < 12)
         return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint32_t name_len = read_u32(payload);
+    uint32_t name_len = corex_protocol_read_u32(payload);
 
     if (name_len == 0 || name_len >= 128)
         return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -983,7 +879,7 @@ static int handle_upload_module(
         return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
 
     size_t size_pos = 4u + name_len;
-    uint64_t image_size64 = read_u64(payload + size_pos);
+    uint64_t image_size64 = corex_protocol_read_u64(payload + size_pos);
     size_t image_pos = size_pos + 8;
 
     if (image_size64 == 0 ||
@@ -1063,7 +959,7 @@ static int handle_upload_module(
     slot->metadata = parsed_metadata;
     slot->metadata_valid = 1;
 
-    uint64_t wire_id = to_be64(slot->id);
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
     printf(
         "UPLOAD_MODULE request=%u module_id=%llu name=%s size=%zu magic=%02x%02x%02x%02x\n",
@@ -1095,8 +991,8 @@ static int handle_get_kernel(
     if (len < 12)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t module_id = read_u64(payload);
-    uint32_t name_len = read_u32(payload + 8);
+    uint64_t module_id = corex_protocol_read_u64(payload);
+    uint32_t name_len = corex_protocol_read_u32(payload + 8);
 
     if (name_len == 0 || name_len >= 128 ||
         12ULL + name_len != len)
@@ -1151,7 +1047,7 @@ static int handle_get_kernel(
         kernel_meta->kernarg_segment_size,
         kernel_meta->kernarg_segment_align);
 
-    uint64_t wire_id = to_be64(slot->id);
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
     printf(
         "GET_KERNEL request=%u module_id=%llu kernel_id=%llu name=%s\n",
@@ -1178,7 +1074,7 @@ static int handle_unload_module(
     if (len != 8)
         return send_response(fd, OP_UNLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t module_id = read_u64(payload);
+    uint64_t module_id = corex_protocol_read_u64(payload);
     ModuleEntry *m = find_module(module_id);
 
     if (!m)
@@ -1238,7 +1134,7 @@ static int handle_create_stream(
     if (len != 4)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint32_t flags = read_u32(payload);
+    uint32_t flags = corex_protocol_read_u32(payload);
 
     if (flags != CU_STREAM_DEFAULT)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -1255,7 +1151,7 @@ static int handle_create_stream(
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_CUDA_ERROR, NULL, 0);
     }
 
-    uint64_t wire_id = to_be64(slot->id);
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
     printf(
         "CREATE_STREAM request=%u stream_id=%llu flags=%u\n",
@@ -1281,7 +1177,7 @@ static int handle_stream_query(
     if (len != 8)
         return send_response(fd, OP_STREAM_QUERY, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t stream_id = read_u64(payload);
+    uint64_t stream_id = corex_protocol_read_u64(payload);
     CUstream stream = 0;
     if (resolve_stream_id(stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_QUERY, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1329,7 +1225,7 @@ static int handle_stream_sync(
     if (len != 8)
         return send_response(fd, OP_STREAM_SYNC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t stream_id = read_u64(payload);
+    uint64_t stream_id = corex_protocol_read_u64(payload);
     CUstream stream = 0;
     if (resolve_stream_id(stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_SYNC, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1356,7 +1252,7 @@ static int handle_destroy_stream(
     if (len != 8)
         return send_response(fd, OP_DESTROY_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t stream_id = read_u64(payload);
+    uint64_t stream_id = corex_protocol_read_u64(payload);
     StreamEntry *entry = find_stream(stream_id);
 
     if (!entry)
@@ -1433,7 +1329,7 @@ static int handle_create_event(
     if (len != 4)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint32_t flags = read_u32(payload);
+    uint32_t flags = corex_protocol_read_u32(payload);
 
     if (flags != CU_EVENT_DEFAULT)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -1450,7 +1346,7 @@ static int handle_create_event(
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_CUDA_ERROR, NULL, 0);
     }
 
-    uint64_t wire_id = to_be64(slot->id);
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
     printf(
         "CREATE_EVENT request=%u event_id=%llu flags=%u\n",
@@ -1476,8 +1372,8 @@ static int handle_event_record(
     if (len != 16)
         return send_response(fd, OP_EVENT_RECORD, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t event_id = read_u64(payload);
-    uint64_t stream_id = read_u64(payload + 8);
+    uint64_t event_id = corex_protocol_read_u64(payload);
+    uint64_t stream_id = corex_protocol_read_u64(payload + 8);
 
     EventEntry *event_entry = find_event(event_id);
 
@@ -1512,7 +1408,7 @@ static int handle_event_query(
     if (len != 8)
         return send_response(fd, OP_EVENT_QUERY, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t event_id = read_u64(payload);
+    uint64_t event_id = corex_protocol_read_u64(payload);
     EventEntry *entry = find_event(event_id);
 
     if (!entry)
@@ -1561,7 +1457,7 @@ static int handle_event_sync(
     if (len != 8)
         return send_response(fd, OP_EVENT_SYNC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t event_id = read_u64(payload);
+    uint64_t event_id = corex_protocol_read_u64(payload);
     EventEntry *entry = find_event(event_id);
 
     if (!entry)
@@ -1589,9 +1485,9 @@ static int handle_stream_wait_event(
     if (len != 20)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t stream_id = read_u64(payload);
-    uint64_t event_id = read_u64(payload + 8);
-    uint32_t flags = read_u32(payload + 16);
+    uint64_t stream_id = corex_protocol_read_u64(payload);
+    uint64_t event_id = corex_protocol_read_u64(payload + 8);
+    uint32_t flags = corex_protocol_read_u32(payload + 16);
 
     if (flags != 0)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -1629,7 +1525,7 @@ static int handle_destroy_event(
     if (len != 8)
         return send_response(fd, OP_DESTROY_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    uint64_t event_id = read_u64(payload);
+    uint64_t event_id = corex_protocol_read_u64(payload);
     EventEntry *entry = find_event(event_id);
 
     if (!entry)
@@ -1776,19 +1672,19 @@ static int handle_launch_generic(
 
     size_t pos = 0;
 
-    uint64_t kernel_id = read_u64(payload + pos); pos += 8;
-    uint64_t stream_id = read_u64(payload + pos); pos += 8;
+    uint64_t kernel_id = corex_protocol_read_u64(payload + pos); pos += 8;
+    uint64_t stream_id = corex_protocol_read_u64(payload + pos); pos += 8;
 
-    uint32_t grid_x = read_u32(payload + pos); pos += 4;
-    uint32_t grid_y = read_u32(payload + pos); pos += 4;
-    uint32_t grid_z = read_u32(payload + pos); pos += 4;
+    uint32_t grid_x = corex_protocol_read_u32(payload + pos); pos += 4;
+    uint32_t grid_y = corex_protocol_read_u32(payload + pos); pos += 4;
+    uint32_t grid_z = corex_protocol_read_u32(payload + pos); pos += 4;
 
-    uint32_t block_x = read_u32(payload + pos); pos += 4;
-    uint32_t block_y = read_u32(payload + pos); pos += 4;
-    uint32_t block_z = read_u32(payload + pos); pos += 4;
+    uint32_t block_x = corex_protocol_read_u32(payload + pos); pos += 4;
+    uint32_t block_y = corex_protocol_read_u32(payload + pos); pos += 4;
+    uint32_t block_z = corex_protocol_read_u32(payload + pos); pos += 4;
 
-    uint32_t shared_mem = read_u32(payload + pos); pos += 4;
-    uint32_t argc       = read_u32(payload + pos); pos += 4;
+    uint32_t shared_mem = corex_protocol_read_u32(payload + pos); pos += 4;
+    uint32_t argc       = corex_protocol_read_u32(payload + pos); pos += 4;
 
     if (argc > MAX_ARGS)
         return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -1853,8 +1749,8 @@ static int handle_launch_generic(
             goto fail;
         }
 
-        uint32_t kind = read_u32(payload + pos); pos += 4;
-        uint32_t arg_size = read_u32(payload + pos); pos += 4;
+        uint32_t kind = corex_protocol_read_u32(payload + pos); pos += 4;
+        uint32_t arg_size = corex_protocol_read_u32(payload + pos); pos += 4;
 
         if ((uint64_t)pos + arg_size > len) {
             fail_status = ST_BAD_REQUEST;
@@ -1912,8 +1808,8 @@ static int handle_launch_generic(
 
         switch (kind) {
         case ARG_REMOTE_PTR: {
-            uint64_t allocation_id = read_u64(payload + pos);
-            uint64_t offset64      = read_u64(payload + pos + 8);
+            uint64_t allocation_id = corex_protocol_read_u64(payload + pos);
+            uint64_t offset64      = corex_protocol_read_u64(payload + pos + 8);
             Allocation *a = find_allocation(allocation_id);
 
             if (!a) {
@@ -1936,7 +1832,7 @@ static int handle_launch_generic(
         }
 
         case ARG_I32: {
-            uint32_t bits = read_u32(payload + pos);
+            uint32_t bits = corex_protocol_read_u32(payload + pos);
             storage[i].i32 = (int32_t)bits;
             kernel_params[i] = &storage[i].i32;
             printf("  arg[%u] I32 value=%d\n", i, storage[i].i32);
@@ -1944,7 +1840,7 @@ static int handle_launch_generic(
         }
 
         case ARG_U64:
-            storage[i].u64 = read_u64(payload + pos);
+            storage[i].u64 = corex_protocol_read_u64(payload + pos);
             kernel_params[i] = &storage[i].u64;
             printf("  arg[%u] U64 value=%llu\n",
                    i,
@@ -1952,7 +1848,7 @@ static int handle_launch_generic(
             break;
 
         case ARG_F32: {
-            uint32_t bits = read_u32(payload + pos);
+            uint32_t bits = corex_protocol_read_u32(payload + pos);
             memcpy(&storage[i].f32, &bits, sizeof(bits));
             kernel_params[i] = &storage[i].f32;
             printf("  arg[%u] F32 value=%f\n", i, storage[i].f32);
@@ -2053,10 +1949,10 @@ static int handle_h2d_async_submit(
             NULL,
             0);
 
-    uint64_t allocation_id = read_u64(payload + 0);
-    uint64_t offset64      = read_u64(payload + 8);
-    uint64_t stream_id     = read_u64(payload + 16);
-    uint64_t bytes64       = read_u64(payload + 24);
+    uint64_t allocation_id = corex_protocol_read_u64(payload + 0);
+    uint64_t offset64      = corex_protocol_read_u64(payload + 8);
+    uint64_t stream_id     = corex_protocol_read_u64(payload + 16);
+    uint64_t bytes64       = corex_protocol_read_u64(payload + 24);
 
     if (bytes64 == 0 ||
         bytes64 > UINT32_MAX ||
@@ -2213,7 +2109,7 @@ static int handle_h2d_async_submit(
         entry->id;
 
     uint64_t wire_id =
-        to_be64(
+        corex_protocol_to_be64(
             transfer_id);
 
     printf(
@@ -2269,10 +2165,10 @@ static int handle_d2h_async_submit(
             NULL,
             0);
 
-    uint64_t allocation_id = read_u64(payload + 0);
-    uint64_t offset64      = read_u64(payload + 8);
-    uint64_t stream_id     = read_u64(payload + 16);
-    uint64_t bytes64       = read_u64(payload + 24);
+    uint64_t allocation_id = corex_protocol_read_u64(payload + 0);
+    uint64_t offset64      = corex_protocol_read_u64(payload + 8);
+    uint64_t stream_id     = corex_protocol_read_u64(payload + 16);
+    uint64_t bytes64       = corex_protocol_read_u64(payload + 24);
 
     if (bytes64 == 0 ||
         bytes64 > UINT32_MAX ||
@@ -2423,7 +2319,7 @@ static int handle_d2h_async_submit(
         entry->id;
 
     uint64_t wire_id =
-        to_be64(
+        corex_protocol_to_be64(
             transfer_id);
 
     printf(
@@ -2471,7 +2367,7 @@ static int handle_transfer_query(
             0);
 
     uint64_t transfer_id =
-        read_u64(
+        corex_protocol_read_u64(
             payload);
 
     TransferEntry *entry =
@@ -2561,7 +2457,7 @@ static int handle_transfer_wait(
             0);
 
     uint64_t transfer_id =
-        read_u64(
+        corex_protocol_read_u64(
             payload);
 
     TransferEntry *entry =
@@ -2668,7 +2564,7 @@ static int handle_get_device_info(
             NULL,
             0);
 
-    uint32_t logical_device = read_u32(payload);
+    uint32_t logical_device = corex_protocol_read_u32(payload);
 
     if (logical_device != 0)
         return send_response(
@@ -2846,12 +2742,12 @@ static int handle_get_device_info(
     memset(response, 0, sizeof(response));
     size_t pos = 0;
 
-    g8c_put_u32(
+    corex_protocol_write_u32(
         response,
         &pos,
         1u); /* DTO version */
 
-    g8c_put_u32(
+    corex_protocol_write_u32(
         response,
         &pos,
         logical_device);
@@ -2862,57 +2758,57 @@ static int handle_get_device_info(
         sizeof(name));
     pos += sizeof(name);
 
-    g8c_put_u64(
+    corex_protocol_write_u64(
         response,
         &pos,
         (uint64_t)total_global_mem);
-    g8c_put_u64(
+    corex_protocol_write_u64(
         response,
         &pos,
         (uint64_t)free_mem);
-    g8c_put_u64(
+    corex_protocol_write_u64(
         response,
         &pos,
         (uint64_t)shared_mem_per_block);
 
-    g8c_put_u32(response, &pos, regs_per_block);
-    g8c_put_u32(response, &pos, warp_size);
-    g8c_put_u64(response, &pos, (uint64_t)mem_pitch);
+    corex_protocol_write_u32(response, &pos, regs_per_block);
+    corex_protocol_write_u32(response, &pos, warp_size);
+    corex_protocol_write_u64(response, &pos, (uint64_t)mem_pitch);
 
-    g8c_put_u32(response, &pos, max_threads_per_block);
+    corex_protocol_write_u32(response, &pos, max_threads_per_block);
     for (size_t i = 0; i < 3; ++i)
-        g8c_put_u32(response, &pos, max_threads_dim[i]);
+        corex_protocol_write_u32(response, &pos, max_threads_dim[i]);
     for (size_t i = 0; i < 3; ++i)
-        g8c_put_u32(response, &pos, max_grid_size[i]);
+        corex_protocol_write_u32(response, &pos, max_grid_size[i]);
 
-    g8c_put_u32(response, &pos, clock_rate);
-    g8c_put_u64(response, &pos, (uint64_t)total_const_mem);
+    corex_protocol_write_u32(response, &pos, clock_rate);
+    corex_protocol_write_u64(response, &pos, (uint64_t)total_const_mem);
 
-    g8c_put_u32(response, &pos, (uint32_t)major_i);
-    g8c_put_u32(response, &pos, (uint32_t)minor_i);
+    corex_protocol_write_u32(response, &pos, (uint32_t)major_i);
+    corex_protocol_write_u32(response, &pos, (uint32_t)minor_i);
 
-    g8c_put_u64(
+    corex_protocol_write_u64(
         response,
         &pos,
         (uint64_t)texture_alignment);
 
-    g8c_put_u32(response, &pos, device_overlap);
-    g8c_put_u32(response, &pos, multi_processor_count);
-    g8c_put_u32(response, &pos, kernel_exec_timeout);
-    g8c_put_u32(response, &pos, integrated);
-    g8c_put_u32(response, &pos, can_map_host_memory);
-    g8c_put_u32(response, &pos, compute_mode);
-    g8c_put_u32(response, &pos, concurrent_kernels);
-    g8c_put_u32(response, &pos, ecc_enabled);
-    g8c_put_u32(response, &pos, pci_bus_id);
-    g8c_put_u32(response, &pos, pci_device_id);
-    g8c_put_u32(response, &pos, tcc_driver);
-    g8c_put_u32(response, &pos, memory_clock_rate);
-    g8c_put_u32(response, &pos, memory_bus_width);
-    g8c_put_u32(response, &pos, l2_cache_size);
-    g8c_put_u32(response, &pos, max_threads_per_mp);
-    g8c_put_u32(response, &pos, async_engine_count);
-    g8c_put_u32(response, &pos, unified_addressing);
+    corex_protocol_write_u32(response, &pos, device_overlap);
+    corex_protocol_write_u32(response, &pos, multi_processor_count);
+    corex_protocol_write_u32(response, &pos, kernel_exec_timeout);
+    corex_protocol_write_u32(response, &pos, integrated);
+    corex_protocol_write_u32(response, &pos, can_map_host_memory);
+    corex_protocol_write_u32(response, &pos, compute_mode);
+    corex_protocol_write_u32(response, &pos, concurrent_kernels);
+    corex_protocol_write_u32(response, &pos, ecc_enabled);
+    corex_protocol_write_u32(response, &pos, pci_bus_id);
+    corex_protocol_write_u32(response, &pos, pci_device_id);
+    corex_protocol_write_u32(response, &pos, tcc_driver);
+    corex_protocol_write_u32(response, &pos, memory_clock_rate);
+    corex_protocol_write_u32(response, &pos, memory_bus_width);
+    corex_protocol_write_u32(response, &pos, l2_cache_size);
+    corex_protocol_write_u32(response, &pos, max_threads_per_mp);
+    corex_protocol_write_u32(response, &pos, async_engine_count);
+    corex_protocol_write_u32(response, &pos, unified_addressing);
 
     printf(
         "GET_DEVICE_INFO request=%u device=%u "
@@ -2941,25 +2837,27 @@ static int handle_get_device_info(
 static int serve_session(int fd)
 {
     for (;;) {
-        uint32_t h[5];
+        unsigned char h[CRX_REQUEST_HEADER_BYTES];
 
         if (recv_all(fd, h, sizeof(h)) != 0)
             return 0;  /* disconnect */
 
-        uint32_t magic       = ntohl(h[0]);
-        uint32_t version     = ntohl(h[1]);
-        uint32_t opcode      = ntohl(h[2]);
-        uint32_t req_id      = ntohl(h[3]);
-        uint32_t payload_len = ntohl(h[4]);
-
-        if (magic != MAGIC || version != VERSION) {
+        CorexProtocolRequestHeader request_header;
+        if (corex_protocol_decode_request_header(
+                h,
+                sizeof(h),
+                &request_header) != 0) {
             fprintf(
                 stderr,
                 "PROTOCOL_ERROR magic=0x%08x version=%u\n",
-                magic,
-                version);
+                corex_protocol_read_u32(h),
+                corex_protocol_read_u32(h + sizeof(uint32_t)));
             return -1;
         }
+
+        uint32_t opcode = request_header.opcode;
+        uint32_t req_id = request_header.request_id;
+        uint32_t payload_len = request_header.payload_length;
 
         if (payload_len > MAX_PAYLOAD) {
             fprintf(
@@ -3215,7 +3113,7 @@ int main(void)
     printf("GPU=%s\n", device_name);
     printf("startup_modules=0\n");
     printf("startup_kernels=0\n");
-    printf("protocol=CRX9 version=%u default_stream=LEGACY\n", VERSION);
+    printf("protocol=CRX9 version=%u default_stream=LEGACY\n", CRX_PROTOCOL_VERSION);
     printf("listen=127.0.0.1:%d\n", listen_port);
     printf("SERVER_READY\n");
     fflush(stdout);

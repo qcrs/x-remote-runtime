@@ -1,0 +1,2 @@
+BASELINE_COMMIT=c5cfdba09f812bf54f8261285eb7b852258d8960
+SLICE_COMMIT=m1/s3: canonicalize crx9 protocol definitions (evidence committed atomically)

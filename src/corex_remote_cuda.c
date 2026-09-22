@@ -4,6 +4,7 @@
 #include "corex_fatbin_runtime.h"
 #include "corex_metadata.h"
 #include "corex_device_info.h"
+#include "corex_protocol.h"
 #include "corex_runtime_context.h"
 
 #include <arpa/inet.h>
@@ -16,10 +17,6 @@
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-/* Remote device-info wire semantics. */
-#define MAGIC   0x43525839u  /* CRX9 */
-#define VERSION 3u
 
 #ifndef COREX_REMOTE_SERVER_HOST
 #define COREX_REMOTE_SERVER_HOST "127.0.0.1"
@@ -59,54 +56,6 @@ static int remote_server_port(void)
 #define G6A_VA_GUARD_BYTES   (64ULL * 1024ULL)
 #define G7C_REG_COOKIE 0x4737435245473031ULL /* G7CREG01 */
 #define G6A_COPY_CHUNK       (16ULL * 1024ULL * 1024ULL)
-
-enum {
-    ST_OK             = 0,
-    ST_BAD_REQUEST    = 1,
-    ST_NOT_FOUND      = 2,
-    ST_CUDA_ERROR     = 3,
-    ST_INTERNAL       = 4,
-    ST_NO_RESOURCE    = 5,
-    ST_ABI_MISMATCH   = 6,
-    ST_METADATA_ERROR = 7,
-};
-
-enum {
-    OP_ALLOC             = 1,
-    OP_H2D               = 2,
-    OP_SYNC              = 4,
-    OP_D2H               = 5,
-    OP_FREE              = 6,
-    OP_CLOSE             = 7,
-    OP_UPLOAD_MODULE     = 8,
-    OP_GET_KERNEL        = 9,
-    OP_UNLOAD_MODULE     = 10,
-    OP_LAUNCH_GENERIC    = 11,
-    OP_CREATE_STREAM     = 12,
-    OP_DESTROY_STREAM    = 13,
-    OP_STREAM_QUERY      = 14,
-    OP_STREAM_SYNC       = 15,
-    OP_CREATE_EVENT      = 16,
-    OP_DESTROY_EVENT     = 17,
-    OP_EVENT_RECORD      = 18,
-    OP_EVENT_QUERY       = 19,
-    OP_EVENT_SYNC          = 20,
-    OP_STREAM_WAIT_EVENT   = 21,
-    OP_H2D_ASYNC_SUBMIT    = 22,
-    OP_D2H_ASYNC_SUBMIT    = 23,
-    OP_TRANSFER_QUERY      = 24,
-    OP_TRANSFER_WAIT       = 25,
-    OP_GET_DEVICE_INFO     = 26,
-};
-
-
-enum {
-    ARG_REMOTE_PTR = 1,
-    ARG_I32        = 2,
-    ARG_U64        = 3,
-    ARG_F32        = 4,
-    ARG_RAW_VALUE  = 5,
-};
 
 enum {
     STREAM_STATE_READY   = 0,
@@ -165,60 +114,6 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback);
 
 /* All callers of this helper are inside a locked RuntimeContext entry path. */
 #define ensure_runtime ensure_runtime_locked
-
-static uint64_t to_be64(uint64_t v)
-{
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return ((uint64_t)htonl((uint32_t)(v & 0xffffffffULL)) << 32) |
-           htonl((uint32_t)(v >> 32));
-#else
-    return v;
-#endif
-}
-
-static uint64_t from_be64(uint64_t v)
-{
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return ((uint64_t)ntohl((uint32_t)(v & 0xffffffffULL)) << 32) |
-           ntohl((uint32_t)(v >> 32));
-#else
-    return v;
-#endif
-}
-
-static int g8c_take_u32(
-    const unsigned char *buf,
-    uint32_t len,
-    size_t *pos,
-    uint32_t *value_out)
-{
-    if (!buf || !pos || !value_out ||
-        *pos > len || len - *pos < sizeof(uint32_t))
-        return -1;
-
-    uint32_t wire = 0;
-    memcpy(&wire, buf + *pos, sizeof(wire));
-    *pos += sizeof(wire);
-    *value_out = ntohl(wire);
-    return 0;
-}
-
-static int g8c_take_u64(
-    const unsigned char *buf,
-    uint32_t len,
-    size_t *pos,
-    uint64_t *value_out)
-{
-    if (!buf || !pos || !value_out ||
-        *pos > len || len - *pos < sizeof(uint64_t))
-        return -1;
-
-    uint64_t wire = 0;
-    memcpy(&wire, buf + *pos, sizeof(wire));
-    *pos += sizeof(wire);
-    *value_out = from_be64(wire);
-    return 0;
-}
 
 static int send_all(int fd, const void *buf, size_t len)
 {
@@ -301,13 +196,12 @@ static int rpc(
     g_last_remote_status = ST_OK;
     g_last_rpc_transport_error = 0;
     uint32_t req_id = g_next_req_id++;
-    uint32_t h[5];
-
-    h[0] = htonl(MAGIC);
-    h[1] = htonl(VERSION);
-    h[2] = htonl(opcode);
-    h[3] = htonl(req_id);
-    h[4] = htonl(payload_len);
+    unsigned char h[CRX_REQUEST_HEADER_BYTES];
+    corex_protocol_encode_request_header(
+        h,
+        opcode,
+        req_id,
+        payload_len);
 
     if (send_all(fd, h, sizeof(h)) != 0) {
         g_last_rpc_transport_error = 1;
@@ -321,23 +215,19 @@ static int rpc(
         }
     }
 
-    uint32_t rh[6];
+    unsigned char rh[CRX_RESPONSE_HEADER_BYTES];
     if (recv_all(fd, rh, sizeof(rh)) != 0) {
         g_last_rpc_transport_error = 1;
         return -1;
     }
 
-    uint32_t magic = ntohl(rh[0]);
-    uint32_t version = ntohl(rh[1]);
-    uint32_t returned_opcode = ntohl(rh[2]);
-    uint32_t returned_req_id = ntohl(rh[3]);
-    uint32_t status = ntohl(rh[4]);
-    uint32_t response_len = ntohl(rh[5]);
-
-    if (magic != MAGIC ||
-        version != VERSION ||
-        returned_opcode != opcode ||
-        returned_req_id != req_id) {
+    CorexProtocolResponseHeader response_header;
+    if (corex_protocol_decode_response_header(
+            rh,
+            sizeof(rh),
+            &response_header) != 0 ||
+        response_header.opcode != opcode ||
+        response_header.request_id != req_id) {
         fprintf(stderr,
                 "G6E_RPC_PROTOCOL_MISMATCH opcode=%u request=%u\n",
                 opcode,
@@ -346,6 +236,8 @@ static int rpc(
         return -1;
     }
 
+    uint32_t status = response_header.status;
+    uint32_t response_len = response_header.payload_length;
     unsigned char *response = NULL;
     if (response_len > 0) {
         response = (unsigned char *)malloc(response_len);
@@ -414,21 +306,6 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback)
     }
 }
 
-static void put_u32(unsigned char *buf, size_t *pos, uint32_t value)
-{
-    uint32_t wire = htonl(value);
-    memcpy(buf + *pos, &wire, sizeof(wire));
-    *pos += sizeof(wire);
-}
-
-static void put_u64(unsigned char *buf, size_t *pos, uint64_t value)
-{
-    uint64_t wire = to_be64(value);
-    memcpy(buf + *pos, &wire, sizeof(wire));
-    *pos += sizeof(wire);
-}
-
-
 static unsigned char *read_file_bytes(const char *path, size_t *size_out)
 {
     if (!path || !size_out)
@@ -465,7 +342,7 @@ static unsigned char *read_file_bytes(const char *path, size_t *size_out)
 
 static int remote_alloc(uint64_t bytes, uint64_t *allocation_id_out)
 {
-    uint64_t wire_bytes = to_be64(bytes);
+    uint64_t wire_bytes = corex_protocol_to_be64(bytes);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
 
@@ -486,13 +363,13 @@ static int remote_alloc(uint64_t bytes, uint64_t *allocation_id_out)
     memcpy(&wire_id, resp, sizeof(wire_id));
     free(resp);
 
-    *allocation_id_out = from_be64(wire_id);
+    *allocation_id_out = corex_protocol_from_be64(wire_id);
     return 0;
 }
 
 static int remote_free(uint64_t allocation_id)
 {
-    uint64_t wire_id = to_be64(allocation_id);
+    uint64_t wire_id = corex_protocol_to_be64(allocation_id);
     return rpc(g_fd, OP_FREE, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
@@ -516,9 +393,9 @@ static int remote_h2d(
         return -1;
 
     size_t pos = 0;
-    put_u64(payload, &pos, allocation_id);
-    put_u64(payload, &pos, offset);
-    put_u64(payload, &pos, bytes);
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u64(payload, &pos, bytes);
     memcpy(payload + pos, data, (size_t)bytes);
     pos += (size_t)bytes;
 
@@ -539,9 +416,9 @@ static int remote_d2h(
     unsigned char payload[24];
     size_t pos = 0;
 
-    put_u64(payload, &pos, allocation_id);
-    put_u64(payload, &pos, offset);
-    put_u64(payload, &pos, bytes);
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u64(payload, &pos, bytes);
 
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
@@ -590,10 +467,10 @@ static int remote_upload_module_bytes(
         return -1;
 
     size_t pos = 0;
-    put_u32(payload, &pos, (uint32_t)name_len);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)name_len);
     memcpy(payload + pos, wire_name, name_len);
     pos += name_len;
-    put_u64(payload, &pos, image_size);
+    corex_protocol_write_u64(payload, &pos, image_size);
     memcpy(payload + pos, image, image_size);
     pos += image_size;
 
@@ -611,7 +488,7 @@ static int remote_upload_module_bytes(
         resp_len == 8) {
         uint64_t wire_id;
         memcpy(&wire_id, resp, sizeof(wire_id));
-        *module_id_out = from_be64(wire_id);
+        *module_id_out = corex_protocol_from_be64(wire_id);
         rc = 0;
     }
 
@@ -642,8 +519,8 @@ static int remote_get_kernel(
         return -1;
 
     size_t pos = 0;
-    put_u64(payload, &pos, module_id);
-    put_u32(payload, &pos, (uint32_t)name_len);
+    corex_protocol_write_u64(payload, &pos, module_id);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)name_len);
     memcpy(payload + pos, name, name_len);
     pos += name_len;
 
@@ -655,7 +532,7 @@ static int remote_get_kernel(
         resp_len == 8) {
         uint64_t wire_id;
         memcpy(&wire_id, resp, sizeof(wire_id));
-        *kernel_id_out = from_be64(wire_id);
+        *kernel_id_out = corex_protocol_from_be64(wire_id);
         rc = 0;
     }
 
@@ -666,7 +543,7 @@ static int remote_get_kernel(
 
 static int remote_unload_module(uint64_t module_id)
 {
-    uint64_t wire_id = to_be64(module_id);
+    uint64_t wire_id = corex_protocol_to_be64(module_id);
     return rpc(g_fd, OP_UNLOAD_MODULE, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
@@ -686,25 +563,25 @@ static int remote_create_stream(uint64_t *stream_id_out)
     uint64_t wire_id;
     memcpy(&wire_id, resp, sizeof(wire_id));
     free(resp);
-    *stream_id_out = from_be64(wire_id);
+    *stream_id_out = corex_protocol_from_be64(wire_id);
     return 0;
 }
 
 static int remote_destroy_stream(uint64_t stream_id)
 {
-    uint64_t wire_id = to_be64(stream_id);
+    uint64_t wire_id = corex_protocol_to_be64(stream_id);
     return rpc(g_fd, OP_DESTROY_STREAM, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
 static int remote_stream_sync(uint64_t stream_id)
 {
-    uint64_t wire_id = to_be64(stream_id);
+    uint64_t wire_id = corex_protocol_to_be64(stream_id);
     return rpc(g_fd, OP_STREAM_SYNC, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
 static int remote_stream_query(uint64_t stream_id, uint32_t *state_out)
 {
-    uint64_t wire_id = to_be64(stream_id);
+    uint64_t wire_id = corex_protocol_to_be64(stream_id);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
 
@@ -738,13 +615,13 @@ static int remote_create_event(uint64_t *event_id_out)
     uint64_t wire_id;
     memcpy(&wire_id, resp, sizeof(wire_id));
     free(resp);
-    *event_id_out = from_be64(wire_id);
+    *event_id_out = corex_protocol_from_be64(wire_id);
     return 0;
 }
 
 static int remote_destroy_event(uint64_t event_id)
 {
-    uint64_t wire_id = to_be64(event_id);
+    uint64_t wire_id = corex_protocol_to_be64(event_id);
     return rpc(g_fd, OP_DESTROY_EVENT, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
@@ -752,20 +629,20 @@ static int remote_event_record(uint64_t event_id, uint64_t stream_id)
 {
     unsigned char payload[16];
     size_t pos = 0;
-    put_u64(payload, &pos, event_id);
-    put_u64(payload, &pos, stream_id);
+    corex_protocol_write_u64(payload, &pos, event_id);
+    corex_protocol_write_u64(payload, &pos, stream_id);
     return rpc(g_fd, OP_EVENT_RECORD, payload, sizeof(payload), NULL, NULL);
 }
 
 static int remote_event_sync(uint64_t event_id)
 {
-    uint64_t wire_id = to_be64(event_id);
+    uint64_t wire_id = corex_protocol_to_be64(event_id);
     return rpc(g_fd, OP_EVENT_SYNC, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
 static int remote_event_query(uint64_t event_id, uint32_t *state_out)
 {
-    uint64_t wire_id = to_be64(event_id);
+    uint64_t wire_id = corex_protocol_to_be64(event_id);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
 
@@ -787,9 +664,9 @@ static int remote_stream_wait_event(uint64_t stream_id, uint64_t event_id)
 {
     unsigned char payload[20];
     size_t pos = 0;
-    put_u64(payload, &pos, stream_id);
-    put_u64(payload, &pos, event_id);
-    put_u32(payload, &pos, 0);
+    corex_protocol_write_u64(payload, &pos, stream_id);
+    corex_protocol_write_u64(payload, &pos, event_id);
+    corex_protocol_write_u32(payload, &pos, 0);
     return rpc(g_fd, OP_STREAM_WAIT_EVENT, payload, sizeof(payload), NULL, NULL);
 }
 
@@ -810,10 +687,10 @@ static int remote_h2d_async_submit(
         return -1;
 
     size_t pos = 0;
-    put_u64(payload, &pos, allocation_id);
-    put_u64(payload, &pos, offset);
-    put_u64(payload, &pos, stream_id);
-    put_u64(payload, &pos, bytes);
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u64(payload, &pos, stream_id);
+    corex_protocol_write_u64(payload, &pos, bytes);
     memcpy(payload + pos, data, (size_t)bytes);
     pos += (size_t)bytes;
 
@@ -831,7 +708,7 @@ static int remote_h2d_async_submit(
         resp_len == 8) {
         uint64_t wire_id;
         memcpy(&wire_id, resp, sizeof(wire_id));
-        *transfer_id_out = from_be64(wire_id);
+        *transfer_id_out = corex_protocol_from_be64(wire_id);
         rc = 0;
     }
 
@@ -852,10 +729,10 @@ static int remote_d2h_async_submit(
 
     unsigned char payload[32];
     size_t pos = 0;
-    put_u64(payload, &pos, allocation_id);
-    put_u64(payload, &pos, offset);
-    put_u64(payload, &pos, stream_id);
-    put_u64(payload, &pos, bytes);
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u64(payload, &pos, stream_id);
+    corex_protocol_write_u64(payload, &pos, bytes);
 
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
@@ -876,7 +753,7 @@ static int remote_d2h_async_submit(
     uint64_t wire_id;
     memcpy(&wire_id, resp, sizeof(wire_id));
     free(resp);
-    *transfer_id_out = from_be64(wire_id);
+    *transfer_id_out = corex_protocol_from_be64(wire_id);
     return 0;
 }
 
@@ -885,7 +762,7 @@ static int remote_transfer_query(uint64_t transfer_id, uint32_t *state_out)
     if (!state_out)
         return -1;
 
-    uint64_t wire_id = to_be64(transfer_id);
+    uint64_t wire_id = corex_protocol_to_be64(transfer_id);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
 
@@ -914,7 +791,7 @@ static int remote_transfer_wait(
     void *data_out,
     uint32_t expected_bytes)
 {
-    uint64_t wire_id = to_be64(transfer_id);
+    uint64_t wire_id = corex_protocol_to_be64(transfer_id);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
 
@@ -972,13 +849,13 @@ static int remote_get_device_info(
 
 #define TAKE32(dst) \
     do { \
-        if (g8c_take_u32(resp, resp_len, &pos, &(dst)) != 0) \
+        if (corex_protocol_take_u32(resp, resp_len, &pos, &(dst)) != 0) \
             goto parse_fail; \
     } while (0)
 
 #define TAKE64(dst) \
     do { \
-        if (g8c_take_u64(resp, resp_len, &pos, &(dst)) != 0) \
+        if (corex_protocol_take_u64(resp, resp_len, &pos, &(dst)) != 0) \
             goto parse_fail; \
     } while (0)
 
@@ -1688,7 +1565,7 @@ static cudaError_t ensure_runtime(void)
            (unsigned long long)g_active_session_generation,
            remote_server_host(),
            remote_server_port(),
-           VERSION);
+           CRX_PROTOCOL_VERSION);
 
     return cudaSuccess;
 }
@@ -3340,16 +3217,16 @@ static cudaError_t cudaLaunchKernel_locked(
         G6E_RETURN(cudaErrorMemoryAllocation);
 
     size_t pos = 0;
-    put_u64(payload, &pos, kh->kernel_id);
-    put_u64(payload, &pos, sv.stream_id);
-    put_u32(payload, &pos, gridDim.x);
-    put_u32(payload, &pos, gridDim.y);
-    put_u32(payload, &pos, gridDim.z);
-    put_u32(payload, &pos, blockDim.x);
-    put_u32(payload, &pos, blockDim.y);
-    put_u32(payload, &pos, blockDim.z);
-    put_u32(payload, &pos, (uint32_t)sharedMem);
-    put_u32(payload, &pos, (uint32_t)kh->argc);
+    corex_protocol_write_u64(payload, &pos, kh->kernel_id);
+    corex_protocol_write_u64(payload, &pos, sv.stream_id);
+    corex_protocol_write_u32(payload, &pos, gridDim.x);
+    corex_protocol_write_u32(payload, &pos, gridDim.y);
+    corex_protocol_write_u32(payload, &pos, gridDim.z);
+    corex_protocol_write_u32(payload, &pos, blockDim.x);
+    corex_protocol_write_u32(payload, &pos, blockDim.y);
+    corex_protocol_write_u32(payload, &pos, blockDim.z);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)sharedMem);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)kh->argc);
 
     cudaError_t result = cudaSuccess;
     for (size_t i = 0; i < kh->argc; ++i) {
@@ -3364,10 +3241,10 @@ static cudaError_t cudaLaunchKernel_locked(
                 goto out;
             }
 
-            put_u32(payload, &pos, ARG_REMOTE_PTR);
-            put_u32(payload, &pos, 16);
-            put_u64(payload, &pos, remote.allocation_id);
-            put_u64(payload, &pos, remote.byte_offset);
+            corex_protocol_write_u32(payload, &pos, ARG_REMOTE_PTR);
+            corex_protocol_write_u32(payload, &pos, 16);
+            corex_protocol_write_u64(payload, &pos, remote.allocation_id);
+            corex_protocol_write_u64(payload, &pos, remote.byte_offset);
 
             printf("G6D_LAUNCH_ARG arg=%zu kind=REMOTE_PTR allocation_id=%llu offset=%llu\n",
                    i,
@@ -3375,8 +3252,8 @@ static cudaError_t cudaLaunchKernel_locked(
                    (unsigned long long)remote.byte_offset);
         } else {
             uint32_t raw_size = kh->args[i].size;
-            put_u32(payload, &pos, ARG_RAW_VALUE);
-            put_u32(payload, &pos, raw_size);
+            corex_protocol_write_u32(payload, &pos, ARG_RAW_VALUE);
+            corex_protocol_write_u32(payload, &pos, raw_size);
             memcpy(payload + pos, args[i], raw_size);
             pos += raw_size;
 

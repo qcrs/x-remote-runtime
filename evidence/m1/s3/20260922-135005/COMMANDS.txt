@@ -1,0 +1,7 @@
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+COREX_REMOTE_PORT=50051 stdbuf -oL ./dist/bin/runtime_server
+OUT=/tmp/m1s3-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m1s3-baseline SERVER_LOG=/tmp/m1s3-server.log ./scripts/run-integration.sh
+OUT=/tmp/m1s3-multithread ./scripts/run-multithread-integration.sh
+rg duplicate protocol definitions across src/server/include/internal
+git diff --check

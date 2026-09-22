@@ -44,6 +44,12 @@ echo "CXX=$CXX"
 echo "CC=$CC"
 echo "GXX=$GXX"
 
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 \
+    -I"$INTERNAL" \
+    "$ROOT/tests/protocol/protocol_golden.c" \
+    -o "$BUILD/protocol_golden_test"
+"$BUILD/protocol_golden_test" | tee "$BUILD/PROTOCOL-GOLDEN.txt"
+
 "$CC" \
     -O2 -Wall -Wextra -Werror -std=gnu11 \
     -I"$COREX/include" \

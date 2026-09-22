@@ -8,17 +8,25 @@ root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 client = (root / "src/corex_remote_cuda.c").read_text()
 server = (root / "server/runtime_server.c").read_text()
 api = (root / "src/corex_device_api.c").read_text()
+protocol = (root / "include/internal/corex_protocol.h").read_text()
 vmap = (root / "packaging/corex_remote_cudart.map").read_text()
 
 checks = [
     ("client_protocol_v3",
-     "#define VERSION 3u" in client),
+     '#include "corex_protocol.h"' in client and
+     "#define CRX_PROTOCOL_VERSION 3u" in protocol),
     ("server_protocol_v3",
-     "#define VERSION 3u" in server),
+     '#include "corex_protocol.h"' in server and
+     "#define CRX_PROTOCOL_VERSION 3u" in protocol),
     ("client_opcode_26",
-     "OP_GET_DEVICE_INFO     = 26" in client),
+     "OP_GET_DEVICE_INFO     = 26" in protocol),
     ("server_opcode_26",
-     "OP_GET_DEVICE_INFO  = 26" in server),
+     "OP_GET_DEVICE_INFO     = 26" in protocol),
+    ("canonical_protocol_owner",
+     "enum {\n    ST_OK" not in client and
+     "enum {\n    ST_OK" not in server and
+     "CorexProtocolRequestHeader" in protocol and
+     "CorexProtocolResponseHeader" in protocol),
     ("server_no_cudaDeviceProp",
      "cudaDeviceProp" not in server),
     ("server_driver_only",
