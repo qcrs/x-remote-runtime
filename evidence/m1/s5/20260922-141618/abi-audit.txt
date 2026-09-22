@@ -1,0 +1,4 @@
+missing_exports=NONE
+unexpected_function_exports=NONE
+G8C_ABI_SURFACE=PASS
+PUBLIC_ABI_CHANGE=NONE

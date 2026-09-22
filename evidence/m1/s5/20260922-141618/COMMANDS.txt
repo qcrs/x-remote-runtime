@@ -1,0 +1,8 @@
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+OUT=/tmp/m1s5-failure-protocol ./scripts/run-failure-reconnect-integration.sh
+COREX_REMOTE_PORT=50051 stdbuf -oL ./dist/bin/runtime_server
+OUT=/tmp/m1s5-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m1s5-baseline SERVER_LOG=/tmp/m1s5-server.log ./scripts/run-integration.sh
+OUT=/tmp/m1s5-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m1s5-multithread ./scripts/run-multithread-integration.sh
+git diff --check

@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M1-S5 ready**.
+Current autonomous roadmap position: **M2-S1 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M1-S5 ready**.
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M1-S4 (`m1/s4: establish explicit server session ownership`, this state commit) |
-| Current Slice | M1-S5 deterministic failure and reconnect semantics |
+| Last PASS commit | M1-S5 (`m1/s5: make transport failure a session event`, this state commit) |
+| Current Slice | M2-S1 CoreX 4.4 API census and canonical compatibility ledger |
 | Blockers | None |
-| Next action | Centralize transport-failed state, invalidate the failed generation, and test kill/reconnect paths |
+| Next action | Build a deterministic CoreX-header census tool that preserves reviewed semantic annotations |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -39,3 +39,9 @@ all next-ID counters into an explicit per-connection `ServerSession`. Cleanup
 takes that session, retires live resources, and restores an empty structure.
 Sequential-connection isolation and all common regressions passed. Evidence:
 `evidence/m1/s4/20260922-140429/`.
+
+M1-S5 promotes send, receive, and protocol-header failures to an explicit
+failed-session state. The failed generation is invalidated without replay;
+lazy reconnect creates a clean generation. Idle/live-object server kills and a
+malformed peer were exercised, followed by fresh numerical work. M1 now passes
+G0-G6 and G8. Evidence: `evidence/m1/s5/20260922-141618/`.

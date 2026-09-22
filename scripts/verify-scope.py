@@ -9,6 +9,7 @@ client = (root / "src/corex_remote_cuda.c").read_text()
 server = (root / "server/runtime_server.c").read_text()
 api = (root / "src/corex_device_api.c").read_text()
 protocol = (root / "include/internal/corex_protocol.h").read_text()
+context = (root / "include/internal/corex_runtime_context.h").read_text()
 vmap = (root / "packaging/corex_remote_cudart.map").read_text()
 
 checks = [
@@ -38,6 +39,11 @@ checks = [
      "static Allocation allocations[MAX_ALLOCS]" not in server and
      "static ModuleEntry modules[MAX_MODULES]" not in server and
      "static KernelEntry kernels[MAX_KERNELS]" not in server),
+    ("client_failed_session_state",
+     "COREX_RUNTIME_FAILED" in context and
+     "mark_session_failed_locked" in client and
+     "MSG_NOSIGNAL" in client and
+     "no_replay=YES" in client),
     ("client_vendor_abi_adapter",
      "#include <cuda_runtime_api.h>" in api and
      "sizeof(*prop)" in api),

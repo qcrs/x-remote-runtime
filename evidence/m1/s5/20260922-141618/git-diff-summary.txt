@@ -1,0 +1,12 @@
+include/internal/corex_runtime_context.h
+src/corex_remote_cuda.c
+scripts/verify-scope.py
+scripts/run-failure-reconnect-integration.sh
+tests/integration/session_failure_reconnect.py
+docs/PROJECT_STATE.md
+evidence/m1/s5/20260922-141618/*
+
+SEMANTIC_SCOPE=transport failure and reconnect semantics
+PUBLIC_ABI_CHANGE=NONE
+WIRE_CHANGE=NONE
+NON_IDEMPOTENT_REPLAY=NONE

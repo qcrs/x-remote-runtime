@@ -1,0 +1,2 @@
+BASELINE_COMMIT=38af69decb6c50c00b263ec587051f9eb9eee314
+SLICE_COMMIT=m1/s5: make transport failure a session event (evidence committed atomically)

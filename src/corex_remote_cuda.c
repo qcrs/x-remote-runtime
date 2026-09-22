@@ -111,6 +111,7 @@ static _Thread_local int g_last_rpc_transport_error = 0;
 
 static cudaError_t ensure_runtime_locked(void);
 static cudaError_t map_last_rpc_error(cudaError_t fallback);
+static void mark_session_failed_locked(const char *reason);
 
 /* All callers of this helper are inside a locked RuntimeContext entry path. */
 #define ensure_runtime ensure_runtime_locked
@@ -120,7 +121,7 @@ static int send_all(int fd, const void *buf, size_t len)
     const unsigned char *p = (const unsigned char *)buf;
 
     while (len > 0) {
-        ssize_t n = send(fd, p, len, 0);
+        ssize_t n = send(fd, p, len, MSG_NOSIGNAL);
         if (n < 0) {
             if (errno == EINTR)
                 continue;
@@ -181,6 +182,72 @@ static int connect_server(void)
     return fd;
 }
 
+static void mark_session_failed_locked(const char *reason)
+{
+    uint64_t failed_generation = g_active_session_generation;
+
+    if (g_fd >= 0) {
+        close(g_fd);
+        g_fd = -1;
+    }
+
+    for (size_t i = 0; i < g_stream_handle_next; ++i) {
+        if (g_stream_handles[i].session_generation != failed_generation)
+            continue;
+        free(g_stream_handles[i].frontier);
+        g_stream_handles[i].frontier = NULL;
+        g_stream_handles[i].live = 0;
+        g_stream_handles[i].stream_id = 0;
+    }
+    for (size_t i = 0; i < g_event_handle_next; ++i) {
+        if (g_event_handles[i].session_generation != failed_generation)
+            continue;
+        free(g_event_handles[i].frontier);
+        g_event_handles[i].frontier = NULL;
+        g_event_handles[i].live = 0;
+        g_event_handles[i].event_id = 0;
+        g_event_handles[i].recorded = 0;
+    }
+    for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+        if (g_allocs[i].session_generation == failed_generation)
+            g_allocs[i].live = 0;
+    }
+    for (size_t i = 0; i < G6D_MAX_MODULE_HANDLES; ++i) {
+        if (g_module_handles[i].session_generation == failed_generation) {
+            g_module_handles[i].live = 0;
+            g_module_handles[i].module_id = 0;
+        }
+    }
+    for (size_t i = 0; i < G6D_MAX_KERNEL_HANDLES; ++i) {
+        if (g_kernel_handles[i].session_generation == failed_generation) {
+            g_kernel_handles[i].live = 0;
+            g_kernel_handles[i].kernel_id = 0;
+            g_kernel_handles[i].module_id = 0;
+        }
+    }
+    for (size_t i = 0; i < G7C_MAX_FATBIN_REGISTRATIONS; ++i) {
+        G7CFatbinRegistration *reg = &g_g7c_registrations[i];
+        if (reg->session_generation != failed_generation)
+            continue;
+        reg->remote_module = NULL;
+        if (reg->state != G7C_REG_EMPTY && reg->state != G7C_REG_FAILED)
+            reg->state = G7C_REG_DEAD;
+    }
+
+    memset(g_hidden_transfers, 0, sizeof(g_hidden_transfers));
+    free(g_default_frontier);
+    g_default_frontier = NULL;
+    g_default_next_transfer_seq = 0;
+    g_transfer_submit_order = 0;
+
+    g_active_session_generation = 0;
+    g_lifecycle = COREX_RUNTIME_FAILED;
+    fprintf(stderr,
+            "M1_S5_SESSION_FAILED generation=%llu reason=%s reconnect=LAZY no_replay=YES\n",
+            (unsigned long long)failed_generation,
+            reason ? reason : "UNKNOWN");
+}
+
 /*
  * Gate 6C still defers full server-status-to-CUDA error mapping to Gate 6E.
  * READY/PENDING query states are mapped explicitly in this slice.
@@ -205,12 +272,14 @@ static int rpc(
 
     if (send_all(fd, h, sizeof(h)) != 0) {
         g_last_rpc_transport_error = 1;
+        mark_session_failed_locked("SEND_HEADER");
         return -1;
     }
 
     if (payload_len > 0) {
         if (!payload || send_all(fd, payload, payload_len) != 0) {
             g_last_rpc_transport_error = 1;
+            mark_session_failed_locked("SEND_PAYLOAD");
             return -1;
         }
     }
@@ -218,6 +287,7 @@ static int rpc(
     unsigned char rh[CRX_RESPONSE_HEADER_BYTES];
     if (recv_all(fd, rh, sizeof(rh)) != 0) {
         g_last_rpc_transport_error = 1;
+        mark_session_failed_locked("RECV_HEADER");
         return -1;
     }
 
@@ -233,6 +303,7 @@ static int rpc(
                 opcode,
                 req_id);
         g_last_rpc_transport_error = 1;
+        mark_session_failed_locked("PROTOCOL_MISMATCH");
         return -1;
     }
 
@@ -243,11 +314,13 @@ static int rpc(
         response = (unsigned char *)malloc(response_len);
         if (!response) {
             g_last_rpc_transport_error = 1;
+            mark_session_failed_locked("RESPONSE_ALLOCATION");
             return -1;
         }
         if (recv_all(fd, response, response_len) != 0) {
             free(response);
             g_last_rpc_transport_error = 1;
+            mark_session_failed_locked("RECV_PAYLOAD");
             return -1;
         }
     }
@@ -286,7 +359,7 @@ static cudaError_t record_error(cudaError_t error)
 static cudaError_t map_last_rpc_error(cudaError_t fallback)
 {
     if (g_last_rpc_transport_error)
-        return fallback;
+        return cudaErrorUnknown;
 
     switch (g_last_remote_status) {
     case ST_BAD_REQUEST:
@@ -1665,7 +1738,7 @@ static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
 
     uint64_t allocation_id = 0;
     if (remote_alloc((uint64_t)size, &allocation_id) != 0)
-        G6E_RETURN(cudaErrorMemoryAllocation);
+        G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
 
     uintptr_t base = (uintptr_t)(g_va_arena + g_va_next);
 
