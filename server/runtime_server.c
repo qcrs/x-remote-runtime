@@ -858,6 +858,96 @@ static int handle_d2d(
     return send_response(fd, OP_D2D, req_id, ST_OK, NULL, 0);
 }
 
+static int decode_memset_payload(
+    ServerSession *session,
+    const unsigned char *payload,
+    uint32_t len,
+    int async,
+    Allocation **allocation_out,
+    CUstream *stream_out,
+    uint64_t *offset_out,
+    unsigned char *value_out,
+    uint64_t *bytes_out)
+{
+    uint32_t expected = async ? 36u : 28u;
+    if (!payload || len != expected)
+        return -1;
+    uint64_t allocation_id = corex_protocol_read_u64(payload + 0);
+    uint64_t offset = corex_protocol_read_u64(payload + 8);
+    uint32_t value = corex_protocol_read_u32(payload + 16);
+    uint64_t bytes = corex_protocol_read_u64(payload + 20);
+    Allocation *allocation = find_allocation(session, allocation_id);
+    if (!allocation || value > 0xffu || offset > allocation->size ||
+        bytes > allocation->size - (size_t)offset)
+        return -1;
+    CUstream stream = NULL;
+    if (async) {
+        uint64_t stream_id = corex_protocol_read_u64(payload + 28);
+        if (stream_id != 0) {
+            StreamEntry *entry = find_stream(session, stream_id);
+            if (!entry)
+                return -1;
+            stream = entry->stream;
+        }
+    }
+    *allocation_out = allocation;
+    *stream_out = stream;
+    *offset_out = offset;
+    *value_out = (unsigned char)value;
+    *bytes_out = bytes;
+    return 0;
+}
+
+static int handle_memset(
+    ServerSession *session,
+    int fd,
+    uint32_t req_id,
+    const unsigned char *payload,
+    uint32_t len)
+{
+    Allocation *allocation = NULL;
+    CUstream stream = NULL;
+    uint64_t offset = 0, bytes = 0;
+    unsigned char value = 0;
+    if (decode_memset_payload(session, payload, len, 0, &allocation, &stream,
+                              &offset, &value, &bytes) != 0)
+        return send_response(fd, OP_MEMSET, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult result = corex_backend_memset_d8(
+        allocation->ptr + (size_t)offset, value, (size_t)bytes);
+    if (result != CUDA_SUCCESS)
+        return send_response(fd, OP_MEMSET, req_id, ST_CUDA_ERROR, NULL, 0);
+    printf("MEMSET request=%u allocation_id=%llu offset=%llu value=%u bytes=%llu\n",
+           req_id, (unsigned long long)allocation->id,
+           (unsigned long long)offset, (unsigned)value,
+           (unsigned long long)bytes);
+    return send_response(fd, OP_MEMSET, req_id, ST_OK, NULL, 0);
+}
+
+static int handle_memset_async(
+    ServerSession *session,
+    int fd,
+    uint32_t req_id,
+    const unsigned char *payload,
+    uint32_t len)
+{
+    Allocation *allocation = NULL;
+    CUstream stream = NULL;
+    uint64_t offset = 0, bytes = 0;
+    unsigned char value = 0;
+    if (decode_memset_payload(session, payload, len, 1, &allocation, &stream,
+                              &offset, &value, &bytes) != 0)
+        return send_response(fd, OP_MEMSET_ASYNC, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult result = corex_backend_memset_d8_async(
+        allocation->ptr + (size_t)offset, value, (size_t)bytes, stream);
+    if (result != CUDA_SUCCESS)
+        return send_response(fd, OP_MEMSET_ASYNC, req_id, ST_CUDA_ERROR, NULL, 0);
+    printf("MEMSET_ASYNC request=%u allocation_id=%llu offset=%llu value=%u bytes=%llu\n",
+           req_id, (unsigned long long)allocation->id,
+           (unsigned long long)offset, (unsigned)value,
+           (unsigned long long)bytes);
+    return send_response(fd, OP_MEMSET_ASYNC, req_id, ST_OK, NULL, 0);
+}
+
 static int handle_free(
     ServerSession *session,
     int fd,
@@ -3028,11 +3118,13 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_GET_DEVICE_INFO, handle_get_device_info, CRX_CAP_DEVICE_INFO) \
     X(OP_HELLO, handle_hello_entry, 0) \
     X(OP_D2D, handle_d2d, CRX_CAP_COPY_SYNC) \
+    X(OP_MEMSET, handle_memset, CRX_CAP_LINEAR_MEMORY) \
+    X(OP_MEMSET_ASYNC, handle_memset_async, CRX_CAP_COPY_ASYNC) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_D2D + 1] = {
+static const ServerHandlerEntry g_handlers[OP_MEMSET_ASYNC + 1] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3046,14 +3138,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_D2D; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_MEMSET_ASYNC; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_D2D ||
+        if (opcode > OP_MEMSET_ASYNC ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

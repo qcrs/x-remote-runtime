@@ -7,6 +7,8 @@ COREX_REMOTE_CUDART_1.0 {
         cudaFree;
         cudaMemcpy;
         cudaMemcpyAsync;
+        cudaMemset;
+        cudaMemsetAsync;
         cudaDeviceSynchronize;
         cudaStreamCreate;
         cudaStreamDestroy;

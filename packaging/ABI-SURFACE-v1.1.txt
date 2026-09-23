@@ -36,6 +36,8 @@ corexRemoteModuleUnload
 corexRemoteRegisterKernel
 
 [COREX_REMOTE_CUDART_1.1]
+cudaMemset
+cudaMemsetAsync
 cudaGetDeviceProperties
 cudaMemGetInfo
 

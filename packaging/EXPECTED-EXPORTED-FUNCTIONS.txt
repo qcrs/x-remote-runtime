@@ -5,6 +5,8 @@ cudaMalloc
 cudaFree
 cudaMemcpy
 cudaMemcpyAsync
+cudaMemset
+cudaMemsetAsync
 cudaDeviceSynchronize
 cudaStreamCreate
 cudaStreamDestroy

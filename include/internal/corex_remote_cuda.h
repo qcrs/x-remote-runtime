@@ -71,6 +71,10 @@ cudaError_t cudaMemcpyAsync(
     cudaMemcpyKind kind,
     cudaStream_t stream);
 
+cudaError_t cudaMemset(void *devPtr, int value, size_t count);
+cudaError_t cudaMemsetAsync(
+    void *devPtr, int value, size_t count, cudaStream_t stream);
+
 cudaError_t cudaDeviceSynchronize(void);
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream);

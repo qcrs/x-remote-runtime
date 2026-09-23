@@ -545,6 +545,38 @@ static int remote_d2d(
     return rpc(g_fd, OP_D2D, payload, sizeof(payload), NULL, NULL);
 }
 
+static int remote_memset(
+    uint64_t allocation_id,
+    uint64_t offset,
+    unsigned char value,
+    uint64_t bytes)
+{
+    unsigned char payload[28];
+    size_t pos = 0;
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u32(payload, &pos, value);
+    corex_protocol_write_u64(payload, &pos, bytes);
+    return rpc(g_fd, OP_MEMSET, payload, sizeof(payload), NULL, NULL);
+}
+
+static int remote_memset_async(
+    uint64_t allocation_id,
+    uint64_t offset,
+    unsigned char value,
+    uint64_t bytes,
+    uint64_t stream_id)
+{
+    unsigned char payload[36];
+    size_t pos = 0;
+    corex_protocol_write_u64(payload, &pos, allocation_id);
+    corex_protocol_write_u64(payload, &pos, offset);
+    corex_protocol_write_u32(payload, &pos, value);
+    corex_protocol_write_u64(payload, &pos, bytes);
+    corex_protocol_write_u64(payload, &pos, stream_id);
+    return rpc(g_fd, OP_MEMSET_ASYNC, payload, sizeof(payload), NULL, NULL);
+}
+
 
 static int remote_upload_module_bytes(
     const char *wire_name,
@@ -2181,6 +2213,61 @@ static cudaError_t cudaMemcpyAsync_locked(
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }
 
+static cudaError_t cudaMemset_locked(void *devPtr, int value, size_t count)
+{
+    if (count == 0)
+        return cudaSuccess;
+    if (!devPtr)
+        G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess)
+        G6E_RETURN(init);
+    ResolvedRemotePtr remote;
+    ResolveResult result = resolve_remote_ptr(devPtr, count, &remote);
+    if (result != RESOLVE_OK)
+        G6E_RETURN(map_resolve_error(result));
+    if (remote_memset(remote.allocation_id, remote.byte_offset,
+                      (unsigned char)value, count) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    printf("G6A_CUDA_MEMSET allocation_id=%llu offset=%llu value=%u bytes=%zu result=PASS\n",
+           (unsigned long long)remote.allocation_id,
+           (unsigned long long)remote.byte_offset,
+           (unsigned)((unsigned char)value), count);
+    return cudaSuccess;
+}
+
+static cudaError_t cudaMemsetAsync_locked(
+    void *devPtr, int value, size_t count, cudaStream_t stream)
+{
+    if (count == 0)
+        return cudaSuccess;
+    if (!devPtr)
+        G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess)
+        G6E_RETURN(init);
+    G6EStreamView sv;
+    if (get_stream_view(stream, &sv) != 0)
+        G6E_RETURN(cudaErrorInvalidResourceHandle);
+    apply_legacy_default_ordering(&sv);
+    ResolvedRemotePtr remote;
+    ResolveResult result = resolve_remote_ptr(devPtr, count, &remote);
+    if (result != RESOLVE_OK)
+        G6E_RETURN(map_resolve_error(result));
+    if (remote_memset_async(remote.allocation_id, remote.byte_offset,
+                            (unsigned char)value, count, sv.stream_id) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    uint64_t sequence = (*sv.next_transfer_seq) + 1;
+    *sv.next_transfer_seq = sequence;
+    sv.frontier[sv.slot_index] = sequence;
+    printf("G6E_CUDA_MEMSET_ASYNC allocation_id=%llu offset=%llu value=%u bytes=%zu stream_id=%llu result=PASS\n",
+           (unsigned long long)remote.allocation_id,
+           (unsigned long long)remote.byte_offset,
+           (unsigned)((unsigned char)value), count,
+           (unsigned long long)sv.stream_id);
+    return cudaSuccess;
+}
+
 static cudaError_t cudaDeviceSynchronize_locked(void)
 {
     cudaError_t init = ensure_runtime();
@@ -3729,6 +3816,25 @@ cudaError_t cudaMemcpyAsync(
         count,
         kind,
         stream);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemset(void *devPtr, int value, size_t count)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaMemset_locked(devPtr, value, count);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemsetAsync(
+    void *devPtr, int value, size_t count, cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaMemsetAsync_locked(devPtr, value, count, stream);
     corex_runtime_context_unlock(context);
     return result;
 }

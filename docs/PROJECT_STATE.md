@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S2 ready** (M1 PASS).
+Current autonomous roadmap position: **M3-S3 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M3-S2 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S1 (`m3/s1: complete memcpy direction matrix`, this state commit) |
-| Current Slice | M3-S2 memset family |
+| Last PASS commit | M3-S2 (`m3/s2: add stream-ordered memset`, this state commit) |
+| Current Slice | M3-S3 stream/event extensions |
 | Blockers | None |
-| Next action | Census/probe memset variants and implement only verified semantics |
+| Next action | Probe and add supported stream/event flags, priorities, and timing queries |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -89,3 +89,11 @@ classification is unambiguous. Explicit remote-VA validation prevents stale or
 remote pointers from being dereferenced as host memory. Bounds, overlap,
 zero-byte, unsupported async-D2D, numerical, and 8×100 multithread tests
 passed. Evidence: `evidence/m3/s1/20260923-020000/`.
+
+M3-S2 implements `cudaMemset` and `cudaMemsetAsync` through real CoreX
+`cuMemsetD8`/`cuMemsetD8Async` primitives using opcodes 29–30. Both paths use
+fake-VA bounds validation; the async path resolves explicit/default streams and
+participates in the client ordering frontier. Nonzero values, offsets,
+zero-byte, explicit-stream ordering, stale/invalid and out-of-bounds cases,
+ABI/protocol, numerical, and 8×100 multithread regressions passed. Evidence:
+`evidence/m3/s2/20260923-024500/`.

@@ -1,0 +1,4 @@
+./scripts/build.sh
+COREX_REMOTE_PORT=50075 OUT=/tmp/m3s2-matrix4 ./scripts/run-memset-matrix.sh
+COREX_REMOTE_PORT=50075 OUT=/tmp/m3s2-baseline SERVER_LOG=/tmp/m3s2-server.log ./scripts/run-integration.sh
+COREX_REMOTE_PORT=50075 OUT=/tmp/m3s2-multithread ./scripts/run-multithread-integration.sh

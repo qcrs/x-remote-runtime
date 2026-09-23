@@ -29,6 +29,9 @@ CUresult corex_backend_host_free(void *pointer);
 CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes);
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes);
 CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes);
+CUresult corex_backend_memset_d8(CUdeviceptr dst, unsigned char value, size_t bytes);
+CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value,
+                                       size_t bytes, CUstream stream);
 CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src,
                                       size_t bytes, CUstream stream);
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src,
