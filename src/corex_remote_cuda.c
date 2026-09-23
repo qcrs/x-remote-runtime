@@ -89,6 +89,8 @@ static _Thread_local int g_last_rpc_transport_error = 0;
 #define g_lifecycle                  (corex_runtime_context_get()->lifecycle)
 #define g_active_session_generation  (corex_runtime_context_get()->active_session_generation)
 #define g_next_session_generation    (corex_runtime_context_get()->next_session_generation)
+#define g_hello_state                (corex_runtime_context_get()->hello_state)
+#define g_hello                      (corex_runtime_context_get()->hello)
 #define g_va_arena                   (corex_runtime_context_get()->va_arena)
 #define g_va_next                    (corex_runtime_context_get()->va_next)
 #define g_allocs                     (corex_runtime_context_get()->allocs)
@@ -185,6 +187,9 @@ static int connect_server(void)
 static void mark_session_failed_locked(const char *reason)
 {
     uint64_t failed_generation = g_active_session_generation;
+
+    g_hello_state = COREX_HELLO_UNDETERMINED;
+    memset(&g_hello, 0, sizeof(g_hello));
 
     if (g_fd >= 0) {
         close(g_fd);
@@ -309,6 +314,13 @@ static int rpc(
 
     uint32_t status = response_header.status;
     uint32_t response_len = response_header.payload_length;
+    if (opcode == OP_HELLO &&
+        (response_len > CRX_HELLO_MAX_BYTES ||
+         (status != ST_OK && response_len != 0))) {
+        g_last_rpc_transport_error = 1;
+        mark_session_failed_locked("MALFORMED_HELLO_HEADER");
+        return -1;
+    }
     unsigned char *response = NULL;
     if (response_len > 0) {
         response = (unsigned char *)malloc(response_len);
@@ -1628,6 +1640,32 @@ static cudaError_t ensure_runtime(void)
 
     g_active_session_generation = g_next_session_generation++;
     g_lifecycle = COREX_RUNTIME_ACTIVE;
+    g_hello_state = COREX_HELLO_UNDETERMINED;
+    memset(&g_hello, 0, sizeof(g_hello));
+
+    unsigned char *hello_payload = NULL;
+    uint32_t hello_length = 0;
+    if (rpc(g_fd, OP_HELLO, NULL, 0, &hello_payload, &hello_length) == 0) {
+        if (corex_protocol_decode_hello(hello_payload, hello_length, &g_hello) != 0) {
+            free(hello_payload);
+            mark_session_failed_locked("MALFORMED_HELLO_PAYLOAD");
+            G6E_RETURN(cudaErrorInitializationError);
+        }
+        free(hello_payload);
+        g_hello_state = COREX_HELLO_NEGOTIATED;
+        printf("M2_S2_HELLO=NEGOTIATED server=%u.%u.%u backend=%u backend_version=%u devices=%u profile=%u capabilities=%u\n",
+               g_hello.server_major, g_hello.server_minor, g_hello.server_patch,
+               g_hello.backend_id, g_hello.backend_version, g_hello.device_count,
+               g_hello.device_profile_id, g_hello.capability_count);
+    } else if (!g_last_rpc_transport_error && g_last_remote_status == ST_BAD_REQUEST) {
+        g_hello_state = COREX_HELLO_LEGACY_V3;
+        g_last_remote_status = ST_OK;
+        printf("M2_S2_HELLO=LEGACY_V3 capabilities=UNKNOWN\n");
+    } else {
+        if (g_fd >= 0)
+            mark_session_failed_locked("HELLO_REJECTED");
+        G6E_RETURN(cudaErrorInitializationError);
+    }
 
     if (!g_shutdown_registered) {
         if (atexit(shutdown_atexit) == 0)
@@ -3490,6 +3528,8 @@ static void corexRemoteRuntimeShutdown_locked(void)
 
     g_active_session_generation = 0;
     g_lifecycle = COREX_RUNTIME_DISCONNECTED;
+    g_hello_state = COREX_HELLO_UNDETERMINED;
+    memset(&g_hello, 0, sizeof(g_hello));
     printf("M1_S2_RUNTIME_SHUTDOWN generation=%llu state=DISCONNECTED result=PASS\n",
            (unsigned long long)closing_generation);
 }

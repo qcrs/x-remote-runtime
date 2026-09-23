@@ -18,6 +18,44 @@ _Static_assert(OP_ALLOC == 1 && OP_H2D == 2 && OP_LAUNCH == 3 &&
                OP_D2H_ASYNC_SUBMIT == 23 && OP_TRANSFER_QUERY == 24 &&
                OP_TRANSFER_WAIT == 25 && OP_GET_DEVICE_INFO == 26,
                "V3 opcode assignment changed");
+_Static_assert(OP_HELLO == 27, "V3 HELLO opcode changed");
+
+static int test_hello(void)
+{
+    CorexHello original = {
+        .server_major = 1,
+        .server_minor = 1,
+        .backend_id = CRX_BACKEND_COREX,
+        .backend_version = 4400,
+        .device_count = 1,
+        .device_profile_id = CRX_DEVICE_PROFILE_COREX_GENERIC,
+        .capability_count = 2,
+        .capabilities = {CRX_CAP_DEVICE_INFO, CRX_CAP_LINEAR_MEMORY},
+    };
+    static const unsigned char prefix[] = {
+        0x43, 0x52, 0x58, 0x39, 0, 0, 0, 3,
+        0, 0, 0, 1, 0, 0, 0, 1,
+    };
+    unsigned char wire[CRX_HELLO_MAX_BYTES];
+    uint32_t length = 0;
+    CorexHello decoded;
+    if (corex_protocol_encode_hello(wire, &original, &length) != 0 ||
+        length != 52 || memcmp(wire, prefix, sizeof(prefix)) != 0 ||
+        corex_protocol_decode_hello(wire, length, &decoded) != 0 ||
+        decoded.backend_version != 4400 || decoded.capability_count != 2 ||
+        decoded.capabilities[1] != CRX_CAP_LINEAR_MEMORY)
+        return -1;
+    if (corex_protocol_decode_hello(wire, length - 1, &decoded) == 0)
+        return -1;
+    wire[43] = 3; /* count now exceeds the encoded list */
+    if (corex_protocol_decode_hello(wire, length, &decoded) == 0)
+        return -1;
+    wire[43] = 2;
+    memcpy(wire + 48, wire + 44, 4); /* duplicate capability */
+    if (corex_protocol_decode_hello(wire, length, &decoded) == 0)
+        return -1;
+    return 0;
+}
 
 int main(void)
 {
@@ -87,9 +125,12 @@ int main(void)
     if (corex_protocol_take_u32(
             scalars, sizeof(scalars), &position, &value32) == 0)
         return 7;
+    if (test_hello() != 0)
+        return 8;
 
     printf("M1_S3_PROTOCOL_GOLDEN=PASS\n");
     printf("M1_S3_PROTOCOL_BOUNDED_DECODE=PASS\n");
     printf("M1_S3_PROTOCOL_OPCODES_1_26=PASS\n");
+    printf("M2_S2_HELLO_CODEC=PASS\n");
     return 0;
 }

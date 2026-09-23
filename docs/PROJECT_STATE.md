@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M2-S2 ready** (M1 PASS).
+Current autonomous roadmap position: **M2-S3 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M2-S2 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M2-S1 (`m2/s1: add CoreX runtime API census`, this state commit) |
-| Current Slice | M2-S2 V3 HELLO and capability discovery |
+| Last PASS commit | M2-S2 (`m2/s2: add optional V3 HELLO`, this state commit) |
+| Current Slice | M2-S3 handler registry |
 | Blockers | None |
-| Next action | Add optional HELLO opcode, stable capability IDs, and legacy V3 detection |
+| Next action | Introduce a reviewable opcode-to-handler registry without changing V3 payloads |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -51,3 +51,10 @@ CoreX 4.4 `cuda_runtime_api.h` plus nine project/compiler ABI entries. All 33
 existing public exports map to ledger rows. Human-reviewed annotations survive
 regeneration, and unknown APIs retain `GROUND_TRUTH_REQUIRED`. Evidence:
 `evidence/m2/s1/20260922-235848/`.
+
+M2-S2 adds optional V3 `OP_HELLO=27` with network-order version/backend/device
+metadata and six stable capability IDs. New client/server negotiation, legacy
+V3 fallback, malformed-payload rejection, ABI/protocol audit, numerical,
+lifecycle, failure/reconnect, session-isolation, and 8×100 multithread gates
+passed. The wire contract is in `docs/HELLO_CAPABILITIES.md`.
+Evidence: `evidence/m2/s2/20260923-001341/`.

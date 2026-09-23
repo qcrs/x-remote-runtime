@@ -63,7 +63,45 @@ typedef enum {
     OP_TRANSFER_QUERY      = 24,
     OP_TRANSFER_WAIT       = 25,
     OP_GET_DEVICE_INFO     = 26,
+    OP_HELLO               = 27,
 } CorexProtocolOpcode;
+
+#define CRX_HELLO_SCHEMA_VERSION 1u
+#define CRX_HELLO_FIXED_WORDS 11u
+#define CRX_HELLO_MAX_CAPABILITIES 32u
+#define CRX_HELLO_MAX_BYTES \
+    ((CRX_HELLO_FIXED_WORDS + CRX_HELLO_MAX_CAPABILITIES) * sizeof(uint32_t))
+
+typedef enum {
+    CRX_BACKEND_COREX = 1,
+} CorexBackendId;
+
+typedef enum {
+    CRX_DEVICE_PROFILE_UNKNOWN = 0,
+    CRX_DEVICE_PROFILE_COREX_GENERIC = 1,
+} CorexDeviceProfileId;
+
+/* Stable semantic feature IDs. Unknown future IDs are safe to ignore. */
+typedef enum {
+    CRX_CAP_DEVICE_INFO = 1,
+    CRX_CAP_LINEAR_MEMORY = 2,
+    CRX_CAP_COPY_SYNC = 3,
+    CRX_CAP_STREAM_EVENT = 4,
+    CRX_CAP_COPY_ASYNC = 5,
+    CRX_CAP_MODULE_KERNEL = 6,
+} CorexCapabilityId;
+
+typedef struct {
+    uint32_t server_major;
+    uint32_t server_minor;
+    uint32_t server_patch;
+    uint32_t backend_id;
+    uint32_t backend_version;
+    uint32_t device_count;
+    uint32_t device_profile_id;
+    uint32_t capability_count;
+    uint32_t capabilities[CRX_HELLO_MAX_CAPABILITIES];
+} CorexHello;
 
 typedef enum {
     ARG_REMOTE_PTR = 1,
@@ -161,6 +199,75 @@ static inline int corex_protocol_take_u64(
     *value_out = corex_protocol_read_u64(data + *position);
     *position += sizeof(uint64_t);
     return 0;
+}
+
+/* HELLO is a bounded sequence of network-order u32 values, never a native ABI. */
+static inline int corex_protocol_encode_hello(
+    unsigned char output[CRX_HELLO_MAX_BYTES],
+    const CorexHello *hello,
+    uint32_t *length_out)
+{
+    if (!output || !hello || !length_out ||
+        hello->capability_count > CRX_HELLO_MAX_CAPABILITIES)
+        return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, CRX_PROTOCOL_MAGIC);
+    corex_protocol_write_u32(output, &position, CRX_PROTOCOL_VERSION);
+    corex_protocol_write_u32(output, &position, CRX_HELLO_SCHEMA_VERSION);
+    corex_protocol_write_u32(output, &position, hello->server_major);
+    corex_protocol_write_u32(output, &position, hello->server_minor);
+    corex_protocol_write_u32(output, &position, hello->server_patch);
+    corex_protocol_write_u32(output, &position, hello->backend_id);
+    corex_protocol_write_u32(output, &position, hello->backend_version);
+    corex_protocol_write_u32(output, &position, hello->device_count);
+    corex_protocol_write_u32(output, &position, hello->device_profile_id);
+    corex_protocol_write_u32(output, &position, hello->capability_count);
+    for (uint32_t i = 0; i < hello->capability_count; ++i)
+        corex_protocol_write_u32(output, &position, hello->capabilities[i]);
+    *length_out = (uint32_t)position;
+    return 0;
+}
+
+static inline int corex_protocol_decode_hello(
+    const unsigned char *input,
+    size_t length,
+    CorexHello *hello_out)
+{
+    uint32_t magic, version, schema;
+    size_t position = 0;
+    if (!hello_out || length < CRX_HELLO_FIXED_WORDS * sizeof(uint32_t) ||
+        length > CRX_HELLO_MAX_BYTES)
+        return -1;
+    memset(hello_out, 0, sizeof(*hello_out));
+    if (corex_protocol_take_u32(input, length, &position, &magic) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &version) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &schema) != 0 ||
+        magic != CRX_PROTOCOL_MAGIC || version != CRX_PROTOCOL_VERSION ||
+        schema != CRX_HELLO_SCHEMA_VERSION ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->server_major) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->server_minor) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->server_patch) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->backend_id) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->backend_version) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->device_count) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->device_profile_id) != 0 ||
+        corex_protocol_take_u32(input, length, &position, &hello_out->capability_count) != 0 ||
+        hello_out->device_count == 0 ||
+        hello_out->capability_count > CRX_HELLO_MAX_CAPABILITIES ||
+        length != (CRX_HELLO_FIXED_WORDS + hello_out->capability_count) * sizeof(uint32_t))
+        return -1;
+    for (uint32_t i = 0; i < hello_out->capability_count; ++i) {
+        uint32_t capability;
+        if (corex_protocol_take_u32(input, length, &position, &capability) != 0 ||
+            capability == 0)
+            return -1;
+        for (uint32_t j = 0; j < i; ++j) {
+            if (hello_out->capabilities[j] == capability)
+                return -1;
+        }
+        hello_out->capabilities[i] = capability;
+    }
+    return position == length ? 0 : -1;
 }
 
 static inline void corex_protocol_encode_request_header(

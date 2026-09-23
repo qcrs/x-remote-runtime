@@ -12,6 +12,7 @@ CUDA_SUCCESS = 0
 CUDA_ERROR_INVALID_DEVICE_POINTER = 17
 CUDA_ERROR_INVALID_RESOURCE_HANDLE = 400
 CUDA_ERROR_UNKNOWN = 999
+CUDA_ERROR_INITIALIZATION_ERROR = 3
 CUDA_MEMCPY_HOST_TO_DEVICE = 1
 CUDA_MEMCPY_DEVICE_TO_HOST = 2
 
@@ -194,8 +195,7 @@ def main():
         server = server_log = None
         expect("pre-protocol-test-disconnect", runtime.cudaDeviceSynchronize(), CUDA_ERROR_UNKNOWN)
         bad_server = start_bad_protocol_server(port)
-        expect("connect-to-bad-protocol-peer", runtime.cudaGetDeviceCount(ctypes.byref(count)), CUDA_SUCCESS)
-        expect("protocol-mismatch-failing-call", runtime.cudaDeviceSynchronize(), CUDA_ERROR_UNKNOWN)
+        expect("protocol-mismatch-during-hello", runtime.cudaGetDeviceCount(ctypes.byref(count)), CUDA_ERROR_INITIALIZATION_ERROR)
         bad_server.join(timeout=5)
         if bad_server.is_alive():
             raise RuntimeError("bad protocol server did not finish")

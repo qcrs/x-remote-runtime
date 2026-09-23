@@ -2,6 +2,7 @@
 #define COREX_RUNTIME_CONTEXT_H
 
 #include "corex_remote_cuda.h"
+#include "corex_protocol.h"
 
 #include <pthread.h>
 #include <stddef.h>
@@ -142,6 +143,12 @@ typedef enum {
     COREX_RUNTIME_FAILED,
 } CorexRuntimeLifecycle;
 
+typedef enum {
+    COREX_HELLO_UNDETERMINED = 0,
+    COREX_HELLO_NEGOTIATED,
+    COREX_HELLO_LEGACY_V3,
+} CorexHelloState;
+
 /*
  * One process owns one client RuntimeContext in M1-S1.  The fields below are
  * the former process-global mutable Runtime/RPC state.  TLS error/device and
@@ -155,6 +162,8 @@ typedef struct CorexRuntimeContext {
     CorexRuntimeLifecycle lifecycle;
     uint64_t active_session_generation;
     uint64_t next_session_generation;
+    CorexHelloState hello_state;
+    CorexHello hello;
 
     unsigned char *va_arena;
     size_t va_next;

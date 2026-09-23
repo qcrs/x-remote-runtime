@@ -133,6 +133,40 @@ typedef union {
 
 static CUcontext g_ctx = NULL;
 static CUdevice g_device = 0;
+static uint32_t g_backend_version = 0;
+static int send_response(int fd, uint32_t opcode, uint32_t req_id,
+                         uint32_t status, const void *payload, uint32_t payload_len);
+
+static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
+{
+    if (payload_len != 0)
+        return send_response(fd, OP_HELLO, req_id, ST_BAD_REQUEST, NULL, 0);
+
+    CorexHello hello = {
+        .server_major = 1,
+        .server_minor = 1,
+        .server_patch = 0,
+        .backend_id = CRX_BACKEND_COREX,
+        .backend_version = g_backend_version,
+        /* The V3 server exposes logical device zero only. */
+        .device_count = 1,
+        .device_profile_id = CRX_DEVICE_PROFILE_COREX_GENERIC,
+        .capability_count = 6,
+        .capabilities = {
+            CRX_CAP_DEVICE_INFO,
+            CRX_CAP_LINEAR_MEMORY,
+            CRX_CAP_COPY_SYNC,
+            CRX_CAP_STREAM_EVENT,
+            CRX_CAP_COPY_ASYNC,
+            CRX_CAP_MODULE_KERNEL,
+        },
+    };
+    unsigned char response[CRX_HELLO_MAX_BYTES];
+    uint32_t length = 0;
+    if (corex_protocol_encode_hello(response, &hello, &length) != 0)
+        return send_response(fd, OP_HELLO, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_HELLO, req_id, ST_OK, response, length);
+}
 
 static void server_session_init(ServerSession *session)
 {
@@ -3052,6 +3086,10 @@ static int serve_session(ServerSession *session, int fd)
                 payload_len);
             break;
 
+        case OP_HELLO:
+            rc = handle_hello(fd, req_id, payload_len);
+            break;
+
         default:
             rc = send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
             break;
@@ -3102,6 +3140,9 @@ int main(void)
     }
 
     g_device = device;
+    int driver_version = 0;
+    if (cuDriverGetVersion(&driver_version) == CUDA_SUCCESS && driver_version > 0)
+        g_backend_version = (uint32_t)driver_version;
 
     memset(device_name, 0, sizeof(device_name));
     r = cuDeviceGetName(device_name, sizeof(device_name), device);

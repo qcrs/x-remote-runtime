@@ -1,0 +1,10 @@
+./scripts/build-sdk.sh
+OUT=/tmp/m2s2-hello-escalated ./scripts/run-hello-integration.sh
+OUT=/tmp/m2s2-baseline-escalated ./scripts/run-integration.sh
+OUT=/tmp/m2s2-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m2s2-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m2s2-multithread ./scripts/run-multithread-integration.sh
+OUT=/tmp/m2s1-failure-escalated ./scripts/run-failure-reconnect-integration.sh
+
+GPU/localhost integration commands used approved out-of-sandbox execution;
+the managed sandbox's cuInit returned 100 and could not reach the external server.
