@@ -1,0 +1,7 @@
+BASELINE_COMMIT=d7815be
+SOURCE_COMMIT=m3/s1: complete memcpy direction matrix (evidence committed atomically)
+NEW_OPCODE=OP_D2D=28,existing CRX9/V3 headers and opcode 1..26 unchanged
+BACKEND=corex_backend_copy_d2d -> cuMemcpyDtoD
+MATRIX=M3_S1_MEMCPY_MATRIX=PASS
+BASELINE=G8C_B_RESULT=PASS,device_identity_app_exit=0
+MULTITHREAD=M1_S1_MULTITHREAD=PASS,M1_S1_RESULT=PASS

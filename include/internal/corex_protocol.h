@@ -64,6 +64,7 @@ typedef enum {
     OP_TRANSFER_WAIT       = 25,
     OP_GET_DEVICE_INFO     = 26,
     OP_HELLO               = 27,
+    OP_D2D                 = 28,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

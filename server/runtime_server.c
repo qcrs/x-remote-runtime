@@ -820,6 +820,44 @@ static int handle_d2h(
     return rc;
 }
 
+static int handle_d2d(
+    ServerSession *session,
+    int fd,
+    uint32_t req_id,
+    const unsigned char *payload,
+    uint32_t len)
+{
+    /* dst_id:u64 + dst_offset:u64 + src_id:u64 + src_offset:u64 + bytes:u64 */
+    if (len != 40)
+        return send_response(fd, OP_D2D, req_id, ST_BAD_REQUEST, NULL, 0);
+    uint64_t dst_id = corex_protocol_read_u64(payload + 0);
+    uint64_t dst_offset = corex_protocol_read_u64(payload + 8);
+    uint64_t src_id = corex_protocol_read_u64(payload + 16);
+    uint64_t src_offset = corex_protocol_read_u64(payload + 24);
+    uint64_t bytes = corex_protocol_read_u64(payload + 32);
+    Allocation *dst = find_allocation(session, dst_id);
+    Allocation *src = find_allocation(session, src_id);
+    if (!dst || !src)
+        return send_response(fd, OP_D2D, req_id, ST_NOT_FOUND, NULL, 0);
+    if (dst_offset > dst->size || src_offset > src->size ||
+        bytes > dst->size - (size_t)dst_offset ||
+        bytes > src->size - (size_t)src_offset)
+        return send_response(fd, OP_D2D, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (dst == src && dst_offset < src_offset + bytes &&
+        src_offset < dst_offset + bytes)
+        return send_response(fd, OP_D2D, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult r = corex_backend_copy_d2d(
+        dst->ptr + (size_t)dst_offset,
+        src->ptr + (size_t)src_offset,
+        (size_t)bytes);
+    if (r != CUDA_SUCCESS)
+        return send_response(fd, OP_D2D, req_id, ST_CUDA_ERROR, NULL, 0);
+    printf("D2D request=%u dst_allocation_id=%llu src_allocation_id=%llu bytes=%llu\n",
+           req_id, (unsigned long long)dst_id, (unsigned long long)src_id,
+           (unsigned long long)bytes);
+    return send_response(fd, OP_D2D, req_id, ST_OK, NULL, 0);
+}
+
 static int handle_free(
     ServerSession *session,
     int fd,
@@ -2989,11 +3027,12 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_TRANSFER_WAIT, handle_transfer_wait, CRX_CAP_COPY_ASYNC) \
     X(OP_GET_DEVICE_INFO, handle_get_device_info, CRX_CAP_DEVICE_INFO) \
     X(OP_HELLO, handle_hello_entry, 0) \
+    X(OP_D2D, handle_d2d, CRX_CAP_COPY_SYNC) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_HELLO + 1] = {
+static const ServerHandlerEntry g_handlers[OP_D2D + 1] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3007,14 +3046,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_HELLO; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_D2D; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_HELLO ||
+        if (opcode > OP_D2D ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

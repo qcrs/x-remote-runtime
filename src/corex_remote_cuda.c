@@ -528,6 +528,23 @@ static int remote_d2h(
     return 0;
 }
 
+static int remote_d2d(
+    uint64_t dst_allocation_id,
+    uint64_t dst_offset,
+    uint64_t src_allocation_id,
+    uint64_t src_offset,
+    uint64_t bytes)
+{
+    unsigned char payload[40];
+    size_t pos = 0;
+    corex_protocol_write_u64(payload, &pos, dst_allocation_id);
+    corex_protocol_write_u64(payload, &pos, dst_offset);
+    corex_protocol_write_u64(payload, &pos, src_allocation_id);
+    corex_protocol_write_u64(payload, &pos, src_offset);
+    corex_protocol_write_u64(payload, &pos, bytes);
+    return rpc(g_fd, OP_D2D, payload, sizeof(payload), NULL, NULL);
+}
+
 
 static int remote_upload_module_bytes(
     const char *wire_name,
@@ -1121,6 +1138,15 @@ static ResolveResult resolve_remote_ptr(
     }
 
     return RESOLVE_INVALID;
+}
+
+static int pointer_in_remote_arena(const void *ptr)
+{
+    if (!ptr || !g_va_arena)
+        return 0;
+    uintptr_t value = (uintptr_t)ptr;
+    uintptr_t base = (uintptr_t)g_va_arena;
+    return value >= base && value - base < G6A_VA_ARENA_BYTES;
 }
 
 static struct corexCudaStreamHandle *resolve_stream_handle(cudaStream_t stream)
@@ -1866,10 +1892,25 @@ static cudaError_t cudaMemcpy_locked(
     if (init != cudaSuccess)
         G6E_RETURN(init);
 
+    int dst_remote = pointer_in_remote_arena(dst);
+    int src_remote = pointer_in_remote_arena(src);
+    if (kind == cudaMemcpyDefault) {
+        if (dst_remote && src_remote)
+            kind = cudaMemcpyDeviceToDevice;
+        else if (dst_remote)
+            kind = cudaMemcpyHostToDevice;
+        else if (src_remote)
+            kind = cudaMemcpyDeviceToHost;
+        else
+            kind = cudaMemcpyHostToHost;
+    }
+
     ResolvedRemotePtr remote;
     ResolveResult rr;
 
     if (kind == cudaMemcpyHostToDevice) {
+        if (src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
         rr = resolve_remote_ptr(dst, count, &remote);
         if (rr != RESOLVE_OK)
             G6E_RETURN(map_resolve_error(rr));
@@ -1897,6 +1938,8 @@ static cudaError_t cudaMemcpy_locked(
     }
 
     if (kind == cudaMemcpyDeviceToHost) {
+        if (dst_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
         rr = resolve_remote_ptr(src, count, &remote);
         if (rr != RESOLVE_OK)
             G6E_RETURN(map_resolve_error(rr));
@@ -1923,10 +1966,44 @@ static cudaError_t cudaMemcpy_locked(
         return cudaSuccess;
     }
 
-    if (kind == cudaMemcpyHostToHost ||
-        kind == cudaMemcpyDeviceToDevice ||
-        kind == cudaMemcpyDefault)
-        G6E_RETURN(cudaErrorNotSupported);
+    if (kind == cudaMemcpyHostToHost) {
+        if (dst_remote || src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
+        memmove(dst, src, count);
+        return cudaSuccess;
+    }
+
+    if (kind == cudaMemcpyDeviceToDevice) {
+        if (!dst_remote || !src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
+        ResolvedRemotePtr dst_remote_ptr;
+        ResolvedRemotePtr src_remote_ptr;
+        ResolveResult dst_result = resolve_remote_ptr(dst, count, &dst_remote_ptr);
+        if (dst_result != RESOLVE_OK)
+            G6E_RETURN(map_resolve_error(dst_result));
+        ResolveResult src_result = resolve_remote_ptr(src, count, &src_remote_ptr);
+        if (src_result != RESOLVE_OK)
+            G6E_RETURN(map_resolve_error(src_result));
+        if (dst_remote_ptr.allocation_id == src_remote_ptr.allocation_id &&
+            dst_remote_ptr.byte_offset < src_remote_ptr.byte_offset + count &&
+            src_remote_ptr.byte_offset < dst_remote_ptr.byte_offset + count)
+            G6E_RETURN(cudaErrorInvalidValue);
+        size_t done = 0;
+        while (done < count) {
+            size_t chunk = count - done;
+            if (chunk > (size_t)G6A_COPY_CHUNK)
+                chunk = (size_t)G6A_COPY_CHUNK;
+            if (remote_d2d(dst_remote_ptr.allocation_id,
+                           dst_remote_ptr.byte_offset + done,
+                           src_remote_ptr.allocation_id,
+                           src_remote_ptr.byte_offset + done,
+                           chunk) != 0)
+                G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+            done += chunk;
+        }
+        printf("G6A_CUDA_MEMCPY kind=D2D bytes=%zu result=PASS\n", count);
+        return cudaSuccess;
+    }
 
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }
@@ -1952,10 +2029,25 @@ static cudaError_t cudaMemcpyAsync_locked(
         G6E_RETURN(cudaErrorInvalidResourceHandle);
     apply_legacy_default_ordering(&sv);
 
+    int dst_remote = pointer_in_remote_arena(dst);
+    int src_remote = pointer_in_remote_arena(src);
+    if (kind == cudaMemcpyDefault) {
+        if (dst_remote && src_remote)
+            kind = cudaMemcpyDeviceToDevice;
+        else if (dst_remote)
+            kind = cudaMemcpyHostToDevice;
+        else if (src_remote)
+            kind = cudaMemcpyDeviceToHost;
+        else
+            kind = cudaMemcpyHostToHost;
+    }
+
     ResolvedRemotePtr remote;
     ResolveResult rr;
 
     if (kind == cudaMemcpyHostToDevice) {
+        if (src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
         rr = resolve_remote_ptr(dst, count, &remote);
         if (rr != RESOLVE_OK)
             G6E_RETURN(map_resolve_error(rr));
@@ -2014,6 +2106,8 @@ static cudaError_t cudaMemcpyAsync_locked(
     }
 
     if (kind == cudaMemcpyDeviceToHost) {
+        if (dst_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
         rr = resolve_remote_ptr(src, count, &remote);
         if (rr != RESOLVE_OK)
             G6E_RETURN(map_resolve_error(rr));
@@ -2071,10 +2165,18 @@ static cudaError_t cudaMemcpyAsync_locked(
         return cudaSuccess;
     }
 
-    if (kind == cudaMemcpyHostToHost ||
-        kind == cudaMemcpyDeviceToDevice ||
-        kind == cudaMemcpyDefault)
+    if (kind == cudaMemcpyHostToHost) {
+        if (dst_remote || src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
+        memmove(dst, src, count);
+        return cudaSuccess;
+    }
+
+    if (kind == cudaMemcpyDeviceToDevice) {
+        if (!dst_remote || !src_remote)
+            G6E_RETURN(cudaErrorInvalidValue);
         G6E_RETURN(cudaErrorNotSupported);
+    }
 
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }

@@ -17,6 +17,7 @@ CUresult corex_backend_host_alloc(void **pointer, size_t bytes) { return cuMemAl
 CUresult corex_backend_host_free(void *pointer) { return cuMemFreeHost(pointer); }
 CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes) { return cuMemcpyHtoD(dst, src, bytes); }
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoH(dst, src, bytes); }
+CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoD(dst, src, bytes); }
 CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src, size_t bytes, CUstream stream) { return cuMemcpyHtoDAsync(dst, src, bytes, stream); }
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src, size_t bytes, CUstream stream) { return cuMemcpyDtoHAsync(dst, src, bytes, stream); }
 CUresult corex_backend_stream_create(CUstream *stream, unsigned int flags) { return cuStreamCreate(stream, flags); }

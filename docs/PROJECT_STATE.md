@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S1 ready** (M1 PASS).
+Current autonomous roadmap position: **M3-S2 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M3-S1 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M2-S5 (`m2/s5: add deterministic API schema generator`, this state commit) |
-| Current Slice | M3-S1 linear memcpy completeness |
+| Last PASS commit | M3-S1 (`m3/s1: complete memcpy direction matrix`, this state commit) |
+| Current Slice | M3-S2 memset family |
 | Blockers | None |
-| Next action | Complete memcpy direction/validation coverage using verified CoreX capabilities |
+| Next action | Census/probe memset variants and implement only verified semantics |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -81,3 +81,11 @@ in metadata, bounded wire-payload adapters, handler/capability metadata, and a
 test skeleton. Unsupported schema values fail generation; two regenerations
 are byte-identical. Generated sync/stream-query/event-query positive and
 negative parity tests passed. Evidence: `evidence/m2/s5/20260923-013000/`.
+
+M3-S1 completes synchronous memcpy direction coverage. H2H uses local
+`memmove`; H2D and D2H retain the proven chunked paths; D2D uses a real
+`cuMemcpyDtoD` backend opcode; `cudaMemcpyDefault` is enabled only when fake-VA
+classification is unambiguous. Explicit remote-VA validation prevents stale or
+remote pointers from being dereferenced as host memory. Bounds, overlap,
+zero-byte, unsupported async-D2D, numerical, and 8×100 multithread tests
+passed. Evidence: `evidence/m3/s1/20260923-020000/`.
