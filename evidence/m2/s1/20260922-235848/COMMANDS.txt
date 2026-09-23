@@ -1,0 +1,9 @@
+./scripts/census-corex-runtime-api.py --corex /usr/local/corex-4.4.0 --annotations /home/lvtong/design-handoff/x-remote-runtime-luna-max-full-implementation-handoff/cuda-api-implementation-ledger.csv --output compat/cuda-api-ledger.csv
+./scripts/census-corex-runtime-api.py --corex /usr/local/corex-4.4.0 --output compat/cuda-api-ledger.csv
+sha256sum compat/cuda-api-ledger.csv
+COREX=/usr/local/corex-4.4.0 ./scripts/build-sdk.sh
+OUT=/tmp/m2s1-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m2s1-baseline SERVER_LOG=/tmp/m2s1-server.log ./scripts/run-integration.sh
+OUT=/tmp/m2s1-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m2s1-multithread ./scripts/run-multithread-integration.sh
+OUT=/tmp/m2s1-failure-escalated ./scripts/run-failure-reconnect-integration.sh

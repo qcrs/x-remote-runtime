@@ -1,0 +1,9 @@
+scripts/census-corex-runtime-api.py
+compat/cuda-api-ledger.csv
+compat/README.md
+docs/PROJECT_STATE.md
+evidence/m2/s1/20260922-235848/*
+
+SEMANTIC_SCOPE=CoreX header census and reviewed compatibility ledger
+PUBLIC_ABI_CHANGE=NONE
+WIRE_CHANGE=NONE

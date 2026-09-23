@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M2-S1 ready** (M1 PASS).
+Current autonomous roadmap position: **M2-S2 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M2-S1 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M1-S5 (`m1/s5: make transport failure a session event`, this state commit) |
-| Current Slice | M2-S1 CoreX 4.4 API census and canonical compatibility ledger |
+| Last PASS commit | M2-S1 (`m2/s1: add CoreX runtime API census`, this state commit) |
+| Current Slice | M2-S2 V3 HELLO and capability discovery |
 | Blockers | None |
-| Next action | Build a deterministic CoreX-header census tool that preserves reviewed semantic annotations |
+| Next action | Add optional HELLO opcode, stable capability IDs, and legacy V3 detection |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -45,3 +45,9 @@ failed-session state. The failed generation is invalidated without replay;
 lazy reconnect creates a clean generation. Idle/live-object server kills and a
 malformed peer were exercised, followed by fresh numerical work. M1 now passes
 G0-G6 and G8. Evidence: `evidence/m1/s5/20260922-141618/`.
+
+M2-S1 produced a deterministic census of 266 declarations in the installed
+CoreX 4.4 `cuda_runtime_api.h` plus nine project/compiler ABI entries. All 33
+existing public exports map to ledger rows. Human-reviewed annotations survive
+regeneration, and unknown APIs retain `GROUND_TRUTH_REQUIRED`. Evidence:
+`evidence/m2/s1/20260922-235848/`.

@@ -1,0 +1,2 @@
+BASELINE_COMMIT=162faaec4df4c13e2983c8537429abeebaad4299
+SLICE_COMMIT=m2/s1: add CoreX runtime API census (evidence committed atomically)
