@@ -1,0 +1,9 @@
+BASELINE_COMMIT=da3f71b
+SOURCE_COMMIT=m2/s5: add deterministic API schema generator (evidence committed atomically)
+SCHEMA=3 APIs: cudaDeviceSynchronize, cudaStreamQuery, cudaEventQuery
+FIELDS=direction,type,limit,object reference,opcode,capability ID
+GENERATED_OUTPUT=include/generated/corex_api_schema.h,tests/generated/corex_api_schema_test.c
+BUILD_OUTPUT=M2_S5_GENERATED_SCHEMA_TEST=PASS,G8C_BUILD=PASS
+REPRODUCIBILITY=M2_S5_SCHEMA_REPRODUCIBLE=PASS
+NEGATIVE_SCHEMA=unsupported opcode rejected before output
+WIRE_PARITY=M2_S5_GENERATED_API_INTEGRATION=PASS

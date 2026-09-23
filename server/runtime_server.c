@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <cuda.h>
 #include "corex_backend.h"
+#include "corex_api_schema.h"
 #include "corex_metadata.h"
 #include "corex_protocol.h"
 
@@ -3011,6 +3012,12 @@ static int server_registry_validate(void)
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
+    for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
+        uint32_t opcode = corex_generated_apis[i].opcode;
+        if (opcode > OP_HELLO ||
+            g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
+            return -1;
+    }
     return 0;
 }
 
@@ -3064,10 +3071,20 @@ static int serve_session(ServerSession *session, int fd)
             }
         }
 
+        int generated_schema_error = 0;
+        for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
+            if (corex_generated_apis[i].opcode == opcode) {
+                generated_schema_error =
+                    corex_generated_validate_payload(opcode, payload_len) != 0;
+                break;
+            }
+        }
         const ServerHandlerEntry *entry =
             opcode < sizeof(g_handlers) / sizeof(g_handlers[0]) &&
             g_handlers[opcode].handler ? &g_handlers[opcode] : NULL;
-        int rc = entry
+        int rc = generated_schema_error
+            ? send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0)
+            : entry
             ? entry->handler(session, fd, req_id, payload, payload_len)
             : send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
         int close_after_response = opcode == OP_CLOSE && payload_len == 0;

@@ -30,6 +30,11 @@ mkdir -p \
     "$DIST/lib" \
     "$DIST/share/corex-remote-cudart"
 
+python3 "$ROOT/scripts/generate-api-schema.py" \
+    --schema "$ROOT/schema/corex_api_schema.json" \
+    --output "$ROOT/include/generated/corex_api_schema.h" \
+    --test-output "$ROOT/tests/generated/corex_api_schema_test.c"
+
 GCC_MAJOR="$("$GXX" -dumpfullversion -dumpversion | cut -d. -f1)"
 EXTRA=()
 [[ -d "/usr/include/c++/$GCC_MAJOR" ]] &&
@@ -50,10 +55,17 @@ echo "GXX=$GXX"
     -o "$BUILD/protocol_golden_test"
 "$BUILD/protocol_golden_test" | tee "$BUILD/PROTOCOL-GOLDEN.txt"
 
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 \
+    -I"$INTERNAL" -I"$ROOT/include/generated" \
+    "$ROOT/tests/generated/corex_api_schema_test.c" \
+    -o "$BUILD/corex_api_schema_test"
+"$BUILD/corex_api_schema_test" | tee "$BUILD/API-SCHEMA-GENERATED.txt"
+
 "$CC" \
     -O2 -Wall -Wextra -Werror -std=gnu11 \
     -I"$COREX/include" \
     -I"$INTERNAL" \
+    -I"$ROOT/include/generated" \
     "$SERVER/runtime_server.c" \
     "$SERVER/corex_backend.c" \
     "$SRC/corex_metadata.c" \

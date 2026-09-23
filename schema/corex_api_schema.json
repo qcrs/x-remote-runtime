@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "apis": [
+    {
+      "name": "cudaDeviceSynchronize",
+      "opcode": "OP_SYNC",
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "wire_payload_bytes": 0,
+      "parameters": []
+    },
+    {
+      "name": "cudaStreamQuery",
+      "opcode": "OP_STREAM_QUERY",
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "wire_payload_bytes": 8,
+      "parameters": [
+        {"name": "stream", "direction": "in", "type": "u64", "object": "stream_id", "max_bytes": 8}
+      ]
+    },
+    {
+      "name": "cudaEventQuery",
+      "opcode": "OP_EVENT_QUERY",
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "wire_payload_bytes": 8,
+      "parameters": [
+        {"name": "event", "direction": "in", "type": "u64", "object": "event_id", "max_bytes": 8}
+      ]
+    }
+  ]
+}

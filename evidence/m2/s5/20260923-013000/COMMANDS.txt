@@ -1,0 +1,3 @@
+./scripts/build.sh
+OUT=/tmp/m2s5-schema ./scripts/test-api-schema.sh
+COREX_REMOTE_PORT=50073 ./scripts/run-generated-api-integration.sh
