@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <cuda.h>
+#include "corex_backend.h"
 #include "corex_metadata.h"
 #include "corex_protocol.h"
 
@@ -399,10 +400,10 @@ static void release_transfer(TransferEntry *entry)
         return;
 
     if (entry->done_event)
-        cuEventDestroy(entry->done_event);
+        corex_backend_event_destroy(entry->done_event);
 
     if (entry->host_buffer)
-        cuMemFreeHost(entry->host_buffer);
+        corex_backend_host_free(entry->host_buffer);
 
     memset(entry, 0, sizeof(*entry));
 }
@@ -437,7 +438,7 @@ static int lifetime_context_barrier(
     uint64_t resource_id)
 {
     CUresult r =
-        cuCtxSynchronize();
+        corex_backend_context_sync();
 
     printf(
         "LIFETIME_BARRIER op=%s "
@@ -463,7 +464,7 @@ static int lifetime_stream_barrier(
     CUstream stream)
 {
     CUresult r =
-        cuStreamSynchronize(
+        corex_backend_stream_sync(
             stream);
 
     printf(
@@ -539,7 +540,7 @@ static void cleanup_session(ServerSession *session)
         if (!session->streams[i].used)
             continue;
 
-        CUresult sr = cuStreamSynchronize(session->streams[i].stream);
+        CUresult sr = corex_backend_stream_sync(session->streams[i].stream);
 
         printf(
             "cleanup stream_id=%llu sync_rc=%d\n",
@@ -559,7 +560,7 @@ static void cleanup_session(ServerSession *session)
             continue;
 
         CUresult tr =
-            cuEventSynchronize(
+            corex_backend_event_sync(
                 session->transfers[i].done_event);
 
         printf(
@@ -580,7 +581,7 @@ static void cleanup_session(ServerSession *session)
         if (!session->events[i].used)
             continue;
 
-        CUresult er = cuEventDestroy(session->events[i].event);
+        CUresult er = corex_backend_event_destroy(session->events[i].event);
 
         printf(
             "cleanup event_id=%llu destroy_rc=%d\n",
@@ -594,7 +595,7 @@ static void cleanup_session(ServerSession *session)
         if (!session->streams[i].used)
             continue;
 
-        CUresult dr = cuStreamDestroy(session->streams[i].stream);
+        CUresult dr = corex_backend_stream_destroy(session->streams[i].stream);
 
         printf(
             "cleanup stream_id=%llu destroy_rc=%d\n",
@@ -605,7 +606,7 @@ static void cleanup_session(ServerSession *session)
     }
 
     if (g_ctx) {
-        CUresult r = cuCtxSynchronize();
+        CUresult r = corex_backend_context_sync();
         printf("cleanup_sync rc=%d\n", (int)r);
     }
 
@@ -618,7 +619,7 @@ static void cleanup_session(ServerSession *session)
             (unsigned long long)session->allocations[i].id);
 
         if (session->allocations[i].ptr)
-            cuMemFree(session->allocations[i].ptr);
+            corex_backend_mem_free(session->allocations[i].ptr);
 
         memset(&session->allocations[i], 0, sizeof(session->allocations[i]));
     }
@@ -646,7 +647,7 @@ static void cleanup_session(ServerSession *session)
             session->modules[i].name);
 
         if (session->modules[i].module)
-            cuModuleUnload(session->modules[i].module);
+            corex_backend_module_unload(session->modules[i].module);
 
         free(session->modules[i].image);
 
@@ -682,7 +683,7 @@ static int handle_alloc(
     if (!slot)
         return send_response(fd, OP_ALLOC, req_id, ST_NO_RESOURCE, NULL, 0);
 
-    CUresult r = cuMemAlloc(&slot->ptr, (size_t)size64);
+    CUresult r = corex_backend_mem_alloc(&slot->ptr, (size_t)size64);
 
     if (r != CUDA_SUCCESS) {
         memset(slot, 0, sizeof(*slot));
@@ -736,7 +737,7 @@ static int handle_h2d(
         bytes64 > a->size - (size_t)offset64)
         return send_response(fd, OP_H2D, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    CUresult r = cuMemcpyHtoD(
+    CUresult r = corex_backend_copy_h2d(
         a->ptr + (size_t)offset64,
         payload + 24,
         (size_t)bytes64);
@@ -789,7 +790,7 @@ static int handle_d2h(
             return send_response(fd, OP_D2H, req_id, ST_INTERNAL, NULL, 0);
     }
 
-    CUresult r = cuMemcpyDtoH(
+    CUresult r = corex_backend_copy_d2h(
         out,
         a->ptr + (size_t)offset64,
         (size_t)bytes64);
@@ -859,7 +860,7 @@ static int handle_free(
     }
 
     CUresult r =
-        cuMemFree(
+        corex_backend_mem_free(
             a->ptr);
 
     if (r != CUDA_SUCCESS)
@@ -888,7 +889,7 @@ static int handle_sync(
     if (len != 0)
         return send_response(fd, OP_SYNC, req_id, ST_BAD_REQUEST, NULL, 0);
 
-    CUresult r = cuCtxSynchronize();
+    CUresult r = corex_backend_context_sync();
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_SYNC, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -996,7 +997,7 @@ static int handle_upload_module(
         parsed_metadata.kernel_count);
 
     CUmodule module = NULL;
-    CUresult r = cuModuleLoadData(&module, image);
+    CUresult r = corex_backend_module_load(&module, image);
 
     if (r != CUDA_SUCCESS) {
         free(image);
@@ -1006,7 +1007,7 @@ static int handle_upload_module(
     ModuleEntry *slot = new_module_slot(session);
 
     if (!slot) {
-        cuModuleUnload(module);
+        corex_backend_module_unload(module);
         free(image);
         return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_NO_RESOURCE, NULL, 0);
     }
@@ -1084,7 +1085,7 @@ static int handle_get_kernel(
     }
 
     CUfunction function = NULL;
-    CUresult r = cuModuleGetFunction(&function, m->module, name);
+    CUresult r = corex_backend_module_function(&function, m->module, name);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NOT_FOUND, NULL, 0);
@@ -1162,7 +1163,7 @@ static int handle_unload_module(
 
     invalidate_module_kernels(session, module_id);
 
-    CUresult r = cuModuleUnload(m->module);
+    CUresult r = corex_backend_module_unload(m->module);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_UNLOAD_MODULE, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -1206,7 +1207,7 @@ static int handle_create_stream(
     if (!slot)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_NO_RESOURCE, NULL, 0);
 
-    CUresult r = cuStreamCreate(&slot->stream, flags);
+    CUresult r = corex_backend_stream_create(&slot->stream, flags);
 
     if (r != CUDA_SUCCESS) {
         memset(slot, 0, sizeof(*slot));
@@ -1245,7 +1246,7 @@ static int handle_stream_query(
     if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_QUERY, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuStreamQuery(stream);
+    CUresult r = corex_backend_stream_query(stream);
     uint32_t state;
 
     if (r == CUDA_SUCCESS) {
@@ -1294,7 +1295,7 @@ static int handle_stream_sync(
     if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_STREAM_SYNC, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuStreamSynchronize(stream);
+    CUresult r = corex_backend_stream_sync(stream);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_STREAM_SYNC, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -1346,7 +1347,7 @@ static int handle_destroy_stream(
     }
 
     CUresult r =
-        cuStreamDestroy(
+        corex_backend_stream_destroy(
             entry->stream);
 
     if (r != CUDA_SUCCESS)
@@ -1406,7 +1407,7 @@ static int handle_create_event(
     if (!slot)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_NO_RESOURCE, NULL, 0);
 
-    CUresult r = cuEventCreate(&slot->event, flags);
+    CUresult r = corex_backend_event_create(&slot->event, flags);
 
     if (r != CUDA_SUCCESS) {
         memset(slot, 0, sizeof(*slot));
@@ -1453,7 +1454,7 @@ static int handle_event_record(
     if (resolve_stream_id(session, stream_id, &stream) != 0)
         return send_response(fd, OP_EVENT_RECORD, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuEventRecord(event_entry->event, stream);
+    CUresult r = corex_backend_event_record(event_entry->event, stream);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_EVENT_RECORD, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -1483,7 +1484,7 @@ static int handle_event_query(
     if (!entry)
         return send_response(fd, OP_EVENT_QUERY, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuEventQuery(entry->event);
+    CUresult r = corex_backend_event_query(entry->event);
     uint32_t state;
 
     if (r == CUDA_SUCCESS) {
@@ -1533,7 +1534,7 @@ static int handle_event_sync(
     if (!entry)
         return send_response(fd, OP_EVENT_SYNC, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuEventSynchronize(entry->event);
+    CUresult r = corex_backend_event_sync(entry->event);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_EVENT_SYNC, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -1573,7 +1574,7 @@ static int handle_stream_wait_event(
     if (!event_entry)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_NOT_FOUND, NULL, 0);
 
-    CUresult r = cuStreamWaitEvent(stream, event_entry->event, flags);
+    CUresult r = corex_backend_stream_wait_event(stream, event_entry->event, flags);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_STREAM_WAIT_EVENT, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -1608,7 +1609,7 @@ static int handle_destroy_event(
      *
      * Event lifetime is stronger than merely waiting for the
      * producer event to become complete. Another stream may
-     * already contain cuStreamWaitEvent(event) followed by
+     * already contain corex_backend_stream_wait_event(event) followed by
      * downstream work.
      *
      * The V1 correctness policy therefore uses a context
@@ -1630,7 +1631,7 @@ static int handle_destroy_event(
     }
 
     CUresult r =
-        cuEventDestroy(
+        corex_backend_event_destroy(
             entry->event);
 
     if (r != CUDA_SUCCESS)
@@ -1954,7 +1955,7 @@ static int handle_launch_generic(
 
     printf("ABI_VALIDATE kernel=%s argc=%u result=PASS\n", k->name, argc);
 
-    CUresult r = cuLaunchKernel(
+    CUresult r = corex_backend_launch(
         k->function,
         grid_x, grid_y, grid_z,
         block_x, block_y, block_z,
@@ -2102,7 +2103,7 @@ static int handle_h2d_async_submit(
         (size_t)bytes64;
 
     CUresult r =
-        cuMemAllocHost(
+        corex_backend_host_alloc(
             &entry->host_buffer,
             entry->bytes);
 
@@ -2124,7 +2125,7 @@ static int handle_h2d_async_submit(
         entry->bytes);
 
     r =
-        cuEventCreate(
+        corex_backend_event_create(
             &entry->done_event,
             CU_EVENT_DEFAULT);
 
@@ -2141,7 +2142,7 @@ static int handle_h2d_async_submit(
     }
 
     r =
-        cuMemcpyHtoDAsync(
+        corex_backend_copy_h2d_async(
             a->ptr + (size_t)offset64,
             entry->host_buffer,
             entry->bytes,
@@ -2160,7 +2161,7 @@ static int handle_h2d_async_submit(
     }
 
     r =
-        cuEventRecord(
+        corex_backend_event_record(
             entry->done_event,
             stream);
 
@@ -2169,7 +2170,7 @@ static int handle_h2d_async_submit(
          * H2D may already be in flight and still reference the
          * pinned staging buffer. Synchronize before freeing it.
          */
-        (void)cuStreamSynchronize(stream);
+        (void)corex_backend_stream_sync(stream);
         release_transfer(entry);
 
         return send_response(
@@ -2321,7 +2322,7 @@ static int handle_d2h_async_submit(
         (size_t)bytes64;
 
     CUresult r =
-        cuMemAllocHost(
+        corex_backend_host_alloc(
             &entry->host_buffer,
             entry->bytes);
 
@@ -2338,7 +2339,7 @@ static int handle_d2h_async_submit(
     }
 
     r =
-        cuEventCreate(
+        corex_backend_event_create(
             &entry->done_event,
             CU_EVENT_DEFAULT);
 
@@ -2355,7 +2356,7 @@ static int handle_d2h_async_submit(
     }
 
     r =
-        cuMemcpyDtoHAsync(
+        corex_backend_copy_d2h_async(
             entry->host_buffer,
             a->ptr + (size_t)offset64,
             entry->bytes,
@@ -2374,7 +2375,7 @@ static int handle_d2h_async_submit(
     }
 
     r =
-        cuEventRecord(
+        corex_backend_event_record(
             entry->done_event,
             stream);
 
@@ -2382,7 +2383,7 @@ static int handle_d2h_async_submit(
         /*
          * D2H may already be writing the pinned buffer.
          */
-        (void)cuStreamSynchronize(stream);
+        (void)corex_backend_stream_sync(stream);
         release_transfer(entry);
 
         return send_response(
@@ -2465,7 +2466,7 @@ static int handle_transfer_query(
             0);
 
     CUresult r =
-        cuEventQuery(
+        corex_backend_event_query(
             entry->done_event);
 
     uint32_t state;
@@ -2557,7 +2558,7 @@ static int handle_transfer_wait(
             0);
 
     CUresult r =
-        cuEventSynchronize(
+        corex_backend_event_sync(
             entry->done_event);
 
     if (r != CUDA_SUCCESS)
@@ -2620,7 +2621,7 @@ static int g8c_query_attr(
     uint32_t *value_out)
 {
     int value = 0;
-    CUresult r = cuDeviceGetAttribute(
+    CUresult r = corex_backend_device_attribute(
         &value,
         attr,
         g_device);
@@ -2663,7 +2664,7 @@ static int handle_get_device_info(
     char name[256];
     memset(name, 0, sizeof(name));
 
-    CUresult r = cuDeviceGetName(
+    CUresult r = corex_backend_device_name(
         name,
         (int)sizeof(name),
         g_device);
@@ -2677,7 +2678,7 @@ static int handle_get_device_info(
             0);
 
     size_t total_global_mem = 0;
-    r = cuDeviceTotalMem(
+    r = corex_backend_device_total_mem(
         &total_global_mem,
         g_device);
     if (r != CUDA_SUCCESS)
@@ -2691,7 +2692,7 @@ static int handle_get_device_info(
 
     size_t free_mem = 0;
     size_t context_total_mem = 0;
-    r = cuMemGetInfo(
+    r = corex_backend_mem_info(
         &free_mem,
         &context_total_mem);
     if (r != CUDA_SUCCESS)
@@ -3097,7 +3098,7 @@ int main(void)
     CUdevice device = 0;
     char device_name[256];
 
-    CUresult r = cuInit(0);
+    CUresult r = corex_backend_init();
 
     if (r != CUDA_SUCCESS) {
         fprintf(stderr, "cuInit failed rc=%d\n", (int)r);
@@ -3105,14 +3106,14 @@ int main(void)
     }
 
     int device_count = 0;
-    r = cuDeviceGetCount(&device_count);
+    r = corex_backend_device_count(&device_count);
 
     if (r != CUDA_SUCCESS || device_count < 1) {
         fprintf(stderr, "no CoreX device rc=%d count=%d\n", (int)r, device_count);
         return 1;
     }
 
-    r = cuDeviceGet(&device, 0);
+    r = corex_backend_device_get(&device, 0);
 
     if (r != CUDA_SUCCESS) {
         fprintf(stderr, "cuDeviceGet failed rc=%d\n", (int)r);
@@ -3121,18 +3122,18 @@ int main(void)
 
     g_device = device;
     int driver_version = 0;
-    if (cuDriverGetVersion(&driver_version) == CUDA_SUCCESS && driver_version > 0)
+    if (corex_backend_driver_version(&driver_version) == CUDA_SUCCESS && driver_version > 0)
         g_backend_version = (uint32_t)driver_version;
 
     memset(device_name, 0, sizeof(device_name));
-    r = cuDeviceGetName(device_name, sizeof(device_name), device);
+    r = corex_backend_device_name(device_name, sizeof(device_name), device);
 
     if (r != CUDA_SUCCESS) {
         fprintf(stderr, "cuDeviceGetName failed rc=%d\n", (int)r);
         return 1;
     }
 
-    r = cuCtxCreate(&g_ctx, 0, device);
+    r = corex_backend_context_create(&g_ctx, 0, device);
 
     if (r != CUDA_SUCCESS) {
         fprintf(stderr, "cuCtxCreate failed rc=%d\n", (int)r);
@@ -3143,7 +3144,7 @@ int main(void)
 
     if (listen_fd < 0) {
         perror("socket");
-        cuCtxDestroy(g_ctx);
+        corex_backend_context_destroy(g_ctx);
         return 1;
     }
 
@@ -3170,14 +3171,14 @@ int main(void)
 
         perror("bind");
         close(listen_fd);
-        cuCtxDestroy(g_ctx);
+        corex_backend_context_destroy(g_ctx);
         return 1;
     }
 
     if (listen(listen_fd, 8) != 0) {
         perror("listen");
         close(listen_fd);
-        cuCtxDestroy(g_ctx);
+        corex_backend_context_destroy(g_ctx);
         return 1;
     }
 
@@ -3226,7 +3227,7 @@ int main(void)
     close(listen_fd);
 
     if (g_ctx) {
-        cuCtxDestroy(g_ctx);
+        corex_backend_context_destroy(g_ctx);
         g_ctx = NULL;
     }
 

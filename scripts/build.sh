@@ -55,6 +55,7 @@ echo "GXX=$GXX"
     -I"$COREX/include" \
     -I"$INTERNAL" \
     "$SERVER/runtime_server.c" \
+    "$SERVER/corex_backend.c" \
     "$SRC/corex_metadata.c" \
     -L"$COREX/lib64" \
     -Wl,-rpath,"$COREX/lib64" \

@@ -1,0 +1,9 @@
+./scripts/build-sdk.sh
+OUT=/tmp/m2s4-seam ./scripts/test-backend-seam.sh
+OUT=/tmp/m2s4-baseline SERVER_LOG=/tmp/m2s4-server.log ./scripts/run-integration.sh
+OUT=/tmp/m2s4-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m2s4-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m2s4-failure ./scripts/run-failure-reconnect-integration.sh
+OUT=/tmp/m2s4-multithread ./scripts/run-multithread-integration.sh
+
+GPU/localhost integration commands used approved out-of-sandbox execution.

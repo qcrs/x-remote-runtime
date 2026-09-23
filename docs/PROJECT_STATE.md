@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M2-S4 ready** (M1 PASS).
+Current autonomous roadmap position: **M2-S5 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M2-S4 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M2-S3 (`m2/s3: replace server switch with handler registry`, this state commit) |
-| Current Slice | M2-S4 minimal CoreX backend seam |
+| Last PASS commit | M2-S4 (`m2/s4: add minimal CoreX backend seam`, this state commit) |
+| Current Slice | M2-S5 human-reviewed schema/codegen MVP |
 | Blockers | None |
-| Next action | Extract proven CoreX primitive calls behind a narrow backend seam |
+| Next action | Add a small declarative schema and deterministic generated codec/metadata path |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -67,3 +67,10 @@ Existing wire headers/payloads and handler implementations are unchanged;
 HELLO/unknown-opcode, ABI/protocol, numerical, lifecycle, session-isolation,
 reconnect, and 8×100 multithread gates passed. Evidence:
 `evidence/m2/s3/20260923-004025/`.
+
+M2-S4 extracts the proven CoreX Driver boundary into the statically linked
+`server/corex_backend.{h,c}` seam. It covers device/context, memory and host
+staging, synchronous/asynchronous copies, streams/events, module/function,
+and launch primitives; `runtime_server.c` has zero direct `cu*` calls. Build,
+ABI/protocol, numerical, lifecycle, session-isolation, reconnect, and 8×100
+multithread gates passed. Evidence: `evidence/m2/s4/20260923-011245/`.
