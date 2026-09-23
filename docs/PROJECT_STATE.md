@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M2-S3 ready** (M1 PASS).
+Current autonomous roadmap position: **M2-S4 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M2-S3 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M2-S2 (`m2/s2: add optional V3 HELLO`, this state commit) |
-| Current Slice | M2-S3 handler registry |
+| Last PASS commit | M2-S3 (`m2/s3: replace server switch with handler registry`, this state commit) |
+| Current Slice | M2-S4 minimal CoreX backend seam |
 | Blockers | None |
-| Next action | Introduce a reviewable opcode-to-handler registry without changing V3 payloads |
+| Next action | Extract proven CoreX primitive calls behind a narrow backend seam |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -58,3 +58,12 @@ V3 fallback, malformed-payload rejection, ABI/protocol audit, numerical,
 lifecycle, failure/reconnect, session-isolation, and 8×100 multithread gates
 passed. The wire contract is in `docs/HELLO_CAPABILITIES.md`.
 Evidence: `evidence/m2/s2/20260923-001341/`.
+
+M2-S3 replaces the server's growing central opcode switch with one static
+opcode-to-handler/capability registry covering all 1–27 opcodes. A compile-time
+duplicate-case guard and startup completeness check reject bad registration.
+Unknown opcodes return `ST_BAD_REQUEST` without closing the connection.
+Existing wire headers/payloads and handler implementations are unchanged;
+HELLO/unknown-opcode, ABI/protocol, numerical, lifecycle, session-isolation,
+reconnect, and 8×100 multithread gates passed. Evidence:
+`evidence/m2/s3/20260923-004025/`.

@@ -2918,6 +2918,101 @@ static int handle_get_device_info(
         (uint32_t)pos);
 }
 
+typedef int (*ServerHandler)(ServerSession *, int, uint32_t,
+                             const unsigned char *, uint32_t);
+
+typedef struct {
+    ServerHandler handler;
+    uint32_t capability_id;
+} ServerHandlerEntry;
+
+static int handle_legacy_launch(ServerSession *session, int fd,
+                                uint32_t req_id, const unsigned char *payload,
+                                uint32_t length)
+{
+    (void)session;
+    (void)payload;
+    (void)length;
+    return send_response(fd, OP_LAUNCH, req_id, ST_BAD_REQUEST, NULL, 0);
+}
+
+static int handle_close(ServerSession *session, int fd, uint32_t req_id,
+                        const unsigned char *payload, uint32_t length)
+{
+    (void)session;
+    (void)payload;
+    return send_response(fd, OP_CLOSE, req_id,
+                         length == 0 ? ST_OK : ST_BAD_REQUEST, NULL, 0);
+}
+
+static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
+                              const unsigned char *payload, uint32_t length)
+{
+    (void)session;
+    (void)payload;
+    return handle_hello(fd, req_id, length);
+}
+
+/* One source of truth for opcode, handler, and optional semantic capability. */
+#ifdef COREX_TEST_DUPLICATE_OPCODE
+#define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
+#else
+#define SERVER_REGISTRY_DUPLICATE_TEST(X)
+#endif
+#define SERVER_HANDLER_REGISTRY(X) \
+    X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY) \
+    X(OP_H2D, handle_h2d, CRX_CAP_COPY_SYNC) \
+    X(OP_LAUNCH, handle_legacy_launch, 0) \
+    X(OP_SYNC, handle_sync, CRX_CAP_STREAM_EVENT) \
+    X(OP_D2H, handle_d2h, CRX_CAP_COPY_SYNC) \
+    X(OP_FREE, handle_free, CRX_CAP_LINEAR_MEMORY) \
+    X(OP_CLOSE, handle_close, 0) \
+    X(OP_UPLOAD_MODULE, handle_upload_module, CRX_CAP_MODULE_KERNEL) \
+    X(OP_GET_KERNEL, handle_get_kernel, CRX_CAP_MODULE_KERNEL) \
+    X(OP_UNLOAD_MODULE, handle_unload_module, CRX_CAP_MODULE_KERNEL) \
+    X(OP_LAUNCH_GENERIC, handle_launch_generic, CRX_CAP_MODULE_KERNEL) \
+    X(OP_CREATE_STREAM, handle_create_stream, CRX_CAP_STREAM_EVENT) \
+    X(OP_DESTROY_STREAM, handle_destroy_stream, CRX_CAP_STREAM_EVENT) \
+    X(OP_STREAM_QUERY, handle_stream_query, CRX_CAP_STREAM_EVENT) \
+    X(OP_STREAM_SYNC, handle_stream_sync, CRX_CAP_STREAM_EVENT) \
+    X(OP_CREATE_EVENT, handle_create_event, CRX_CAP_STREAM_EVENT) \
+    X(OP_DESTROY_EVENT, handle_destroy_event, CRX_CAP_STREAM_EVENT) \
+    X(OP_EVENT_RECORD, handle_event_record, CRX_CAP_STREAM_EVENT) \
+    X(OP_EVENT_QUERY, handle_event_query, CRX_CAP_STREAM_EVENT) \
+    X(OP_EVENT_SYNC, handle_event_sync, CRX_CAP_STREAM_EVENT) \
+    X(OP_STREAM_WAIT_EVENT, handle_stream_wait_event, CRX_CAP_STREAM_EVENT) \
+    X(OP_H2D_ASYNC_SUBMIT, handle_h2d_async_submit, CRX_CAP_COPY_ASYNC) \
+    X(OP_D2H_ASYNC_SUBMIT, handle_d2h_async_submit, CRX_CAP_COPY_ASYNC) \
+    X(OP_TRANSFER_QUERY, handle_transfer_query, CRX_CAP_COPY_ASYNC) \
+    X(OP_TRANSFER_WAIT, handle_transfer_wait, CRX_CAP_COPY_ASYNC) \
+    X(OP_GET_DEVICE_INFO, handle_get_device_info, CRX_CAP_DEVICE_INFO) \
+    X(OP_HELLO, handle_hello_entry, 0) \
+    SERVER_REGISTRY_DUPLICATE_TEST(X)
+
+#define REGISTRY_ENTRY(opcode, function, capability) \
+    [opcode] = {function, capability},
+static const ServerHandlerEntry g_handlers[OP_HELLO + 1] = {
+    SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
+};
+#undef REGISTRY_ENTRY
+
+static int server_registry_validate(void)
+{
+    /* Duplicate numeric opcodes produce a C duplicate-case compilation error. */
+#define UNIQUE_OPCODE_CASE(opcode, function, capability) case opcode: break;
+    switch (0) {
+        SERVER_HANDLER_REGISTRY(UNIQUE_OPCODE_CASE)
+    default: break;
+    }
+#undef UNIQUE_OPCODE_CASE
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_HELLO; ++opcode) {
+        if (!g_handlers[opcode].handler ||
+            g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
+            return -1;
+    }
+    return 0;
+}
+
 
 static int serve_session(ServerSession *session, int fd)
 {
@@ -2968,132 +3063,13 @@ static int serve_session(ServerSession *session, int fd)
             }
         }
 
-        int rc = 0;
-        int close_after_response = 0;
-
-        switch (opcode) {
-        case OP_ALLOC:
-            rc = handle_alloc(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_H2D:
-            rc = handle_h2d(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_LAUNCH:
-            /* Legacy fixed-kernel launch is intentionally not part of Gate 5B. */
-            rc = send_response(fd, OP_LAUNCH, req_id, ST_BAD_REQUEST, NULL, 0);
-            break;
-
-        case OP_SYNC:
-            rc = handle_sync(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_D2H:
-            rc = handle_d2h(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_FREE:
-            rc = handle_free(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_CLOSE:
-            if (payload_len != 0) {
-                rc = send_response(fd, OP_CLOSE, req_id, ST_BAD_REQUEST, NULL, 0);
-            } else {
-                rc = send_response(fd, OP_CLOSE, req_id, ST_OK, NULL, 0);
-                close_after_response = 1;
-            }
-            break;
-
-        case OP_UPLOAD_MODULE:
-            rc = handle_upload_module(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_GET_KERNEL:
-            rc = handle_get_kernel(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_UNLOAD_MODULE:
-            rc = handle_unload_module(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_LAUNCH_GENERIC:
-            rc = handle_launch_generic(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_CREATE_STREAM:
-            rc = handle_create_stream(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_DESTROY_STREAM:
-            rc = handle_destroy_stream(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_STREAM_QUERY:
-            rc = handle_stream_query(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_STREAM_SYNC:
-            rc = handle_stream_sync(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_CREATE_EVENT:
-            rc = handle_create_event(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_DESTROY_EVENT:
-            rc = handle_destroy_event(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_EVENT_RECORD:
-            rc = handle_event_record(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_EVENT_QUERY:
-            rc = handle_event_query(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_EVENT_SYNC:
-            rc = handle_event_sync(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_STREAM_WAIT_EVENT:
-            rc = handle_stream_wait_event(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_H2D_ASYNC_SUBMIT:
-            rc = handle_h2d_async_submit(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_D2H_ASYNC_SUBMIT:
-            rc = handle_d2h_async_submit(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_TRANSFER_QUERY:
-            rc = handle_transfer_query(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_TRANSFER_WAIT:
-            rc = handle_transfer_wait(session, fd, req_id, payload, payload_len);
-            break;
-
-        case OP_GET_DEVICE_INFO:
-            rc = handle_get_device_info(session,
-                fd,
-                req_id,
-                payload,
-                payload_len);
-            break;
-
-        case OP_HELLO:
-            rc = handle_hello(fd, req_id, payload_len);
-            break;
-
-        default:
-            rc = send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
-            break;
-        }
+        const ServerHandlerEntry *entry =
+            opcode < sizeof(g_handlers) / sizeof(g_handlers[0]) &&
+            g_handlers[opcode].handler ? &g_handlers[opcode] : NULL;
+        int rc = entry
+            ? entry->handler(session, fd, req_id, payload, payload_len)
+            : send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
+        int close_after_response = opcode == OP_CLOSE && payload_len == 0;
 
         free(payload);
 
@@ -3114,6 +3090,10 @@ static int serve_session(ServerSession *session, int fd)
 
 int main(void)
 {
+    if (server_registry_validate() != 0) {
+        fprintf(stderr, "SERVER_HANDLER_REGISTRY=INVALID\n");
+        return 1;
+    }
     CUdevice device = 0;
     char device_name[256];
 

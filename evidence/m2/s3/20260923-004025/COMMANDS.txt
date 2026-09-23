@@ -1,0 +1,10 @@
+./scripts/build-sdk.sh
+OUT=/tmp/m2s3-registry ./scripts/test-handler-registry.sh
+OUT=/tmp/m2s3-hello ./scripts/run-hello-integration.sh
+OUT=/tmp/m2s3-baseline SERVER_LOG=/tmp/m2s3-server.log ./scripts/run-integration.sh
+OUT=/tmp/m2s3-lifecycle ./scripts/run-lifecycle-integration.sh
+OUT=/tmp/m2s3-isolation ./scripts/run-server-session-isolation.sh
+OUT=/tmp/m2s3-failure ./scripts/run-failure-reconnect-integration.sh
+OUT=/tmp/m2s3-multithread ./scripts/run-multithread-integration.sh
+
+GPU/localhost integration commands used approved out-of-sandbox execution.

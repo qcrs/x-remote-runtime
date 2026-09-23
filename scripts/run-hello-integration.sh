@@ -9,6 +9,7 @@ mkdir -p "$OUT"
 OUT="$OUT" PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/tests/integration/hello_capabilities.py" \
     >"$OUT/client.stdout.log" 2>"$OUT/client.stderr.log"
 grep -q '^M2_S2_NEW_PEER=PASS$' "$OUT/client.stdout.log"
+grep -q '^M2_S3_UNKNOWN_OPCODE=PASS$' "$OUT/client.stdout.log"
 grep -q '^M2_S2_LEGACY_V3=PASS$' "$OUT/client.stdout.log"
 grep -q '^M2_S2_MALFORMED_PAYLOAD=REJECTED$' "$OUT/client.stdout.log"
 grep -q '^M2_S2_HELLO=NEGOTIATED ' "$OUT/client.stdout.log"

@@ -121,7 +121,14 @@ def main():
             status, body = request(connection, HELLO, 2, b"bad")
             if status != ST_BAD_REQUEST or body:
                 raise RuntimeError("nonempty HELLO request was accepted")
-            request(connection, CLOSE, 3)
+            status, body = request(connection, 999, 3)
+            if status != ST_BAD_REQUEST or body:
+                raise RuntimeError("unknown opcode did not return ST_BAD_REQUEST")
+            status, body = request(connection, HELLO, 4)
+            if status != ST_OK or len(body) < 44:
+                raise RuntimeError("unknown opcode corrupted the connection")
+            request(connection, CLOSE, 5)
+            print("M2_S3_UNKNOWN_OPCODE=PASS")
         if runtime.cudaDeviceSynchronize() != 0:
             raise RuntimeError("new client/new server sync failed")
         print("M2_S2_NEW_PEER=PASS")
