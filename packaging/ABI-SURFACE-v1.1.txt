@@ -38,6 +38,12 @@ corexRemoteRegisterKernel
 [COREX_REMOTE_CUDART_1.1]
 cudaMemset
 cudaMemsetAsync
+cudaStreamCreateWithFlags
+cudaStreamCreateWithPriority
+cudaStreamGetFlags
+cudaStreamGetPriority
+cudaEventCreateWithFlags
+cudaEventElapsedTime
 cudaGetDeviceProperties
 cudaMemGetInfo
 

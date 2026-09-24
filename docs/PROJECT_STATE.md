@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S3 ready** (M1 PASS).
+Current autonomous roadmap position: **M3-S4 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M3-S3 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S2 (`m3/s2: add stream-ordered memset`, this state commit) |
-| Current Slice | M3-S3 stream/event extensions |
+| Last PASS commit | M3-S3 (`m3/s3: add stream and event extensions`, this state commit) |
+| Current Slice | M3-S4 device/version/query expansion |
 | Blockers | None |
-| Next action | Probe and add supported stream/event flags, priorities, and timing queries |
+| Next action | Add low-risk device/runtime/driver version queries through DTOs |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -97,3 +97,12 @@ participates in the client ordering frontier. Nonzero values, offsets,
 zero-byte, explicit-stream ordering, stale/invalid and out-of-bounds cases,
 ABI/protocol, numerical, and 8×100 multithread regressions passed. Evidence:
 `evidence/m3/s2/20260923-024500/`.
+
+M3-S3 probes CoreX stream nonblocking flags, priorities, event timing, and
+disable-timing behavior, then exposes the verified Runtime extensions:
+`cudaStreamCreateWithFlags`, `cudaStreamCreateWithPriority`, stream flag/
+priority queries, `cudaEventCreateWithFlags`, and `cudaEventElapsedTime`.
+Nonblocking streams bypass legacy-default frontier merging; event timing rejects
+disable-timing events. Probe, extension, ABI/protocol, numerical, lifecycle,
+isolation, reconnect, and 8×100 multithread gates passed. Evidence:
+`evidence/m3/s3/20260924-030000/`.

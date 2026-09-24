@@ -37,6 +37,10 @@ CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src,
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src,
                                       size_t bytes, CUstream stream);
 CUresult corex_backend_stream_create(CUstream *stream, unsigned int flags);
+CUresult corex_backend_stream_create_priority(CUstream *stream, unsigned int flags,
+                                              int priority);
+CUresult corex_backend_stream_get_flags(CUstream stream, unsigned int *flags);
+CUresult corex_backend_stream_get_priority(CUstream stream, int *priority);
 CUresult corex_backend_stream_destroy(CUstream stream);
 CUresult corex_backend_stream_query(CUstream stream);
 CUresult corex_backend_stream_sync(CUstream stream);
@@ -47,6 +51,7 @@ CUresult corex_backend_event_destroy(CUevent event);
 CUresult corex_backend_event_record(CUevent event, CUstream stream);
 CUresult corex_backend_event_query(CUevent event);
 CUresult corex_backend_event_sync(CUevent event);
+CUresult corex_backend_event_elapsed(float *milliseconds, CUevent start, CUevent end);
 CUresult corex_backend_module_load(CUmodule *module, const void *image);
 CUresult corex_backend_module_unload(CUmodule module);
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module,

@@ -92,6 +92,7 @@ typedef struct {
     int used;
     uint64_t id;
     CUevent event;
+    unsigned int flags;
 } EventEntry;
 
 typedef struct {
@@ -1328,7 +1329,7 @@ static int handle_create_stream(
 
     uint32_t flags = corex_protocol_read_u32(payload);
 
-    if (flags != CU_STREAM_DEFAULT)
+    if (flags != CU_STREAM_DEFAULT && flags != CU_STREAM_NON_BLOCKING)
         return send_response(fd, OP_CREATE_STREAM, req_id, ST_BAD_REQUEST, NULL, 0);
 
     StreamEntry *slot = new_stream_slot(session);
@@ -1359,6 +1360,52 @@ static int handle_create_stream(
         &wire_id,
         sizeof(wire_id));
 }
+
+static int handle_create_stream_priority(ServerSession *session, int fd,
+                                         uint32_t req_id,
+                                         const unsigned char *payload, uint32_t len)
+{
+    if (len != 8)
+        return send_response(fd, OP_CREATE_STREAM_PRIORITY, req_id, ST_BAD_REQUEST, NULL, 0);
+    uint32_t flags = corex_protocol_read_u32(payload);
+    int priority = (int32_t)corex_protocol_read_u32(payload + 4);
+    if (flags != CU_STREAM_DEFAULT && flags != CU_STREAM_NON_BLOCKING)
+        return send_response(fd, OP_CREATE_STREAM_PRIORITY, req_id, ST_BAD_REQUEST, NULL, 0);
+    StreamEntry *slot = new_stream_slot(session);
+    if (!slot)
+        return send_response(fd, OP_CREATE_STREAM_PRIORITY, req_id, ST_NO_RESOURCE, NULL, 0);
+    CUresult r = corex_backend_stream_create_priority(&slot->stream, flags, priority);
+    if (r != CUDA_SUCCESS) { memset(slot, 0, sizeof(*slot)); return send_response(fd, OP_CREATE_STREAM_PRIORITY, req_id, ST_CUDA_ERROR, NULL, 0); }
+    uint64_t wire_id = corex_protocol_to_be64(slot->id);
+    return send_response(fd, OP_CREATE_STREAM_PRIORITY, req_id, ST_OK, &wire_id, 8);
+}
+
+static int handle_stream_scalar(ServerSession *session, int fd, uint32_t req_id,
+                                const unsigned char *payload, uint32_t len,
+                                int priority)
+{
+    if (len != 8)
+        return send_response(fd, priority ? OP_STREAM_GET_PRIORITY : OP_STREAM_GET_FLAGS, req_id, ST_BAD_REQUEST, NULL, 0);
+    uint64_t id = corex_protocol_read_u64(payload);
+    StreamEntry *entry = find_stream(session, id);
+    if (!entry)
+        return send_response(fd, priority ? OP_STREAM_GET_PRIORITY : OP_STREAM_GET_FLAGS, req_id, ST_NOT_FOUND, NULL, 0);
+    unsigned int flags = 0; int value = 0; CUresult r;
+    if (priority) r = corex_backend_stream_get_priority(entry->stream, &value);
+    else r = corex_backend_stream_get_flags(entry->stream, &flags);
+    if (r != CUDA_SUCCESS)
+        return send_response(fd, priority ? OP_STREAM_GET_PRIORITY : OP_STREAM_GET_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
+    unsigned char response[4]; size_t pos = 0;
+    corex_protocol_write_u32(response, &pos, priority ? (uint32_t)value : flags);
+    return send_response(fd, priority ? OP_STREAM_GET_PRIORITY : OP_STREAM_GET_FLAGS, req_id, ST_OK, response, 4);
+}
+
+static int handle_stream_get_flags(ServerSession *session, int fd, uint32_t req_id,
+                                   const unsigned char *payload, uint32_t len)
+{ return handle_stream_scalar(session, fd, req_id, payload, len, 0); }
+static int handle_stream_get_priority(ServerSession *session, int fd, uint32_t req_id,
+                                      const unsigned char *payload, uint32_t len)
+{ return handle_stream_scalar(session, fd, req_id, payload, len, 1); }
 
 static int handle_stream_query(
     ServerSession *session,
@@ -1528,7 +1575,8 @@ static int handle_create_event(
 
     uint32_t flags = corex_protocol_read_u32(payload);
 
-    if (flags != CU_EVENT_DEFAULT)
+    if (flags != CU_EVENT_DEFAULT && flags != CU_EVENT_BLOCKING_SYNC &&
+        flags != CU_EVENT_DISABLE_TIMING)
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_BAD_REQUEST, NULL, 0);
 
     EventEntry *slot = new_event_slot(session);
@@ -1542,6 +1590,7 @@ static int handle_create_event(
         memset(slot, 0, sizeof(*slot));
         return send_response(fd, OP_CREATE_EVENT, req_id, ST_CUDA_ERROR, NULL, 0);
     }
+    slot->flags = flags;
 
     uint64_t wire_id = corex_protocol_to_be64(slot->id);
 
@@ -1674,6 +1723,25 @@ static int handle_event_sync(
         (unsigned long long)event_id);
 
     return send_response(fd, OP_EVENT_SYNC, req_id, ST_OK, NULL, 0);
+}
+
+static int handle_event_elapsed(ServerSession *session, int fd, uint32_t req_id,
+                                const unsigned char *payload, uint32_t len)
+{
+    if (len != 16)
+        return send_response(fd, OP_EVENT_ELAPSED_TIME, req_id, ST_BAD_REQUEST, NULL, 0);
+    EventEntry *start = find_event(session, corex_protocol_read_u64(payload));
+    EventEntry *end = find_event(session, corex_protocol_read_u64(payload + 8));
+    if (!start || !end)
+        return send_response(fd, OP_EVENT_ELAPSED_TIME, req_id, ST_NOT_FOUND, NULL, 0);
+    float milliseconds = 0.0f;
+    CUresult r = corex_backend_event_elapsed(&milliseconds, start->event, end->event);
+    if (r != CUDA_SUCCESS)
+        return send_response(fd, OP_EVENT_ELAPSED_TIME, req_id, ST_CUDA_ERROR, NULL, 0);
+    uint32_t bits = 0; memcpy(&bits, &milliseconds, 4);
+    unsigned char response[4]; size_t pos = 0;
+    corex_protocol_write_u32(response, &pos, bits);
+    return send_response(fd, OP_EVENT_ELAPSED_TIME, req_id, ST_OK, response, 4);
 }
 
 static int handle_stream_wait_event(
@@ -3120,11 +3188,15 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_D2D, handle_d2d, CRX_CAP_COPY_SYNC) \
     X(OP_MEMSET, handle_memset, CRX_CAP_LINEAR_MEMORY) \
     X(OP_MEMSET_ASYNC, handle_memset_async, CRX_CAP_COPY_ASYNC) \
+    X(OP_STREAM_GET_FLAGS, handle_stream_get_flags, CRX_CAP_STREAM_EVENT) \
+    X(OP_CREATE_STREAM_PRIORITY, handle_create_stream_priority, CRX_CAP_STREAM_EVENT) \
+    X(OP_STREAM_GET_PRIORITY, handle_stream_get_priority, CRX_CAP_STREAM_EVENT) \
+    X(OP_EVENT_ELAPSED_TIME, handle_event_elapsed, CRX_CAP_STREAM_EVENT) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_MEMSET_ASYNC + 1] = {
+static const ServerHandlerEntry g_handlers[OP_EVENT_ELAPSED_TIME + 1] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3138,14 +3210,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_MEMSET_ASYNC; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_EVENT_ELAPSED_TIME; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_MEMSET_ASYNC ||
+        if (opcode > OP_EVENT_ELAPSED_TIME ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

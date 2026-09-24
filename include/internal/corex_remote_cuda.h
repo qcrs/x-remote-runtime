@@ -41,6 +41,13 @@ typedef struct corexCudaStreamHandle *cudaStream_t;
 typedef struct corexCudaEventHandle  *cudaEvent_t;
 typedef struct corexRemoteModuleHandle *corexRemoteModule_t;
 
+#define cudaStreamDefault 0x0u
+#define cudaStreamNonBlocking 0x1u
+#define cudaEventDefault 0x0u
+#define cudaEventBlockingSync 0x1u
+#define cudaEventDisableTiming 0x2u
+#define cudaEventInterprocess 0x4u
+
 typedef enum corexRemoteKernelArgKind {
     COREX_REMOTE_KERNEL_ARG_DEVICE_PTR = 1,
     COREX_REMOTE_KERNEL_ARG_BY_VALUE   = 2
@@ -78,15 +85,22 @@ cudaError_t cudaMemsetAsync(
 cudaError_t cudaDeviceSynchronize(void);
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream);
+cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags);
+cudaError_t cudaStreamCreateWithPriority(
+    cudaStream_t *pStream, unsigned int flags, int priority);
+cudaError_t cudaStreamGetFlags(cudaStream_t stream, unsigned int *flags);
+cudaError_t cudaStreamGetPriority(cudaStream_t stream, int *priority);
 cudaError_t cudaStreamDestroy(cudaStream_t stream);
 cudaError_t cudaStreamSynchronize(cudaStream_t stream);
 cudaError_t cudaStreamQuery(cudaStream_t stream);
 
 cudaError_t cudaEventCreate(cudaEvent_t *event);
+cudaError_t cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int flags);
 cudaError_t cudaEventDestroy(cudaEvent_t event);
 cudaError_t cudaEventRecord(cudaEvent_t event, cudaStream_t stream);
 cudaError_t cudaEventSynchronize(cudaEvent_t event);
 cudaError_t cudaEventQuery(cudaEvent_t event);
+cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end);
 cudaError_t cudaStreamWaitEvent(
     cudaStream_t stream,
     cudaEvent_t event,

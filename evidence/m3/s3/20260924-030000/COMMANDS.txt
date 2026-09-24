@@ -1,0 +1,8 @@
+./scripts/build.sh
+OUT=/tmp/m3s3-probe ./scripts/run-stream-event-probe.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-ext2 ./scripts/run-stream-event-integration.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-baseline SERVER_LOG=/tmp/m3s3-server.log ./scripts/run-integration.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-lifecycle ./scripts/run-lifecycle-integration.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-isolation ./scripts/run-server-session-isolation.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-failure ./scripts/run-failure-reconnect-integration.sh
+COREX_REMOTE_PORT=50076 OUT=/tmp/m3s3-multithread ./scripts/run-multithread-integration.sh

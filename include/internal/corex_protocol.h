@@ -67,6 +67,10 @@ typedef enum {
     OP_D2D                 = 28,
     OP_MEMSET              = 29,
     OP_MEMSET_ASYNC        = 30,
+    OP_STREAM_GET_FLAGS    = 31,
+    OP_CREATE_STREAM_PRIORITY = 32,
+    OP_STREAM_GET_PRIORITY = 33,
+    OP_EVENT_ELAPSED_TIME  = 34,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

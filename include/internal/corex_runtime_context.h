@@ -35,6 +35,8 @@ struct corexCudaStreamHandle {
     uint64_t cookie;
     uint64_t session_generation;
     uint64_t stream_id;
+    unsigned int flags;
+    int priority;
     int live;
     size_t slot_index;
     uint64_t next_transfer_seq;
@@ -45,6 +47,7 @@ struct corexCudaEventHandle {
     uint64_t cookie;
     uint64_t session_generation;
     uint64_t event_id;
+    unsigned int flags;
     int live;
     int recorded;
     uint64_t *frontier;

@@ -681,24 +681,55 @@ static int remote_unload_module(uint64_t module_id)
     return rpc(g_fd, OP_UNLOAD_MODULE, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
-static int remote_create_stream(uint64_t *stream_id_out)
+static int remote_create_stream_flags(unsigned int flags, uint64_t *stream_id_out)
 {
-    uint32_t flags = htonl(0);
+    uint32_t wire_flags = htonl(flags);
     unsigned char *resp = NULL;
     uint32_t resp_len = 0;
-
-    if (rpc(g_fd, OP_CREATE_STREAM, &flags, sizeof(flags), &resp, &resp_len) != 0)
-        return -1;
-    if (resp_len != 8) {
+    if (rpc(g_fd, OP_CREATE_STREAM, &wire_flags, 4, &resp, &resp_len) != 0 || resp_len != 8) {
         free(resp);
         return -1;
     }
-
     uint64_t wire_id;
-    memcpy(&wire_id, resp, sizeof(wire_id));
+    memcpy(&wire_id, resp, 8);
     free(resp);
     *stream_id_out = corex_protocol_from_be64(wire_id);
     return 0;
+}
+
+static int remote_create_stream_priority(unsigned int flags, int priority, uint64_t *stream_id_out)
+{
+    unsigned char payload[8];
+    size_t pos = 0;
+    corex_protocol_write_u32(payload, &pos, flags);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)priority);
+    unsigned char *resp = NULL;
+    uint32_t resp_len = 0;
+    if (rpc(g_fd, OP_CREATE_STREAM_PRIORITY, payload, sizeof(payload), &resp, &resp_len) != 0 || resp_len != 8) {
+        free(resp);
+        return -1;
+    }
+    uint64_t wire_id;
+    memcpy(&wire_id, resp, 8);
+    free(resp);
+    *stream_id_out = corex_protocol_from_be64(wire_id);
+    return 0;
+}
+
+static int remote_stream_get_flags(uint64_t id, uint32_t *flags)
+{
+    uint64_t wire_id = corex_protocol_to_be64(id);
+    unsigned char *resp = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_STREAM_GET_FLAGS, &wire_id, 8, &resp, &len) != 0 || len != 4) { free(resp); return -1; }
+    *flags = corex_protocol_read_u32(resp); free(resp); return 0;
+}
+
+static int remote_stream_get_priority(uint64_t id, int *priority)
+{
+    uint64_t wire_id = corex_protocol_to_be64(id);
+    unsigned char *resp = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_STREAM_GET_PRIORITY, &wire_id, 8, &resp, &len) != 0 || len != 4) { free(resp); return -1; }
+    *priority = (int32_t)corex_protocol_read_u32(resp); free(resp); return 0;
 }
 
 static int remote_destroy_stream(uint64_t stream_id)
@@ -751,6 +782,24 @@ static int remote_create_event(uint64_t *event_id_out)
     free(resp);
     *event_id_out = corex_protocol_from_be64(wire_id);
     return 0;
+}
+
+static int remote_create_event_flags(unsigned int flags, uint64_t *event_id_out)
+{
+    uint32_t wire_flags = htonl(flags); unsigned char *resp = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_CREATE_EVENT, &wire_flags, 4, &resp, &len) != 0 || len != 8) { free(resp); return -1; }
+    uint64_t wire_id; memcpy(&wire_id, resp, 8); free(resp);
+    *event_id_out = corex_protocol_from_be64(wire_id); return 0;
+}
+
+static int remote_event_elapsed(uint64_t start, uint64_t end, float *ms)
+{
+    unsigned char payload[16]; size_t pos = 0;
+    corex_protocol_write_u64(payload, &pos, start);
+    corex_protocol_write_u64(payload, &pos, end);
+    unsigned char *resp = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_EVENT_ELAPSED_TIME, payload, sizeof(payload), &resp, &len) != 0 || len != 4) { free(resp); return -1; }
+    uint32_t bits = corex_protocol_read_u32(resp); memcpy(ms, &bits, 4); free(resp); return 0;
 }
 
 static int remote_destroy_event(uint64_t event_id)
@@ -1615,6 +1664,7 @@ typedef struct {
     uint64_t *frontier;
     uint64_t *next_transfer_seq;
     int is_default;
+    int nonblocking;
 } G6EStreamView;
 
 static int get_stream_view(cudaStream_t stream, G6EStreamView *view)
@@ -1641,7 +1691,8 @@ static int get_stream_view(cudaStream_t stream, G6EStreamView *view)
     view->slot_index = h->slot_index;
     view->frontier = h->frontier;
     view->next_transfer_seq = &h->next_transfer_seq;
-    view->is_default = 0;
+        view->is_default = 0;
+    view->nonblocking = (h->flags & cudaStreamNonBlocking) != 0;
     return 0;
 }
 
@@ -1660,7 +1711,8 @@ static void apply_legacy_default_ordering(G6EStreamView *view)
                 frontier_merge(g_default_frontier, g_stream_handles[i].frontier);
         }
     } else {
-        frontier_merge(view->frontier, g_default_frontier);
+        if (!view->nonblocking)
+            frontier_merge(view->frontier, g_default_frontier);
     }
 }
 
@@ -2285,7 +2337,7 @@ static cudaError_t cudaDeviceSynchronize_locked(void)
     return cudaSuccess;
 }
 
-static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
+static cudaError_t cudaStreamCreate_impl_locked(cudaStream_t *pStream, unsigned int flags, int priority, int with_priority)
 {
     if (!pStream)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -2304,7 +2356,9 @@ static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
         G6E_RETURN(cudaErrorMemoryAllocation);
 
     uint64_t stream_id = 0;
-    if (remote_create_stream(&stream_id) != 0) {
+    int created = with_priority ? remote_create_stream_priority(flags, priority, &stream_id)
+                               : remote_create_stream_flags(flags, &stream_id);
+    if (created != 0) {
         free(frontier);
         G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     }
@@ -2314,6 +2368,8 @@ static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
     h->cookie = G6C_STREAM_COOKIE;
     h->session_generation = g_active_session_generation;
     h->stream_id = stream_id;
+    h->flags = flags;
+    h->priority = priority;
     h->live = 1;
     h->slot_index = g_stream_handle_next;
     h->next_transfer_seq = 0;
@@ -2324,6 +2380,37 @@ static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
     printf("G6C_CUDA_STREAM_CREATE handle=%p stream_id=%llu result=PASS\n",
            (void *)*pStream,
            (unsigned long long)stream_id);
+    return cudaSuccess;
+}
+
+static cudaError_t cudaStreamCreate_locked(cudaStream_t *pStream)
+{ return cudaStreamCreate_impl_locked(pStream, cudaStreamDefault, 0, 0); }
+
+static cudaError_t cudaStreamCreateWithFlags_locked(cudaStream_t *pStream, unsigned int flags)
+{ return cudaStreamCreate_impl_locked(pStream, flags, 0, 0); }
+
+static cudaError_t cudaStreamCreateWithPriority_locked(cudaStream_t *pStream, unsigned int flags, int priority)
+{ return cudaStreamCreate_impl_locked(pStream, flags, priority, 1); }
+
+static cudaError_t cudaStreamGetFlags_locked(cudaStream_t stream, unsigned int *flags)
+{
+    if (!flags) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaStreamHandle *h = resolve_stream_handle(stream);
+    if (!h) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if (remote_stream_get_flags(h->stream_id, flags) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaStreamGetPriority_locked(cudaStream_t stream, int *priority)
+{
+    if (!priority) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaStreamHandle *h = resolve_stream_handle(stream);
+    if (!h) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if (remote_stream_get_priority(h->stream_id, priority) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     return cudaSuccess;
 }
 
@@ -2472,6 +2559,39 @@ static cudaError_t cudaEventCreate_locked(cudaEvent_t *event)
     printf("G6C_CUDA_EVENT_CREATE handle=%p event_id=%llu result=PASS\n",
            (void *)*event,
            (unsigned long long)event_id);
+    return cudaSuccess;
+}
+
+static cudaError_t cudaEventCreateWithFlags_locked(cudaEvent_t *event, unsigned int flags)
+{
+    if (!event) G6E_RETURN(cudaErrorInvalidValue);
+    if (flags != cudaEventDefault && flags != cudaEventBlockingSync &&
+        flags != cudaEventDisableTiming)
+        G6E_RETURN(cudaErrorInvalidValue);
+    *event = NULL;
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (g_event_handle_next >= G6C_MAX_EVENT_HANDLES) G6E_RETURN(cudaErrorMemoryAllocation);
+    uint64_t *frontier = calloc(G6E_FRONTIER_SLOTS, sizeof(uint64_t));
+    if (!frontier) G6E_RETURN(cudaErrorMemoryAllocation);
+    uint64_t event_id = 0;
+    if (remote_create_event_flags(flags, &event_id) != 0) { free(frontier); G6E_RETURN(map_last_rpc_error(cudaErrorUnknown)); }
+    struct corexCudaEventHandle *h = &g_event_handles[g_event_handle_next++];
+    memset(h, 0, sizeof(*h)); h->cookie = G6C_EVENT_COOKIE; h->session_generation = g_active_session_generation;
+    h->event_id = event_id; h->flags = flags; h->live = 1; h->frontier = frontier; *event = (cudaEvent_t)h;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaEventElapsedTime_locked(float *ms, cudaEvent_t start, cudaEvent_t end)
+{
+    if (!ms) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaEventHandle *s = resolve_event_handle(start);
+    struct corexCudaEventHandle *e = resolve_event_handle(end);
+    if (!s || !e) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if ((s->flags & cudaEventDisableTiming) || (e->flags & cudaEventDisableTiming))
+        G6E_RETURN(cudaErrorInvalidValue);
+    if (remote_event_elapsed(s->event_id, e->event_id, ms) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     return cudaSuccess;
 }
 
@@ -3857,6 +3977,34 @@ cudaError_t cudaStreamCreate(cudaStream_t *pStream)
     return result;
 }
 
+cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamCreateWithFlags_locked(pStream, flags);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaStreamCreateWithPriority(cudaStream_t *pStream, unsigned int flags, int priority)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamCreateWithPriority_locked(pStream, flags, priority);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaStreamGetFlags(cudaStream_t stream, unsigned int *flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamGetFlags_locked(stream, flags);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaStreamGetPriority(cudaStream_t stream, int *priority)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamGetPriority_locked(stream, priority);
+    corex_runtime_context_unlock(context); return result;
+}
+
 cudaError_t cudaStreamDestroy(cudaStream_t stream)
 {
     CorexRuntimeContext *context = corex_runtime_context_get();
@@ -3893,6 +4041,13 @@ cudaError_t cudaEventCreate(cudaEvent_t *event)
     return result;
 }
 
+cudaError_t cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventCreateWithFlags_locked(event, flags);
+    corex_runtime_context_unlock(context); return result;
+}
+
 cudaError_t cudaEventDestroy(cudaEvent_t event)
 {
     CorexRuntimeContext *context = corex_runtime_context_get();
@@ -3927,6 +4082,13 @@ cudaError_t cudaEventQuery(cudaEvent_t event)
     cudaError_t result = cudaEventQuery_locked(event);
     corex_runtime_context_unlock(context);
     return result;
+}
+
+cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaEventElapsedTime_locked(ms, start, end);
+    corex_runtime_context_unlock(context); return result;
 }
 
 cudaError_t cudaStreamWaitEvent(

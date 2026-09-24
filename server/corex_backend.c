@@ -23,6 +23,9 @@ CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value, siz
 CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src, size_t bytes, CUstream stream) { return cuMemcpyHtoDAsync(dst, src, bytes, stream); }
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src, size_t bytes, CUstream stream) { return cuMemcpyDtoHAsync(dst, src, bytes, stream); }
 CUresult corex_backend_stream_create(CUstream *stream, unsigned int flags) { return cuStreamCreate(stream, flags); }
+CUresult corex_backend_stream_create_priority(CUstream *stream, unsigned int flags, int priority) { return cuStreamCreateWithPriority(stream, flags, priority); }
+CUresult corex_backend_stream_get_flags(CUstream stream, unsigned int *flags) { return cuStreamGetFlags(stream, flags); }
+CUresult corex_backend_stream_get_priority(CUstream stream, int *priority) { return cuStreamGetPriority(stream, priority); }
 CUresult corex_backend_stream_destroy(CUstream stream) { return cuStreamDestroy(stream); }
 CUresult corex_backend_stream_query(CUstream stream) { return cuStreamQuery(stream); }
 CUresult corex_backend_stream_sync(CUstream stream) { return cuStreamSynchronize(stream); }
@@ -32,6 +35,7 @@ CUresult corex_backend_event_destroy(CUevent event) { return cuEventDestroy(even
 CUresult corex_backend_event_record(CUevent event, CUstream stream) { return cuEventRecord(event, stream); }
 CUresult corex_backend_event_query(CUevent event) { return cuEventQuery(event); }
 CUresult corex_backend_event_sync(CUevent event) { return cuEventSynchronize(event); }
+CUresult corex_backend_event_elapsed(float *milliseconds, CUevent start, CUevent end) { return cuEventElapsedTime(milliseconds, start, end); }
 CUresult corex_backend_module_load(CUmodule *module, const void *image) { return cuModuleLoadData(module, image); }
 CUresult corex_backend_module_unload(CUmodule module) { return cuModuleUnload(module); }
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module, const char *name) { return cuModuleGetFunction(function, module, name); }
