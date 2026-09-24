@@ -36,6 +36,8 @@ corexRemoteModuleUnload
 corexRemoteRegisterKernel
 
 [COREX_REMOTE_CUDART_1.1]
+cudaDriverGetVersion
+cudaRuntimeGetVersion
 cudaMemset
 cudaMemsetAsync
 cudaStreamCreateWithFlags

@@ -1,4 +1,6 @@
 cudaGetDeviceCount
+cudaDriverGetVersion
+cudaRuntimeGetVersion
 cudaGetDevice
 cudaSetDevice
 cudaMalloc

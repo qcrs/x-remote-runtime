@@ -1744,6 +1744,28 @@ static int handle_event_elapsed(ServerSession *session, int fd, uint32_t req_id,
     return send_response(fd, OP_EVENT_ELAPSED_TIME, req_id, ST_OK, response, 4);
 }
 
+static int handle_version_query(int fd, uint32_t req_id, uint32_t opcode)
+{
+    if (opcode == OP_GET_DRIVER_VERSION) {
+        int version = 0;
+        if (corex_backend_driver_version(&version) != CUDA_SUCCESS || version < 0)
+            return send_response(fd, opcode, req_id, ST_CUDA_ERROR, NULL, 0);
+        unsigned char response[4]; size_t pos = 0;
+        corex_protocol_write_u32(response, &pos, (uint32_t)version);
+        return send_response(fd, opcode, req_id, ST_OK, response, 4);
+    }
+    unsigned char response[4]; size_t pos = 0;
+    corex_protocol_write_u32(response, &pos, 11000u);
+    return send_response(fd, opcode, req_id, ST_OK, response, 4);
+}
+
+static int handle_driver_version(ServerSession *session, int fd, uint32_t req_id,
+                                  const unsigned char *payload, uint32_t len)
+{ (void)session; (void)payload; if (len != 0) return send_response(fd, OP_GET_DRIVER_VERSION, req_id, ST_BAD_REQUEST, NULL, 0); return handle_version_query(fd, req_id, OP_GET_DRIVER_VERSION); }
+static int handle_runtime_version(ServerSession *session, int fd, uint32_t req_id,
+                                  const unsigned char *payload, uint32_t len)
+{ (void)session; (void)payload; if (len != 0) return send_response(fd, OP_GET_RUNTIME_VERSION, req_id, ST_BAD_REQUEST, NULL, 0); return handle_version_query(fd, req_id, OP_GET_RUNTIME_VERSION); }
+
 static int handle_stream_wait_event(
     ServerSession *session,
     int fd,
@@ -3192,11 +3214,13 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_CREATE_STREAM_PRIORITY, handle_create_stream_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_STREAM_GET_PRIORITY, handle_stream_get_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_EVENT_ELAPSED_TIME, handle_event_elapsed, CRX_CAP_STREAM_EVENT) \
+    X(OP_GET_DRIVER_VERSION, handle_driver_version, CRX_CAP_DEVICE_INFO) \
+    X(OP_GET_RUNTIME_VERSION, handle_runtime_version, CRX_CAP_DEVICE_INFO) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_EVENT_ELAPSED_TIME + 1] = {
+static const ServerHandlerEntry g_handlers[OP_GET_RUNTIME_VERSION + 1] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3210,14 +3234,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_EVENT_ELAPSED_TIME; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_GET_RUNTIME_VERSION; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_EVENT_ELAPSED_TIME ||
+        if (opcode > OP_GET_RUNTIME_VERSION ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

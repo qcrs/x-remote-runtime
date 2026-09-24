@@ -1,0 +1,3 @@
+./scripts/build.sh
+COREX_REMOTE_PORT=50077 OUT=/tmp/m3s4-version ./scripts/run-version-integration.sh
+COREX_REMOTE_PORT=50077 OUT=/tmp/m3s4-baseline SERVER_LOG=/tmp/m3s4-server.log ./scripts/run-integration.sh

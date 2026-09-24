@@ -1,6 +1,8 @@
 COREX_REMOTE_CUDART_1.0 {
     global:
         cudaGetDeviceCount;
+        cudaDriverGetVersion;
+        cudaRuntimeGetVersion;
         cudaGetDevice;
         cudaSetDevice;
         cudaMalloc;

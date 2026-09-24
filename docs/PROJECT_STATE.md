@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S4 ready** (M1 PASS).
+Current autonomous roadmap position: **M3-S5 ready** (M1 PASS).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M3-S4 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S3 (`m3/s3: add stream and event extensions`, this state commit) |
-| Current Slice | M3-S4 device/version/query expansion |
+| Last PASS commit | M3-S4 (`m3/s4: add scalar version queries`, this state commit) |
+| Current Slice | M3-S5 function attributes and occupancy |
 | Blockers | None |
-| Next action | Add low-risk device/runtime/driver version queries through DTOs |
+| Next action | Probe function attributes/occupancy for already-registered kernel identities |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -106,3 +106,10 @@ Nonblocking streams bypass legacy-default frontier merging; event timing rejects
 disable-timing events. Probe, extension, ABI/protocol, numerical, lifecycle,
 isolation, reconnect, and 8×100 multithread gates passed. Evidence:
 `evidence/m3/s3/20260924-030000/`.
+
+M3-S4 adds scalar `cudaDriverGetVersion` and `cudaRuntimeGetVersion` queries
+through opcodes 35–36. Driver version is read from CoreX
+`cuDriverGetVersion`; runtime version is explicitly the compatibility ABI
+1.1.0 (11000). No native device struct crosses the wire. Version integration,
+ABI/protocol and numerical baseline gates passed. Evidence:
+`evidence/m3/s4/20260924-034500/`.

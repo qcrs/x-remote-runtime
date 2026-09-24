@@ -61,6 +61,8 @@ typedef struct corexRemoteKernelArgDesc {
 cudaError_t cudaGetDeviceCount(int *count);
 cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
+cudaError_t cudaDriverGetVersion(int *driverVersion);
+cudaError_t cudaRuntimeGetVersion(int *runtimeVersion);
 
 cudaError_t cudaMalloc(void **devPtr, size_t size);
 cudaError_t cudaFree(void *devPtr);

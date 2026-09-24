@@ -463,6 +463,13 @@ static int remote_sync(void)
     return rpc(g_fd, OP_SYNC, NULL, 0, NULL, NULL);
 }
 
+static int remote_version_query(uint32_t opcode, int *version)
+{
+    unsigned char *response = NULL; uint32_t length = 0;
+    if (rpc(g_fd, opcode, NULL, 0, &response, &length) != 0 || length != 4) { free(response); return -1; }
+    *version = (int)corex_protocol_read_u32(response); free(response); return 0;
+}
+
 static int remote_h2d(
     uint64_t allocation_id,
     uint64_t offset,
@@ -1841,6 +1848,24 @@ static cudaError_t cudaGetDevice_locked(int *device)
         G6E_RETURN(init);
 
     *device = g_current_device;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDriverGetVersion_locked(int *version)
+{
+    if (!version) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_version_query(OP_GET_DRIVER_VERSION, version) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaRuntimeGetVersion_locked(int *version)
+{
+    if (!version) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_version_query(OP_GET_RUNTIME_VERSION, version) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     return cudaSuccess;
 }
 
@@ -3879,6 +3904,20 @@ cudaError_t cudaGetDevice(int *device)
     cudaError_t result = cudaGetDevice_locked(device);
     corex_runtime_context_unlock(context);
     return result;
+}
+
+cudaError_t cudaDriverGetVersion(int *version)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDriverGetVersion_locked(version);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaRuntimeGetVersion(int *version)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaRuntimeGetVersion_locked(version);
+    corex_runtime_context_unlock(context); return result;
 }
 
 cudaError_t cudaSetDevice(int device)
