@@ -730,6 +730,16 @@ static int handle_alloc_pitched(ServerSession *session, int fd, uint32_t req_id,
     if (!slot) return send_response(fd, OP_ALLOC_PITCHED, req_id, ST_NO_RESOURCE, NULL, 0);
     size_t pitch = 0;
     CUresult r = corex_backend_mem_alloc_pitch(&slot->ptr, &pitch, (size_t)width, (size_t)height, 1);
+    if (r != CUDA_SUCCESS) {
+        /* CoreX exposes cuMemAllocPitch but some devices reject it at runtime.
+         * A linear allocation with pitch=width preserves the remote ABI. */
+        pitch = (size_t)width;
+        if (pitch > SIZE_MAX / (size_t)height ||
+            corex_backend_mem_alloc(&slot->ptr, pitch * (size_t)height) != CUDA_SUCCESS)
+            r = CUDA_ERROR_OUT_OF_MEMORY;
+        else
+            r = CUDA_SUCCESS;
+    }
     if (r != CUDA_SUCCESS || pitch < (size_t)width || pitch > SIZE_MAX / (size_t)height) {
         memset(slot, 0, sizeof(*slot));
         return send_response(fd, OP_ALLOC_PITCHED, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -787,8 +797,12 @@ static int handle_memcpy_2d(ServerSession *session, int fd, uint32_t req_id,
         CUresult native = (async && mode == 3)
             ? corex_backend_copy_2d_async(&copy, stream)
             : corex_backend_copy_2d(&copy);
-        if (native != CUDA_SUCCESS) { free(out); return send_response(fd, OP_MEMCPY_2D, req_id, ST_CUDA_ERROR, NULL, 0); }
-        int native_rc = send_response(fd, OP_MEMCPY_2D, req_id, ST_OK, out, mode == 2 ? (uint32_t)(w*h) : 0); free(out); return native_rc;
+        if (native == CUDA_SUCCESS) {
+            int native_rc = send_response(fd, OP_MEMCPY_2D, req_id, ST_OK, out, mode == 2 ? (uint32_t)(w*h) : 0); free(out); return native_rc;
+        }
+        free(out);
+        out = mode == 2 ? malloc((size_t)(w*h)) : NULL;
+        if (mode == 2 && !out) return send_response(fd, OP_MEMCPY_2D, req_id, ST_INTERNAL, NULL, 0);
     }
     for (uint64_t y=0; y<h; ++y) {
         CUresult r = CUDA_SUCCESS; CUdeviceptr dptr = dst ? dst->ptr + doff + y*dp : 0; CUdeviceptr sptr = src ? src->ptr + soff + y*sp : 0;
