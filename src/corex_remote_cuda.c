@@ -470,6 +470,30 @@ static int remote_version_query(uint32_t opcode, int *version)
     *version = (int)corex_protocol_read_u32(response); free(response); return 0;
 }
 
+static int remote_function_attributes(uint64_t kernel_id, cudaFuncAttributes *attr)
+{
+    uint64_t wire_id = corex_protocol_to_be64(kernel_id); unsigned char *response = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_FUNCTION_ATTRIBUTES, &wire_id, 8, &response, &len) != 0 || len != 28) { free(response); return -1; }
+    attr->sharedSizeBytes = corex_protocol_read_u32(response + 0);
+    attr->constSizeBytes = corex_protocol_read_u32(response + 4);
+    attr->localSizeBytes = corex_protocol_read_u32(response + 8);
+    attr->numRegs = (int)corex_protocol_read_u32(response + 12);
+    attr->ptxVersion = (int)corex_protocol_read_u32(response + 16);
+    attr->binaryVersion = (int)corex_protocol_read_u32(response + 20);
+    attr->maxThreadsPerBlock = (int)corex_protocol_read_u32(response + 24);
+    attr->cacheModeCA = 0; attr->maxDynamicSharedSizeBytes = 0; attr->preferredShmemCarveout = -1;
+    free(response); return 0;
+}
+
+static int remote_occupancy(uint64_t kernel_id, int block_size, size_t dynamic_shared, int *blocks)
+{
+    unsigned char payload[20]; size_t pos = 0; corex_protocol_write_u64(payload, &pos, kernel_id);
+    corex_protocol_write_u32(payload, &pos, (uint32_t)block_size); corex_protocol_write_u64(payload, &pos, dynamic_shared);
+    unsigned char *response = NULL; uint32_t len = 0;
+    if (rpc(g_fd, OP_OCCUPANCY, payload, sizeof(payload), &response, &len) != 0 || len != 4) { free(response); return -1; }
+    *blocks = (int)corex_protocol_read_u32(response); free(response); return 0;
+}
+
 static int remote_h2d(
     uint64_t allocation_id,
     uint64_t offset,
@@ -1865,6 +1889,29 @@ static cudaError_t cudaRuntimeGetVersion_locked(int *version)
     if (!version) G6E_RETURN(cudaErrorInvalidValue);
     cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
     if (remote_version_query(OP_GET_RUNTIME_VERSION, version) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaFuncGetAttributes_locked(cudaFuncAttributes *attr, const void *func)
+{
+    if (!attr || !func) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel = resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    memset(attr, 0, sizeof(*attr));
+    if (remote_function_attributes(kernel->kernel_id, attr) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaOccupancy_locked(int *blocks, const void *func, int block_size, size_t dynamic_shared)
+{
+    if (!blocks || !func || block_size <= 0) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel = resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if (remote_occupancy(kernel->kernel_id, block_size, dynamic_shared, blocks) != 0)
         G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     return cudaSuccess;
 }
@@ -3917,6 +3964,20 @@ cudaError_t cudaRuntimeGetVersion(int *version)
 {
     CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
     cudaError_t result = cudaRuntimeGetVersion_locked(version);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaFuncGetAttributes(cudaFuncAttributes *attr, const void *func)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaFuncGetAttributes_locked(attr, func);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessor(int *blocks, const void *func, int block_size, size_t dynamic_shared)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaOccupancy_locked(blocks, func, block_size, dynamic_shared);
     corex_runtime_context_unlock(context); return result;
 }
 

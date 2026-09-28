@@ -56,6 +56,10 @@ CUresult corex_backend_module_load(CUmodule *module, const void *image);
 CUresult corex_backend_module_unload(CUmodule module);
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module,
                                        const char *name);
+CUresult corex_backend_function_attribute(int *value, CUfunction function,
+                                          CUfunction_attribute attribute);
+CUresult corex_backend_occupancy(int *blocks, CUfunction function,
+                                 int block_size, size_t dynamic_shared);
 CUresult corex_backend_launch(CUfunction function,
                               unsigned int grid_x, unsigned int grid_y,
                               unsigned int grid_z, unsigned int block_x,

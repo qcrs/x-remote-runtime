@@ -1,6 +1,8 @@
 cudaGetDeviceCount
 cudaDriverGetVersion
 cudaRuntimeGetVersion
+cudaFuncGetAttributes
+cudaOccupancyMaxActiveBlocksPerMultiprocessor
 cudaGetDevice
 cudaSetDevice
 cudaMalloc

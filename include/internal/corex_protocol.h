@@ -73,6 +73,8 @@ typedef enum {
     OP_EVENT_ELAPSED_TIME  = 34,
     OP_GET_DRIVER_VERSION  = 35,
     OP_GET_RUNTIME_VERSION = 36,
+    OP_FUNCTION_ATTRIBUTES = 37,
+    OP_OCCUPANCY            = 38,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

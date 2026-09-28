@@ -65,11 +65,26 @@ typedef struct corexRemoteKernelArgDesc {
     uint32_t size;
 } corexRemoteKernelArgDesc;
 
+typedef struct cudaFuncAttributes {
+    size_t sharedSizeBytes;
+    size_t constSizeBytes;
+    size_t localSizeBytes;
+    int maxThreadsPerBlock;
+    int numRegs;
+    int ptxVersion;
+    int binaryVersion;
+    int cacheModeCA;
+    int maxDynamicSharedSizeBytes;
+    int preferredShmemCarveout;
+} cudaFuncAttributes;
+
 cudaError_t cudaGetDeviceCount(int *count);
 cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
 cudaError_t cudaDriverGetVersion(int *driverVersion);
 cudaError_t cudaRuntimeGetVersion(int *runtimeVersion);
+cudaError_t cudaFuncGetAttributes(cudaFuncAttributes *attr, const void *func);
+cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, const void *func, int blockSize, size_t dynamicSMemSize);
 
 cudaError_t cudaMalloc(void **devPtr, size_t size);
 cudaError_t cudaFree(void *devPtr);

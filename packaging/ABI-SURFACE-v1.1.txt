@@ -38,6 +38,8 @@ corexRemoteRegisterKernel
 [COREX_REMOTE_CUDART_1.1]
 cudaDriverGetVersion
 cudaRuntimeGetVersion
+cudaFuncGetAttributes
+cudaOccupancyMaxActiveBlocksPerMultiprocessor
 cudaMemset
 cudaMemsetAsync
 cudaStreamCreateWithFlags

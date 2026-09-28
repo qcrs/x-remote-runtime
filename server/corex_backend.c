@@ -39,6 +39,8 @@ CUresult corex_backend_event_elapsed(float *milliseconds, CUevent start, CUevent
 CUresult corex_backend_module_load(CUmodule *module, const void *image) { return cuModuleLoadData(module, image); }
 CUresult corex_backend_module_unload(CUmodule module) { return cuModuleUnload(module); }
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module, const char *name) { return cuModuleGetFunction(function, module, name); }
+CUresult corex_backend_function_attribute(int *value, CUfunction function, CUfunction_attribute attribute) { return cuFuncGetAttribute(value, attribute, function); }
+CUresult corex_backend_occupancy(int *blocks, CUfunction function, int block_size, size_t dynamic_shared) { return cuOccupancyMaxActiveBlocksPerMultiprocessor(blocks, function, block_size, dynamic_shared); }
 CUresult corex_backend_launch(CUfunction function, unsigned int grid_x, unsigned int grid_y, unsigned int grid_z, unsigned int block_x, unsigned int block_y, unsigned int block_z, unsigned int shared_bytes, CUstream stream, void **kernel_params, void **extra)
 {
     return cuLaunchKernel(function, grid_x, grid_y, grid_z,

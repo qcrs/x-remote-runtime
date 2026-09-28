@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S5 ready** (M1 PASS).
+Current autonomous roadmap position: **M6-S1 ready** (M1–M3 PASS locally).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M3-S5 ready** (M1 PASS).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S4 (`m3/s4: add scalar version queries`, this state commit) |
-| Current Slice | M3-S5 function attributes and occupancy |
+| Last PASS commit | M3-S5 (`m3/s5: add function attributes and occupancy`, this state commit) |
+| Current Slice | M6-S1 network configuration and diagnostics |
 | Blockers | None |
-| Next action | Probe function attributes/occupancy for already-registered kernel identities |
+| Next action | Add explicit safe bind/endpoint configuration and a minimal health check |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -113,3 +113,13 @@ through opcodes 35–36. Driver version is read from CoreX
 1.1.0 (11000). No native device struct crosses the wire. Version integration,
 ABI/protocol and numerical baseline gates passed. Evidence:
 `evidence/m3/s4/20260924-034500/`.
+
+M3-S5 adds function attributes and occupancy for already-registered remote
+kernel identities through opcodes 37–38. The server resolves session-owned
+kernel IDs and calls CoreX `cuFuncGetAttribute` for seven scalar attributes and
+`cuOccupancyMaxActiveBlocksPerMultiprocessor`; no host function pointer crosses
+the wire. Attributes use a fixed 28-byte network-order DTO and reconstruct the
+ABI-sensitive `cudaFuncAttributes` fields locally. Positive registered-kernel,
+null-argument, invalid-block-size, numerical, ABI/protocol, lifecycle,
+session-isolation, reconnect, and multithread gates passed. Evidence:
+`evidence/m3/s5/20260924-XXXXXX/`.

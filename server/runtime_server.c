@@ -1766,6 +1766,40 @@ static int handle_runtime_version(ServerSession *session, int fd, uint32_t req_i
                                   const unsigned char *payload, uint32_t len)
 { (void)session; (void)payload; if (len != 0) return send_response(fd, OP_GET_RUNTIME_VERSION, req_id, ST_BAD_REQUEST, NULL, 0); return handle_version_query(fd, req_id, OP_GET_RUNTIME_VERSION); }
 
+static int handle_function_attributes(ServerSession *session, int fd, uint32_t req_id,
+                                      const unsigned char *payload, uint32_t len)
+{
+    if (len != 8) return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_BAD_REQUEST, NULL, 0);
+    KernelEntry *kernel = find_kernel(session, corex_protocol_read_u64(payload));
+    if (!kernel) return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_NOT_FOUND, NULL, 0);
+    int values[7];
+    CUfunction_attribute attrs[] = {CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES,
+        CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, CU_FUNC_ATTRIBUTE_NUM_REGS, CU_FUNC_ATTRIBUTE_PTX_VERSION,
+        CU_FUNC_ATTRIBUTE_BINARY_VERSION, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK};
+    for (size_t i = 0; i < 7; ++i)
+        if (corex_backend_function_attribute(&values[i], kernel->function, attrs[i]) != CUDA_SUCCESS)
+            return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_CUDA_ERROR, NULL, 0);
+    unsigned char response[28]; size_t pos = 0;
+    for (size_t i = 0; i < 7; ++i) corex_protocol_write_u32(response, &pos, (uint32_t)values[i]);
+    return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_OK, response, 28);
+}
+
+static int handle_occupancy(ServerSession *session, int fd, uint32_t req_id,
+                            const unsigned char *payload, uint32_t len)
+{
+    if (len != 20) return send_response(fd, OP_OCCUPANCY, req_id, ST_BAD_REQUEST, NULL, 0);
+    KernelEntry *kernel = find_kernel(session, corex_protocol_read_u64(payload));
+    int block_size = (int)corex_protocol_read_u32(payload + 8);
+    uint64_t dynamic_shared = corex_protocol_read_u64(payload + 12);
+    if (!kernel || block_size <= 0 || block_size > 2048 || dynamic_shared > SIZE_MAX)
+        return send_response(fd, OP_OCCUPANCY, req_id, ST_BAD_REQUEST, NULL, 0);
+    int blocks = 0;
+    if (corex_backend_occupancy(&blocks, kernel->function, block_size, (size_t)dynamic_shared) != CUDA_SUCCESS)
+        return send_response(fd, OP_OCCUPANCY, req_id, ST_CUDA_ERROR, NULL, 0);
+    unsigned char response[4]; size_t pos = 0; corex_protocol_write_u32(response, &pos, (uint32_t)blocks);
+    return send_response(fd, OP_OCCUPANCY, req_id, ST_OK, response, 4);
+}
+
 static int handle_stream_wait_event(
     ServerSession *session,
     int fd,
@@ -3216,11 +3250,13 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_EVENT_ELAPSED_TIME, handle_event_elapsed, CRX_CAP_STREAM_EVENT) \
     X(OP_GET_DRIVER_VERSION, handle_driver_version, CRX_CAP_DEVICE_INFO) \
     X(OP_GET_RUNTIME_VERSION, handle_runtime_version, CRX_CAP_DEVICE_INFO) \
+    X(OP_FUNCTION_ATTRIBUTES, handle_function_attributes, CRX_CAP_MODULE_KERNEL) \
+    X(OP_OCCUPANCY, handle_occupancy, CRX_CAP_MODULE_KERNEL) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_GET_RUNTIME_VERSION + 1] = {
+static const ServerHandlerEntry g_handlers[OP_OCCUPANCY + 1] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3234,14 +3270,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_GET_RUNTIME_VERSION; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode <= OP_OCCUPANCY; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_GET_RUNTIME_VERSION ||
+        if (opcode > OP_OCCUPANCY ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

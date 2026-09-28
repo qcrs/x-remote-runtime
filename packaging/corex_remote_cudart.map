@@ -3,6 +3,8 @@ COREX_REMOTE_CUDART_1.0 {
         cudaGetDeviceCount;
         cudaDriverGetVersion;
         cudaRuntimeGetVersion;
+        cudaFuncGetAttributes;
+        cudaOccupancyMaxActiveBlocksPerMultiprocessor;
         cudaGetDevice;
         cudaSetDevice;
         cudaMalloc;

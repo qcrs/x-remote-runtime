@@ -181,6 +181,32 @@ int main()
     if (rc != cudaSuccess)
         return 12;
 
+    cudaFuncAttributes function_attributes;
+    memset(&function_attributes, 0, sizeof(function_attributes));
+    rc = cudaFuncGetAttributes(&function_attributes, (const void *)g8c_identity_kernel);
+    printf("G8C_FUNCTION_ATTRIBUTES rc=%d maxThreads=%d regs=%d shared=%zu\n",
+           (int)rc, function_attributes.maxThreadsPerBlock,
+           function_attributes.numRegs, function_attributes.sharedSizeBytes);
+    if (rc != cudaSuccess || function_attributes.maxThreadsPerBlock <= 0)
+        return 16;
+    int occupancy_blocks = 0;
+    rc = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        &occupancy_blocks, (const void *)g8c_identity_kernel, 256, 0);
+    printf("G8C_OCCUPANCY rc=%d blocks=%d\n", (int)rc, occupancy_blocks);
+    if (rc != cudaSuccess || occupancy_blocks <= 0)
+        return 17;
+
+    cudaFuncAttributes invalid_attributes;
+    rc = cudaFuncGetAttributes(&invalid_attributes, NULL);
+    printf("G8C_FUNCTION_ATTRIBUTES_NULL rc=%d\n", (int)rc);
+    if (rc != cudaErrorInvalidValue)
+        return 18;
+    rc = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        &occupancy_blocks, (const void *)g8c_identity_kernel, 0, 0);
+    printf("G8C_OCCUPANCY_INVALID_BLOCK rc=%d\n", (int)rc);
+    if (rc != cudaErrorInvalidValue)
+        return 19;
+
     rc = cudaDeviceSynchronize();
     if (rc != cudaSuccess)
         return 13;
