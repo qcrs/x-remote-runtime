@@ -26,5 +26,7 @@ scheduler.
 
 `cudaExtent`, `cudaPitchedPtr`, and `cudaMemcpy3DParms` are public ABI types,
 but are normalized at the API boundary. Array-backed 3D transfers remain
-unsupported until a CoreX 3D ground-truth probe establishes the required
-semantics; depth-one pitched transfers reuse the 2D validation path.
+unsupported because this subsystem owns only pointer memory. Pointer-backed
+3D transfers use explicit slice pitches and CoreX `cuMemcpy3D`/`Async`; the
+client resolver validates the final slice, row, and byte boundary before the
+single RPC.

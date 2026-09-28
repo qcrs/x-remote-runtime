@@ -481,9 +481,28 @@ static int remote_memcpy2d(uint32_t mode, uint64_t did, uint64_t doff, uint64_t 
     free(resp); free(payload); return rc;
 }
 
+static int remote_memcpy2d_async_d2d(uint64_t did, uint64_t doff, uint64_t dpitch,
+                                     uint64_t sid, uint64_t soff, uint64_t spitch,
+                                     uint64_t width, uint64_t height, uint64_t stream_id)
+{
+    unsigned char payload[76]; size_t pos=0; corex_protocol_write_u32(payload,&pos,3); corex_protocol_write_u64(payload,&pos,did); corex_protocol_write_u64(payload,&pos,doff); corex_protocol_write_u64(payload,&pos,dpitch); corex_protocol_write_u64(payload,&pos,sid); corex_protocol_write_u64(payload,&pos,soff); corex_protocol_write_u64(payload,&pos,spitch); corex_protocol_write_u64(payload,&pos,width); corex_protocol_write_u64(payload,&pos,height); corex_protocol_write_u64(payload,&pos,stream_id); return rpc(g_fd,OP_MEMCPY_2D_ASYNC,payload,sizeof(payload),NULL,NULL);
+}
+
 static int remote_memset2d(uint64_t id,uint64_t off,uint64_t pitch,unsigned char value,uint64_t width,uint64_t height)
 {
     unsigned char payload[44]; size_t pos=0; corex_protocol_write_u64(payload,&pos,id); corex_protocol_write_u64(payload,&pos,off); corex_protocol_write_u64(payload,&pos,pitch); corex_protocol_write_u64(payload,&pos,width); corex_protocol_write_u64(payload,&pos,height); corex_protocol_write_u32(payload,&pos,value); return rpc(g_fd,OP_MEMSET_2D,payload,sizeof(payload),NULL,NULL);
+}
+
+static int remote_memcpy3d(uint32_t mode, uint64_t did, uint64_t doff, uint64_t dpitch, uint64_t dslice,
+                           uint64_t sid, uint64_t soff, uint64_t spitch, uint64_t sslice,
+                           uint64_t width, uint64_t height, uint64_t depth,
+                           const void *host, void *host_out)
+{
+    if (!width || !height || !depth || width > UINT64_MAX / height || width * height > UINT64_MAX / depth) return -1;
+    uint64_t volume=width*height*depth, total=92+((mode==1)?volume:0); if(total>UINT32_MAX)return -1;
+    unsigned char *payload=(unsigned char*)malloc((size_t)total);if(!payload)return -1;size_t pos=0;
+    corex_protocol_write_u32(payload,&pos,mode);corex_protocol_write_u64(payload,&pos,did);corex_protocol_write_u64(payload,&pos,doff);corex_protocol_write_u64(payload,&pos,dpitch);corex_protocol_write_u64(payload,&pos,dslice);corex_protocol_write_u64(payload,&pos,sid);corex_protocol_write_u64(payload,&pos,soff);corex_protocol_write_u64(payload,&pos,spitch);corex_protocol_write_u64(payload,&pos,sslice);corex_protocol_write_u64(payload,&pos,width);corex_protocol_write_u64(payload,&pos,height);corex_protocol_write_u64(payload,&pos,depth);if(volume&&mode==1)memcpy(payload+pos,host,(size_t)volume);
+    unsigned char *resp=NULL;uint32_t len=0;int rc=rpc(g_fd,OP_MEMCPY_3D,payload,(uint32_t)total,&resp,&len);if(rc==0&&mode==2&&len==volume)memcpy(host_out,resp,(size_t)volume);else if(rc==0&&mode==2)rc=-1;free(resp);free(payload);return rc;
 }
 
 static int remote_free(uint64_t allocation_id)
@@ -2313,6 +2332,16 @@ static ResolveResult resolve_remote_2d_region(const void *ptr, size_t pitch, siz
     return RESOLVE_INVALID;
 }
 
+static ResolveResult resolve_remote_3d_region(const void *ptr, size_t pitch, size_t slice_pitch,
+                                              size_t width, size_t height, size_t depth,
+                                              ResolvedRemotePtr *resolved)
+{
+    if(!ptr||!resolved||!width||!height||!depth||!pitch||!slice_pitch||width>pitch||slice_pitch<pitch*height)return RESOLVE_INVALID;
+    uintptr_t value=(uintptr_t)ptr;
+    for(size_t i=0;i<G6A_MAX_ALLOCS;++i){VirtualAllocation*a=&g_allocs[i];if(!a->live||a->session_generation!=g_active_session_generation)continue;if(value<a->virtual_base||value-a->virtual_base>a->size)continue;size_t off=(size_t)(value-a->virtual_base);if(depth-1>(a->size-off)/slice_pitch)return RESOLVE_OOB;size_t last=off+(depth-1)*slice_pitch;if(height-1>(a->size-last)/pitch)return RESOLVE_OOB;last+=(height-1)*pitch;if(width>a->size-last)return RESOLVE_OOB;resolved->allocation_id=a->allocation_id;resolved->byte_offset=off;return RESOLVE_OK;}
+    return RESOLVE_INVALID;
+}
+
 static cudaError_t cudaMallocPitch_locked(void **devPtr, size_t *pitch, size_t width, size_t height)
 {
     if(!devPtr||!pitch||!width||!height) G6E_RETURN(cudaErrorInvalidValue);
@@ -2342,7 +2371,7 @@ static cudaError_t cudaMemset2D_locked(void *devPtr,size_t pitch,int value,size_
 { if(!width||!height)return cudaSuccess;if(!devPtr||value<0||value>255)G6E_RETURN(cudaErrorInvalidValue);cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);ResolvedRemotePtr r;if(resolve_remote_2d_region(devPtr,pitch,width,height,&r)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memset2d(r.allocation_id,r.byte_offset,pitch,(unsigned char)value,width,height)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));return cudaSuccess; }
 
 static cudaError_t cudaMemcpy2DAsync_locked(void *dst,size_t dpitch,const void *src,size_t spitch,size_t width,size_t height,cudaMemcpyKind kind,cudaStream_t stream)
-{ if(!width||!height)return cudaSuccess; G6EStreamView sv; if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle); cudaError_t r=cudaMemcpy2D_locked(dst,dpitch,src,spitch,width,height,kind); if(r==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}return r; }
+{ if(!width||!height)return cudaSuccess; G6EStreamView sv; if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle); int dr=pointer_in_remote_arena(dst),sr=pointer_in_remote_arena(src); if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;} cudaError_t r=cudaSuccess; if(kind==cudaMemcpyDeviceToDevice){ResolvedRemotePtr d,s;if(!dr||!sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK||resolve_remote_2d_region(src,spitch,width,height,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memcpy2d_async_d2d(d.allocation_id,d.byte_offset,dpitch,s.allocation_id,s.byte_offset,spitch,width,height,sv.stream_id)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}else r=cudaMemcpy2D_locked(dst,dpitch,src,spitch,width,height,kind);if(r==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}return r; }
 
 static cudaError_t cudaMemset2DAsync_locked(void *devPtr,size_t pitch,int value,size_t width,size_t height,cudaStream_t stream)
 { if(!width||!height)return cudaSuccess;G6EStreamView sv;if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle);cudaError_t r=cudaMemset2D_locked(devPtr,pitch,value,width,height);if(r==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}return r; }
@@ -2476,6 +2505,19 @@ static cudaError_t cudaMemcpy_locked(
     }
 
     G6E_RETURN(cudaErrorInvalidMemcpyDirection);
+}
+
+static cudaError_t cudaMemcpy3D_locked(const cudaMemcpy3DParms *p, cudaStream_t stream, int async)
+{
+    if(!p||p->srcArray||p->dstArray||!p->extent.width||!p->extent.height||!p->extent.depth) G6E_RETURN(cudaErrorInvalidValue);
+    if(p->extent.width>SIZE_MAX/p->extent.height||p->extent.width*p->extent.height>SIZE_MAX/p->extent.depth)G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);int dr=pointer_in_remote_arena(p->dstPtr.ptr),sr=pointer_in_remote_arena(p->srcPtr.ptr);cudaMemcpyKind kind=p->kind;if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;}
+    size_t volume=p->extent.width*p->extent.height*p->extent.depth; if(kind==cudaMemcpyHostToHost){if(dr||sr)G6E_RETURN(cudaErrorInvalidValue);for(size_t z=0;z<p->extent.depth;++z)for(size_t y=0;y<p->extent.height;++y)memmove((unsigned char*)p->dstPtr.ptr+z*p->dstPtr.pitch*p->dstPtr.ysize+y*p->dstPtr.pitch,(const unsigned char*)p->srcPtr.ptr+z*p->srcPtr.pitch*p->srcPtr.ysize+y*p->srcPtr.pitch,p->extent.width);return cudaSuccess;}
+    ResolvedRemotePtr d={0},s={0};size_t ds=p->dstPtr.pitch*p->dstPtr.ysize,ss=p->srcPtr.pitch*p->srcPtr.ysize;
+    if(kind==cudaMemcpyHostToDevice){if(sr||resolve_remote_3d_region(p->dstPtr.ptr,p->dstPtr.pitch,ds,p->extent.width,p->extent.height,p->extent.depth,&d)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);unsigned char*tmp=(unsigned char*)malloc(volume);if(!tmp)G6E_RETURN(cudaErrorMemoryAllocation);for(size_t z=0;z<p->extent.depth;++z)for(size_t y=0;y<p->extent.height;++y)memcpy(tmp+(z*p->extent.height+y)*p->extent.width,(const unsigned char*)p->srcPtr.ptr+z*p->srcPtr.pitch*p->srcPtr.ysize+y*p->srcPtr.pitch,p->extent.width);int rc=remote_memcpy3d(1,d.allocation_id,d.byte_offset,p->dstPtr.pitch,ds,0,0,p->srcPtr.pitch,ss,p->extent.width,p->extent.height,p->extent.depth,tmp,NULL);free(tmp);if(rc)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));return cudaSuccess;}
+    if(kind==cudaMemcpyDeviceToHost){if(dr||resolve_remote_3d_region(p->srcPtr.ptr,p->srcPtr.pitch,ss,p->extent.width,p->extent.height,p->extent.depth,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);unsigned char*tmp=(unsigned char*)malloc(volume);if(!tmp)G6E_RETURN(cudaErrorMemoryAllocation);int rc=remote_memcpy3d(2,0,0,p->dstPtr.pitch,p->dstPtr.pitch*p->dstPtr.ysize,s.allocation_id,s.byte_offset,p->srcPtr.pitch,ss,p->extent.width,p->extent.height,p->extent.depth,NULL,tmp);if(!rc)for(size_t z=0;z<p->extent.depth;++z)for(size_t y=0;y<p->extent.height;++y)memcpy((unsigned char*)p->dstPtr.ptr+z*p->dstPtr.pitch*p->dstPtr.ysize+y*p->dstPtr.pitch,tmp+(z*p->extent.height+y)*p->extent.width,p->extent.width);free(tmp);if(rc)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));return cudaSuccess;}
+    if(kind==cudaMemcpyDeviceToDevice){if(!dr||!sr||resolve_remote_3d_region(p->dstPtr.ptr,p->dstPtr.pitch,ds,p->extent.width,p->extent.height,p->extent.depth,&d)!=RESOLVE_OK||resolve_remote_3d_region(p->srcPtr.ptr,p->srcPtr.pitch,ss,p->extent.width,p->extent.height,p->extent.depth,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memcpy3d(3,d.allocation_id,d.byte_offset,p->dstPtr.pitch,ds,s.allocation_id,s.byte_offset,p->srcPtr.pitch,ss,p->extent.width,p->extent.height,p->extent.depth,NULL,NULL)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));return cudaSuccess;}
+    (void)stream;(void)async;G6E_RETURN(cudaErrorInvalidMemcpyDirection);
 }
 
 static cudaError_t cudaMemcpyAsync_locked(
@@ -4446,10 +4488,10 @@ cudaError_t cudaMemcpy2DAsync(void *dst,size_t dpitch,const void *src,size_t spi
 { CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);cudaError_t result=cudaMemcpy2DAsync_locked(dst,dpitch,src,spitch,width,height,kind,stream);corex_runtime_context_unlock(context);return result; }
 
 cudaError_t cudaMemcpy3D(const cudaMemcpy3DParms *p)
-{ if(!p||p->srcArray||p->dstArray)return cudaErrorNotSupported; if(p->extent.depth>1)return cudaErrorNotSupported; return cudaMemcpy2D(p->dstPtr.ptr,p->dstPtr.pitch,p->srcPtr.ptr,p->srcPtr.pitch,p->extent.width,p->extent.height,p->kind); }
+{ CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);cudaError_t result=cudaMemcpy3D_locked(p,NULL,0);corex_runtime_context_unlock(context);return result; }
 
 cudaError_t cudaMemcpy3DAsync(const cudaMemcpy3DParms *p,cudaStream_t stream)
-{ if(!p||p->srcArray||p->dstArray)return cudaErrorNotSupported; if(p->extent.depth>1)return cudaErrorNotSupported; return cudaMemcpy2DAsync(p->dstPtr.ptr,p->dstPtr.pitch,p->srcPtr.ptr,p->srcPtr.pitch,p->extent.width,p->extent.height,p->kind,stream); }
+{ CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);G6EStreamView sv;if(get_stream_view(stream,&sv)!=0){corex_runtime_context_unlock(context);return cudaErrorInvalidResourceHandle;}cudaError_t result=cudaMemcpy3D_locked(p,stream,1);if(result==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}corex_runtime_context_unlock(context);return result; }
 
 cudaError_t cudaMemset(void *devPtr, int value, size_t count)
 {

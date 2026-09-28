@@ -163,6 +163,6 @@ sources. New evidence follows `docs/EVIDENCE_POLICY.md` and is retained under
 
 The runtime now has a unified linear/pitched allocation record, pitched
 allocation (CRX9 opcode 49), one-RPC 2D copy and 2D memset operations (opcodes
-50-53), and CUDA-compatible 3D descriptor types. CoreX backend calls remain
-isolated in `server/corex_backend.c`; array-backed 3D transfers are explicitly
-unsupported pending a backend probe.
+50-53), and pointer-backed 3D transfer operations (opcodes 55-56). CoreX
+backend calls remain isolated in `server/corex_backend.c`; array-backed 3D
+transfers are explicitly unsupported because Array ownership is out of scope.

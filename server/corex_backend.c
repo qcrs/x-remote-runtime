@@ -27,6 +27,10 @@ CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes) 
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoH(dst, src, bytes); }
 CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoD(dst, src, bytes); }
 CUresult corex_backend_copy_d2d_async(CUdeviceptr dst, CUdeviceptr src, size_t bytes, CUstream stream) { return cuMemcpyDtoDAsync(dst, src, bytes, stream); }
+CUresult corex_backend_copy_2d(const CUDA_MEMCPY2D *copy) { return cuMemcpy2D(copy); }
+CUresult corex_backend_copy_2d_async(const CUDA_MEMCPY2D *copy, CUstream stream) { return cuMemcpy2DAsync(copy, stream); }
+CUresult corex_backend_copy_3d(const CUDA_MEMCPY3D *copy) { return cuMemcpy3D(copy); }
+CUresult corex_backend_copy_3d_async(const CUDA_MEMCPY3D *copy, CUstream stream) { return cuMemcpy3DAsync(copy, stream); }
 CUresult corex_backend_memset_d8(CUdeviceptr dst, unsigned char value, size_t bytes) { return cuMemsetD8(dst, value, bytes); }
 CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value, size_t bytes, CUstream stream) { return cuMemsetD8Async(dst, value, bytes, stream); }
 CUresult corex_backend_memset_d2d8(CUdeviceptr dst, size_t pitch, unsigned char value, size_t width, size_t height) { return cuMemsetD2D8(dst, pitch, value, width, height); }

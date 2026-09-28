@@ -43,6 +43,10 @@ CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes);
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes);
 CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes);
 CUresult corex_backend_copy_d2d_async(CUdeviceptr dst, CUdeviceptr src, size_t bytes, CUstream stream);
+CUresult corex_backend_copy_2d(const CUDA_MEMCPY2D *copy);
+CUresult corex_backend_copy_2d_async(const CUDA_MEMCPY2D *copy, CUstream stream);
+CUresult corex_backend_copy_3d(const CUDA_MEMCPY3D *copy);
+CUresult corex_backend_copy_3d_async(const CUDA_MEMCPY3D *copy, CUstream stream);
 CUresult corex_backend_memset_d8(CUdeviceptr dst, unsigned char value, size_t bytes);
 CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value,
                                        size_t bytes, CUstream stream);

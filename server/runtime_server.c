@@ -774,6 +774,20 @@ static int handle_memcpy_2d(ServerSession *session, int fd, uint32_t req_id,
     if ((mode == 1 && host_bytes != w*h) || (mode != 1 && host_bytes != 0)) return send_response(fd, async ? OP_MEMCPY_2D_ASYNC : OP_MEMCPY_2D, req_id, ST_BAD_REQUEST, NULL, 0);
     unsigned char *out = mode == 2 ? malloc((size_t)(w*h)) : NULL;
     if (mode == 2 && !out) return send_response(fd, async ? OP_MEMCPY_2D_ASYNC : OP_MEMCPY_2D, req_id, ST_INTERNAL, NULL, 0);
+    if (!async || mode == 3) {
+        CUDA_MEMCPY2D copy; memset(&copy, 0, sizeof(copy));
+        copy.srcXInBytes = 0; copy.srcY = 0; copy.srcPitch = (size_t)sp;
+        copy.dstXInBytes = 0; copy.dstY = 0; copy.dstPitch = (size_t)dp;
+        copy.WidthInBytes = (size_t)w; copy.Height = (size_t)h;
+        if (mode == 1) { copy.srcMemoryType = CU_MEMORYTYPE_HOST; copy.srcHost = host; copy.dstMemoryType = CU_MEMORYTYPE_DEVICE; copy.dstDevice = dst->ptr + doff; }
+        else if (mode == 2) { copy.srcMemoryType = CU_MEMORYTYPE_DEVICE; copy.srcDevice = src->ptr + soff; copy.dstMemoryType = CU_MEMORYTYPE_HOST; copy.dstHost = out; }
+        else { copy.srcMemoryType = CU_MEMORYTYPE_DEVICE; copy.srcDevice = src->ptr + soff; copy.dstMemoryType = CU_MEMORYTYPE_DEVICE; copy.dstDevice = dst->ptr + doff; }
+        CUresult native = (async && mode == 3)
+            ? corex_backend_copy_2d_async(&copy, stream)
+            : corex_backend_copy_2d(&copy);
+        if (native != CUDA_SUCCESS) { free(out); return send_response(fd, OP_MEMCPY_2D, req_id, ST_CUDA_ERROR, NULL, 0); }
+        int native_rc = send_response(fd, OP_MEMCPY_2D, req_id, ST_OK, out, mode == 2 ? (uint32_t)(w*h) : 0); free(out); return native_rc;
+    }
     for (uint64_t y=0; y<h; ++y) {
         CUresult r = CUDA_SUCCESS; CUdeviceptr dptr = dst ? dst->ptr + doff + y*dp : 0; CUdeviceptr sptr = src ? src->ptr + soff + y*sp : 0;
         if (mode == 1) r = async ? corex_backend_copy_h2d_async(dptr, host + y*w, (size_t)w, stream) : corex_backend_copy_h2d(dptr, host + y*w, (size_t)w);
@@ -806,6 +820,35 @@ static int handle_memset_2d(ServerSession *session, int fd, uint32_t req_id,
 static int handle_memset_2d_async(ServerSession *session, int fd, uint32_t req_id,
                                   const unsigned char *payload, uint32_t len)
 { return handle_memset_2d(session, fd, req_id, payload, len, 1); }
+
+static int handle_memcpy_3d(ServerSession *session, int fd, uint32_t req_id,
+                            const unsigned char *payload, uint32_t len, int async)
+{
+    const uint32_t header = async ? 100u : 92u;
+    if (!payload || len < header) return send_response(fd, async ? OP_MEMCPY_3D_ASYNC : OP_MEMCPY_3D, req_id, ST_BAD_REQUEST, NULL, 0);
+    uint32_t mode = corex_protocol_read_u32(payload); uint64_t did=corex_protocol_read_u64(payload+4), doff=corex_protocol_read_u64(payload+12), dp=corex_protocol_read_u64(payload+20), ds=corex_protocol_read_u64(payload+28);
+    uint64_t sid=corex_protocol_read_u64(payload+36), soff=corex_protocol_read_u64(payload+44), sp=corex_protocol_read_u64(payload+52), ss=corex_protocol_read_u64(payload+60);
+    uint64_t w=corex_protocol_read_u64(payload+68), h=corex_protocol_read_u64(payload+76), d=corex_protocol_read_u64(payload+84);
+    uint64_t stream_id=async ? corex_protocol_read_u64(payload+92) : 0;
+    Allocation *dst=did?find_allocation(session,did):NULL, *src=sid?find_allocation(session,sid):NULL; StreamEntry *stream_entry=stream_id?find_stream(session,stream_id):NULL;
+    if (!w||!h||!d||w>SIZE_MAX||h>SIZE_MAX||d>SIZE_MAX||((mode==1&&!dst)||(mode==2&&!src)||(mode==3&&(!dst||!src)))||(stream_id&&!stream_entry)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    if (mode != 1 && mode != 2 && mode != 3) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    if (w > UINT64_MAX / h || w*h > UINT64_MAX/d) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    uint64_t volume=w*h*d, host_bytes=(uint64_t)len-header; if ((mode==1&&host_bytes!=volume)||(mode!=1&&host_bytes!=0)||volume>UINT32_MAX) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    if ((mode==1&&(!dp||!ds||w>dp||ds<dp*h))||(mode!=1&&(!sp||!ss||w>sp||ss<sp*h))) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    if (dst && (doff>dst->size || d-1>(dst->size-doff)/ds || h-1>(dst->size-doff-(d-1)*ds)/dp || w>dst->size-doff-(d-1)*ds-(h-1)*dp)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    if (src && (soff>src->size || d-1>(src->size-soff)/ss || h-1>(src->size-soff-(d-1)*ss)/sp || w>src->size-soff-(d-1)*ss-(h-1)*sp)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
+    unsigned char *out=mode==2?malloc((size_t)volume):NULL; if(mode==2&&!out)return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_INTERNAL,NULL,0);
+    CUDA_MEMCPY3D copy; memset(&copy,0,sizeof(copy)); copy.WidthInBytes=(size_t)w; copy.Height=(size_t)h; copy.Depth=(size_t)d;
+    if(mode==1){copy.srcMemoryType=CU_MEMORYTYPE_HOST;copy.srcHost=payload+header;copy.srcPitch=(size_t)w;copy.srcHeight=(size_t)h;copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=dst->ptr+doff;copy.dstPitch=(size_t)dp;copy.dstHeight=(size_t)(ds/dp);}
+    else if(mode==2){copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=src->ptr+soff;copy.srcPitch=(size_t)sp;copy.srcHeight=(size_t)(ss/sp);copy.dstMemoryType=CU_MEMORYTYPE_HOST;copy.dstHost=out;copy.dstPitch=(size_t)w;copy.dstHeight=(size_t)h;}
+    else {copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=src->ptr+soff;copy.srcPitch=(size_t)sp;copy.srcHeight=(size_t)(ss/sp);copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=dst->ptr+doff;copy.dstPitch=(size_t)dp;copy.dstHeight=(size_t)(ds/dp);}
+    CUresult result = async ? corex_backend_copy_3d_async(&copy, stream_entry ? stream_entry->stream : NULL) : corex_backend_copy_3d(&copy);
+    if(result!=CUDA_SUCCESS){free(out);return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_CUDA_ERROR,NULL,0);} int rc=send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_OK,out,mode==2?(uint32_t)volume:0);free(out);return rc;
+}
+
+static int handle_memcpy_3d_sync_entry(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len){return handle_memcpy_3d(session,fd,req_id,payload,len,0);}
+static int handle_memcpy_3d_async_entry(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len){return handle_memcpy_3d(session,fd,req_id,payload,len,1);}
 
 static int handle_memset_2d_sync_entry(ServerSession *session, int fd, uint32_t req_id,
                                        const unsigned char *payload, uint32_t len)
@@ -3689,6 +3732,8 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_MEMSET_ASYNC, handle_memset_async, CRX_CAP_COPY_ASYNC) \
     X(OP_MEMSET_2D, handle_memset_2d_sync_entry, CRX_CAP_LAYOUT_TRANSFER) \
     X(OP_MEMSET_2D_ASYNC, handle_memset_2d_async, CRX_CAP_LAYOUT_TRANSFER) \
+    X(OP_MEMCPY_3D, handle_memcpy_3d_sync_entry, CRX_CAP_LAYOUT_TRANSFER) \
+    X(OP_MEMCPY_3D_ASYNC, handle_memcpy_3d_async_entry, CRX_CAP_LAYOUT_TRANSFER) \
     X(OP_STREAM_GET_FLAGS, handle_stream_get_flags, CRX_CAP_STREAM_EVENT) \
     X(OP_CREATE_STREAM_PRIORITY, handle_create_stream_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_STREAM_GET_PRIORITY, handle_stream_get_priority, CRX_CAP_STREAM_EVENT) \
