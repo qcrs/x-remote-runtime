@@ -18,6 +18,11 @@ Current autonomous roadmap position: **M3-S7 complete; M4-S1 ready** (M1–M3 PA
 | Blockers | None |
 | Next action | Begin Wave 1 pitched and two-dimensional memory probe |
 
+Compatibility and operations work are tracked independently. The compatibility
+track has completed M3-S7 and is ready for M4-S1; M6-S1 network configuration
+and diagnostics remain an independent productization track, not evidence that
+M4/M5 API expansion is complete.
+
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
 `docs/gate8/` and `evidence/gate8d/` for reference; they are not development
@@ -124,19 +129,21 @@ null-argument, invalid-block-size, numerical, ABI/protocol, lifecycle,
 session-isolation, reconnect, and multithread gates passed. Evidence:
 `evidence/m3/s5/20260924-XXXXXX/`.
 
-M3-S6 upgrades the reviewed schema to Codegen V2 for fixed-width scalar and
-object-ID APIs. Generated metadata, network-order codecs, exact payload
-validation, registry coverage, ABI export coverage, and negative schema tests
-are reproducible. The schema now covers opcodes 4, 14, 19, and 39–46 while
-preserving opcodes 1–38. `scripts/verify-api-contracts.py` checks schema,
-ledger, protocol, and packaging consistency.
+M3-S6 upgrades the reviewed schema to Codegen V2 for fixed-width scalar,
+object-ID, and bounded DTO APIs. Generated metadata, size-bound validation,
+network-order codecs, server registry entries, typed client calls, ABI export
+coverage, and negative schema tests are reproducible. The schema now covers
+opcodes 4, 14, 19, and 39–48 while preserving opcodes 1–38.
+`scripts/verify-api-contracts.py` checks schema, ledger, protocol, and packaging
+consistency.
 
 M3-S7 adds CoreX-proven device/context queries and registered-kernel setters:
 `cudaDeviceGetAttribute`, `cudaGetDeviceFlags`,
 `cudaDeviceGetStreamPriorityRange`, `cudaDeviceGetLimit`,
 `cudaDeviceGetCacheConfig`, `cudaDeviceGetSharedMemConfig`,
-`cudaFuncSetAttribute`, and `cudaFuncSetCacheConfig`. CoreX 4.4 probe output
-is preserved in `evidence/m3/s7/20260928-084000/`; supported and native
-unsupported limits are tested without guessing. `cudaFuncGetAttributes` is
-classified `PARTIAL_IMPLEMENTED` because three Runtime fields remain local
-defaults without a proven CoreX query.
+`cudaFuncSetAttribute`, and `cudaFuncSetCacheConfig`. It also adds
+`cudaDeviceGetPCIBusId` and `cudaDeviceGetByPCIBusId` using generated
+bounded-string codecs. CoreX 4.4 probe output is preserved under
+`evidence/m3/s7/`; supported and native unsupported limits are tested without
+guessing. `cudaFuncGetAttributes` is classified `PARTIAL_IMPLEMENTED` because
+three Runtime fields remain local defaults without a proven CoreX query.

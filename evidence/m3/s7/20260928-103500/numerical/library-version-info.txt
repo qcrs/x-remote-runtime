@@ -1,0 +1,46 @@
+
+Version symbols section '.gnu.version' contains 107 entries:
+ Addr: 0x00000000000014e6  Offset: 0x0014e6  Link: 3 (.dynsym)
+  000:   0 (*local*)       0 (*local*)       0 (*local*)       5 (GLIBC_2.17) 
+  004:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    1 (*global*)      5 (GLIBC_2.17) 
+  008:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  00c:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  010:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  014:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  018:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    1 (*global*)   
+  01c:   6 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  020:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  024:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  028:   5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  02c:   1 (*global*)      5 (GLIBC_2.17)    5 (GLIBC_2.17)    5 (GLIBC_2.17) 
+  030:   5 (GLIBC_2.17)    2 (COREX_REMOTE_CUDART_1.0)             3 (COREX_REMOTE_EXT_1.0)          2 (COREX_REMOTE_CUDART_1.0)          
+  034:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)             4 (COREX_REMOTE_CUDART_1.1)          
+  038:   4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)          
+  03c:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  040:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  044:   2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  048:   4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  04c:   4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)          
+  050:   4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)             3 (COREX_REMOTE_EXT_1.0)       
+  054:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)          
+  058:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  05c:   2 (COREX_REMOTE_CUDART_1.0)             4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  060:   2 (COREX_REMOTE_CUDART_1.0)             3 (COREX_REMOTE_EXT_1.0)          2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  064:   2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)             2 (COREX_REMOTE_CUDART_1.0)          
+  068:   4 (COREX_REMOTE_CUDART_1.1)             2 (COREX_REMOTE_CUDART_1.0)             3 (COREX_REMOTE_EXT_1.0)       
+
+Version definition section '.gnu.version_d' contains 4 entries:
+ Addr: 0x00000000000015c0  Offset: 0x0015c0  Link: 4 (.dynstr)
+  000000: Rev: 1  Flags: BASE  Index: 1  Cnt: 1  Name: libcorex_remote_cudart.so.1
+  0x001c: Rev: 1  Flags: none  Index: 2  Cnt: 1  Name: COREX_REMOTE_CUDART_1.0
+  0x0038: Rev: 1  Flags: none  Index: 3  Cnt: 2  Name: COREX_REMOTE_EXT_1.0
+  0x0054: Parent 1: COREX_REMOTE_CUDART_1.0
+  0x005c: Rev: 1  Flags: none  Index: 4  Cnt: 2  Name: COREX_REMOTE_CUDART_1.1
+  0x0078: Parent 1: COREX_REMOTE_CUDART_1.0
+
+Version needs section '.gnu.version_r' contains 2 entries:
+ Addr: 0x0000000000001640  Offset: 0x001640  Link: 4 (.dynstr)
+  000000: Version: 1  File: ld-linux-aarch64.so.1  Cnt: 1
+  0x0010:   Name: GLIBC_2.17  Flags: none  Version: 6
+  0x0020: Version: 1  File: libc.so.6  Cnt: 1
+  0x0030:   Name: GLIBC_2.17  Flags: none  Version: 5

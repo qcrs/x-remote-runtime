@@ -461,9 +461,20 @@ static int remote_free(uint64_t allocation_id)
     return rpc(g_fd, OP_FREE, &wire_id, sizeof(wire_id), NULL, NULL);
 }
 
+static int generated_rpc_call(uint32_t opcode, const unsigned char *payload,
+                              uint32_t payload_length,
+                              unsigned char **response,
+                              uint32_t *response_length)
+{
+    return rpc(g_fd, opcode, payload, payload_length, response, response_length);
+}
+
 static int remote_sync(void)
 {
-    return rpc(g_fd, OP_SYNC, NULL, 0, NULL, NULL);
+    CorexGeneratedcudaDeviceSynchronizeRequest request = {0};
+    CorexGeneratedcudaDeviceSynchronizeResponse response = {0};
+    return corex_generated_call_cudaDeviceSynchronize(
+        generated_rpc_call, &request, &response);
 }
 
 static int remote_version_query(uint32_t opcode, int *version)
@@ -478,19 +489,35 @@ static int remote_device_get_attribute(int attribute, int device, int *value)
     CorexGeneratedcudaDeviceGetAttributeRequest request = {
         .attribute = attribute, .device = device};
     CorexGeneratedcudaDeviceGetAttributeResponse response;
-    unsigned char payload[8], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaDeviceGetAttribute_request(
-            payload, sizeof(payload), &request) != 0 ||
-        rpc(g_fd, OP_DEVICE_GET_ATTRIBUTE, payload, sizeof(payload),
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaDeviceGetAttribute_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaDeviceGetAttribute(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *value = response.value;
-    free(wire_response);
+    return 0;
+}
+
+static int remote_device_get_pci_bus_id(int device,
+                                        CorexGeneratedcudaDeviceGetPCIBusIdResponse *response)
+{
+    CorexGeneratedcudaDeviceGetPCIBusIdRequest request = {.device = device};
+    return corex_generated_call_cudaDeviceGetPCIBusId(
+        generated_rpc_call, &request, response);
+}
+
+static int remote_device_get_by_pci_bus_id(const char *pci_bus_id, size_t length,
+                                           int *device)
+{
+    CorexGeneratedcudaDeviceGetByPCIBusIdRequest request = {
+        .pci_bus_id_length = (uint32_t)length};
+    CorexGeneratedcudaDeviceGetByPCIBusIdResponse response;
+    if (length > COREX_GENERATED_CUDADEVICEGETBYPCIBUSID_REQUEST_PCI_BUS_ID_MAX_BYTES)
+        return -1;
+    memcpy(request.pci_bus_id, pci_bus_id, length);
+    request.pci_bus_id[length] = '\0';
+    if (corex_generated_call_cudaDeviceGetByPCIBusId(
+            generated_rpc_call, &request, &response) != 0)
+        return -1;
+    *device = response.device;
     return 0;
 }
 
@@ -498,19 +525,10 @@ static int remote_get_device_flags(unsigned int *flags)
 {
     CorexGeneratedcudaGetDeviceFlagsRequest request = {0};
     CorexGeneratedcudaGetDeviceFlagsResponse response;
-    unsigned char payload[1], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaGetDeviceFlags_request(
-            payload, 0, &request) != 0 ||
-        rpc(g_fd, OP_GET_DEVICE_FLAGS, NULL, 0,
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaGetDeviceFlags_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaGetDeviceFlags(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *flags = response.flags;
-    free(wire_response);
     return 0;
 }
 
@@ -518,20 +536,11 @@ static int remote_get_priority_range(int *least_priority, int *greatest_priority
 {
     CorexGeneratedcudaDeviceGetStreamPriorityRangeRequest request = {0};
     CorexGeneratedcudaDeviceGetStreamPriorityRangeResponse response;
-    unsigned char payload[1], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaDeviceGetStreamPriorityRange_request(
-            payload, 0, &request) != 0 ||
-        rpc(g_fd, OP_GET_PRIORITY_RANGE, NULL, 0,
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaDeviceGetStreamPriorityRange_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaDeviceGetStreamPriorityRange(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *least_priority = response.least_priority;
     *greatest_priority = response.greatest_priority;
-    free(wire_response);
     return 0;
 }
 
@@ -539,19 +548,10 @@ static int remote_get_limit(int limit, size_t *value)
 {
     CorexGeneratedcudaDeviceGetLimitRequest request = {.limit = limit};
     CorexGeneratedcudaDeviceGetLimitResponse response;
-    unsigned char payload[4], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaDeviceGetLimit_request(
-            payload, sizeof(payload), &request) != 0 ||
-        rpc(g_fd, OP_GET_LIMIT, payload, sizeof(payload),
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaDeviceGetLimit_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaDeviceGetLimit(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *value = (size_t)response.value;
-    free(wire_response);
     return 0;
 }
 
@@ -559,19 +559,10 @@ static int remote_get_cache_config(int *config)
 {
     CorexGeneratedcudaDeviceGetCacheConfigRequest request = {0};
     CorexGeneratedcudaDeviceGetCacheConfigResponse response;
-    unsigned char payload[1], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaDeviceGetCacheConfig_request(
-            payload, 0, &request) != 0 ||
-        rpc(g_fd, OP_GET_CACHE_CONFIG, NULL, 0,
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaDeviceGetCacheConfig_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaDeviceGetCacheConfig(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *config = response.config;
-    free(wire_response);
     return 0;
 }
 
@@ -579,19 +570,10 @@ static int remote_get_shared_mem_config(int *config)
 {
     CorexGeneratedcudaDeviceGetSharedMemConfigRequest request = {0};
     CorexGeneratedcudaDeviceGetSharedMemConfigResponse response;
-    unsigned char payload[1], *wire_response = NULL;
-    uint32_t response_length = 0;
-    if (corex_generated_encode_cudaDeviceGetSharedMemConfig_request(
-            payload, 0, &request) != 0 ||
-        rpc(g_fd, OP_GET_SHARED_MEM_CONFIG, NULL, 0,
-            &wire_response, &response_length) != 0 ||
-        corex_generated_decode_cudaDeviceGetSharedMemConfig_response(
-            wire_response, response_length, &response) != 0) {
-        free(wire_response);
+    if (corex_generated_call_cudaDeviceGetSharedMemConfig(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    }
     *config = response.config;
-    free(wire_response);
     return 0;
 }
 
@@ -599,22 +581,18 @@ static int remote_function_set_attribute(uint64_t kernel_id, int attribute, int 
 {
     CorexGeneratedcudaFuncSetAttributeRequest request = {
         .kernel = kernel_id, .attribute = attribute, .value = value};
-    unsigned char payload[16];
-    return corex_generated_encode_cudaFuncSetAttribute_request(
-               payload, sizeof(payload), &request) == 0 &&
-           rpc(g_fd, OP_FUNCTION_SET_ATTRIBUTE, payload, sizeof(payload), NULL, NULL) == 0
-        ? 0 : -1;
+    CorexGeneratedcudaFuncSetAttributeResponse response = {0};
+    return corex_generated_call_cudaFuncSetAttribute(
+        generated_rpc_call, &request, &response);
 }
 
 static int remote_function_set_cache_config(uint64_t kernel_id, int config)
 {
     CorexGeneratedcudaFuncSetCacheConfigRequest request = {
         .kernel = kernel_id, .config = config};
-    unsigned char payload[12];
-    return corex_generated_encode_cudaFuncSetCacheConfig_request(
-               payload, sizeof(payload), &request) == 0 &&
-           rpc(g_fd, OP_FUNCTION_SET_CACHE_CONFIG, payload, sizeof(payload), NULL, NULL) == 0
-        ? 0 : -1;
+    CorexGeneratedcudaFuncSetCacheConfigResponse response = {0};
+    return corex_generated_call_cudaFuncSetCacheConfig(
+        generated_rpc_call, &request, &response);
 }
 
 static int remote_function_attributes(uint64_t kernel_id, cudaFuncAttributes *attr)
@@ -924,21 +902,12 @@ static int remote_stream_sync(uint64_t stream_id)
 
 static int remote_stream_query(uint64_t stream_id, uint32_t *state_out)
 {
-    uint64_t wire_id = corex_protocol_to_be64(stream_id);
-    unsigned char *resp = NULL;
-    uint32_t resp_len = 0;
-
-    if (rpc(g_fd, OP_STREAM_QUERY, &wire_id, sizeof(wire_id), &resp, &resp_len) != 0)
+    CorexGeneratedcudaStreamQueryRequest request = {.stream = stream_id};
+    CorexGeneratedcudaStreamQueryResponse response;
+    if (corex_generated_call_cudaStreamQuery(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    if (resp_len != 4) {
-        free(resp);
-        return -1;
-    }
-
-    uint32_t wire_state;
-    memcpy(&wire_state, resp, sizeof(wire_state));
-    free(resp);
-    *state_out = ntohl(wire_state);
+    *state_out = response.state;
     return 0;
 }
 
@@ -1003,21 +972,12 @@ static int remote_event_sync(uint64_t event_id)
 
 static int remote_event_query(uint64_t event_id, uint32_t *state_out)
 {
-    uint64_t wire_id = corex_protocol_to_be64(event_id);
-    unsigned char *resp = NULL;
-    uint32_t resp_len = 0;
-
-    if (rpc(g_fd, OP_EVENT_QUERY, &wire_id, sizeof(wire_id), &resp, &resp_len) != 0)
+    CorexGeneratedcudaEventQueryRequest request = {.event = event_id};
+    CorexGeneratedcudaEventQueryResponse response;
+    if (corex_generated_call_cudaEventQuery(
+            generated_rpc_call, &request, &response) != 0)
         return -1;
-    if (resp_len != 4) {
-        free(resp);
-        return -1;
-    }
-
-    uint32_t wire_state;
-    memcpy(&wire_state, resp, sizeof(wire_state));
-    free(resp);
-    *state_out = ntohl(wire_state);
+    *state_out = response.state;
     return 0;
 }
 
@@ -2047,6 +2007,39 @@ static cudaError_t cudaDeviceGetAttribute_locked(int *value, cudaDeviceAttr attr
     cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
     if (remote_device_get_attribute((int)attr, device, value) != 0)
         G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetPCIBusId_locked(char *pci_bus_id, int length,
+                                                int device)
+{
+    if (!pci_bus_id || length <= 0) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    CorexGeneratedcudaDeviceGetPCIBusIdResponse response;
+    if (remote_device_get_pci_bus_id(device, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
+    size_t required = (size_t)response.pci_bus_id_length + 1u;
+    if ((size_t)length < required) {
+        pci_bus_id[0] = '\0';
+        G6E_RETURN(cudaErrorInvalidValue);
+    }
+    memcpy(pci_bus_id, response.pci_bus_id, required);
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetByPCIBusId_locked(int *device,
+                                                  const char *pci_bus_id)
+{
+    if (!device || !pci_bus_id) G6E_RETURN(cudaErrorInvalidValue);
+    size_t max_bytes = COREX_GENERATED_CUDADEVICEGETBYPCIBUSID_REQUEST_PCI_BUS_ID_MAX_BYTES;
+    size_t length = strnlen(pci_bus_id, max_bytes + 1u);
+    if (length > max_bytes)
+        G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    int result = -1;
+    if (remote_device_get_by_pci_bus_id(pci_bus_id, length, &result) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
+    *device = result;
     return cudaSuccess;
 }
 
@@ -4202,6 +4195,24 @@ cudaError_t cudaDeviceGetAttribute(int *value, cudaDeviceAttr attr, int device)
     CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
     cudaError_t result = cudaDeviceGetAttribute_locked(value, attr, device);
     corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaDeviceGetPCIBusId(char *pciBusId, int len, int device)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetPCIBusId_locked(pciBusId, len, device);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaDeviceGetByPCIBusId(int *device, const char *pciBusId)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetByPCIBusId_locked(device, pciBusId);
+    corex_runtime_context_unlock(context);
+    return result;
 }
 
 cudaError_t cudaGetDeviceFlags(unsigned int *flags)

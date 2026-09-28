@@ -1,0 +1,12 @@
+M2_S3_UNKNOWN_OPCODE=PASS
+M2_S2_NEW_PEER=PASS
+M2_S2_LEGACY_V3=PASS
+M2_S2_MALFORMED_PAYLOAD=REJECTED
+G6A_VA_ARENA base=0xffef9c020000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=50072 protocol=CRX9 version=3 default_stream=LEGACY
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M2_S2_HELLO=LEGACY_V3 capabilities=UNKNOWN
+G6E_REMOTE_SESSION=CONNECTED generation=2 host=127.0.0.1 port=50072 protocol=CRX9 version=3 default_stream=LEGACY
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN state=DISCONNECTED action=NOOP result=PASS

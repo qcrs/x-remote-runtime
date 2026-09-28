@@ -44,6 +44,8 @@ corexRemoteRegisterKernel
 cudaGetDeviceProperties
 cudaMemGetInfo
 cudaDeviceGetAttribute
+cudaDeviceGetByPCIBusId
+cudaDeviceGetPCIBusId
 cudaGetDeviceFlags
 cudaDeviceGetStreamPriorityRange
 cudaDeviceGetLimit

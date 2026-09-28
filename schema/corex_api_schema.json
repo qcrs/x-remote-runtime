@@ -11,7 +11,8 @@
       "abi": "COREX_REMOTE_CUDART_1.1",
       "request": [],
       "response": [],
-      "backend_binding": "corex_backend_context_sync"
+      "backend_binding": "corex_backend_context_sync",
+      "server_handler": "handle_sync"
     },
     {
       "name": "cudaStreamQuery",
@@ -26,7 +27,8 @@
       "response": [
         {"name": "state", "type": "u32"}
       ],
-      "backend_binding": "corex_backend_stream_query"
+      "backend_binding": "corex_backend_stream_query",
+      "server_handler": "handle_stream_query"
     },
     {
       "name": "cudaEventQuery",
@@ -41,7 +43,8 @@
       "response": [
         {"name": "state", "type": "u32"}
       ],
-      "backend_binding": "corex_backend_event_query"
+      "backend_binding": "corex_backend_event_query",
+      "server_handler": "handle_event_query"
     },
     {
       "name": "cudaDeviceGetAttribute",
@@ -57,7 +60,8 @@
       "response": [
         {"name": "value", "type": "i32"}
       ],
-      "backend_binding": "corex_backend_device_attribute"
+      "backend_binding": "corex_backend_device_attribute",
+      "server_handler": "handle_device_get_attribute"
     },
     {
       "name": "cudaGetDeviceFlags",
@@ -70,7 +74,8 @@
       "response": [
         {"name": "flags", "type": "u32"}
       ],
-      "backend_binding": "corex_backend_context_get_flags"
+      "backend_binding": "corex_backend_context_get_flags",
+      "server_handler": "handle_get_device_flags"
     },
     {
       "name": "cudaDeviceGetStreamPriorityRange",
@@ -84,7 +89,8 @@
         {"name": "least_priority", "type": "i32"},
         {"name": "greatest_priority", "type": "i32"}
       ],
-      "backend_binding": "corex_backend_stream_priority_range"
+      "backend_binding": "corex_backend_stream_priority_range",
+      "server_handler": "handle_get_priority_range"
     },
     {
       "name": "cudaDeviceGetLimit",
@@ -99,7 +105,8 @@
       "response": [
         {"name": "value", "type": "size_u64"}
       ],
-      "backend_binding": "corex_backend_context_get_limit"
+      "backend_binding": "corex_backend_context_get_limit",
+      "server_handler": "handle_get_limit"
     },
     {
       "name": "cudaDeviceGetCacheConfig",
@@ -112,7 +119,8 @@
       "response": [
         {"name": "config", "type": "i32"}
       ],
-      "backend_binding": "corex_backend_context_get_cache_config"
+      "backend_binding": "corex_backend_context_get_cache_config",
+      "server_handler": "handle_get_cache_config"
     },
     {
       "name": "cudaDeviceGetSharedMemConfig",
@@ -125,7 +133,8 @@
       "response": [
         {"name": "config", "type": "i32"}
       ],
-      "backend_binding": "corex_backend_context_get_shared_mem_config"
+      "backend_binding": "corex_backend_context_get_shared_mem_config",
+      "server_handler": "handle_get_shared_mem_config"
     },
     {
       "name": "cudaFuncSetAttribute",
@@ -140,7 +149,8 @@
         {"name": "value", "type": "i32"}
       ],
       "response": [],
-      "backend_binding": "corex_backend_function_set_attribute"
+      "backend_binding": "corex_backend_function_set_attribute",
+      "server_handler": "handle_function_set_attribute"
     },
     {
       "name": "cudaFuncSetCacheConfig",
@@ -154,7 +164,40 @@
         {"name": "config", "type": "i32"}
       ],
       "response": [],
-      "backend_binding": "corex_backend_function_set_cache_config"
+      "backend_binding": "corex_backend_function_set_cache_config",
+      "server_handler": "handle_function_set_cache_config"
+    },
+    {
+      "name": "cudaDeviceGetPCIBusId",
+      "opcode": 47,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "device", "type": "i32"}
+      ],
+      "response": [
+        {"name": "pci_bus_id", "type": "bounded_string", "max_bytes": 32}
+      ],
+      "backend_binding": "corex_backend_device_pci_bus_id",
+      "server_handler": "handle_device_get_pci_bus_id"
+    },
+    {
+      "name": "cudaDeviceGetByPCIBusId",
+      "opcode": 48,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "pci_bus_id", "type": "bounded_string", "max_bytes": 32}
+      ],
+      "response": [
+        {"name": "device", "type": "i32"}
+      ],
+      "backend_binding": "corex_backend_device_get_by_pci_bus_id",
+      "server_handler": "handle_device_get_by_pci_bus_id"
     }
   ]
 }

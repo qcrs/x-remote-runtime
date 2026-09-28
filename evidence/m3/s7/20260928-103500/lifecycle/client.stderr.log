@@ -1,0 +1,2 @@
+G6C_SHUTDOWN live_hidden_transfers=1 action=SERVER_SESSION_CLEANUP
+G7C_UNREGISTER_FATBINARY invalid_handle=0xaaaabc20d118

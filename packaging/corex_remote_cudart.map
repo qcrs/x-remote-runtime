@@ -54,6 +54,8 @@ COREX_REMOTE_CUDART_1.1 {
         cudaGetDeviceProperties;
         cudaMemGetInfo;
         cudaDeviceGetAttribute;
+        cudaDeviceGetByPCIBusId;
+        cudaDeviceGetPCIBusId;
         cudaGetDeviceFlags;
         cudaDeviceGetStreamPriorityRange;
         cudaDeviceGetLimit;

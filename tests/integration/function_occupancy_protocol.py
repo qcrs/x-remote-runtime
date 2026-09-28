@@ -10,6 +10,8 @@ ST_NOT_FOUND = 2
 OP_CLOSE = 7
 OP_FUNCTION_ATTRIBUTES = 37
 OP_OCCUPANCY = 38
+OP_FUNCTION_SET_ATTRIBUTE = 45
+OP_FUNCTION_SET_CACHE_CONFIG = 46
 
 
 def exact(sock, length):
@@ -47,7 +49,11 @@ def main():
         expect(sock, OP_FUNCTION_ATTRIBUTES, 2, struct.pack("!Q", 999), ST_NOT_FOUND)
         expect(sock, OP_OCCUPANCY, 3, b"bad", ST_BAD_REQUEST)
         expect(sock, OP_OCCUPANCY, 4, struct.pack("!QIQ", 999, 256, 0), ST_BAD_REQUEST)
-        call(sock, OP_CLOSE, 5)
+        expect(sock, OP_FUNCTION_SET_ATTRIBUTE, 5,
+               struct.pack("!Qii", 999, 8, 0), ST_NOT_FOUND)
+        expect(sock, OP_FUNCTION_SET_CACHE_CONFIG, 6,
+               struct.pack("!Qi", 999, 0), ST_NOT_FOUND)
+        call(sock, OP_CLOSE, 7)
     print("M3_S5_FUNCTION_OCCUPANCY_PROTOCOL=PASS")
 
 

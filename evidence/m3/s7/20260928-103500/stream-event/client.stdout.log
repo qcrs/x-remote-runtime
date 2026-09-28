@@ -1,0 +1,32 @@
+M3_S3_CHECK=stream-nonblocking:PASS
+M3_S3_CHECK=stream-flags:PASS
+M3_S3_CHECK=stream-priority:PASS
+M3_S3_CHECK=priority-query:PASS
+M3_S3_CHECK=event-start:PASS
+M3_S3_CHECK=event-end:PASS
+M3_S3_CHECK=event-disabled:PASS
+M3_S3_CHECK=record-start:PASS
+M3_S3_CHECK=record-end:PASS
+M3_S3_CHECK=sync-end:PASS
+M3_S3_CHECK=elapsed:PASS
+M3_S3_CHECK=disabled-elapsed-rejected:PASS
+M3_S3_CHECK=event-destroy:PASS
+M3_S3_CHECK=event-destroy:PASS
+M3_S3_CHECK=event-destroy:PASS
+M3_S3_CHECK=stream-destroy:PASS
+M3_S3_CHECK=stream-destroy:PASS
+M3_S3_STREAM_EVENT_EXTENSIONS=PASS
+G6A_VA_ARENA base=0xffefa8cc0000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=50081 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffa8cee288 stream_id=1 result=PASS
+G6C_CUDA_STREAM_CREATE handle=0xffffa8cee2c8 stream_id=2 result=PASS
+G6E_CUDA_EVENT_RECORD event_handle=0xffffa8cfe288 event_id=1 stream_handle=0xffffa8cee288 stream_id=1 frontier_snapshot=YES result=PASS
+G6E_CUDA_EVENT_RECORD event_handle=0xffffa8cfe2b8 event_id=2 stream_handle=0xffffa8cee288 stream_id=1 frontier_snapshot=YES result=PASS
+G6E_CUDA_EVENT_SYNC handle=0xffffa8cfe2b8 event_id=2 host_visible=YES result=PASS
+G6C_CUDA_EVENT_DESTROY handle=0xffffa8cfe288 event_id=1 covered_transfers_drained=YES result=PASS tombstone=YES
+G6C_CUDA_EVENT_DESTROY handle=0xffffa8cfe2b8 event_id=2 covered_transfers_drained=YES result=PASS tombstone=YES
+G6C_CUDA_EVENT_DESTROY handle=0xffffa8cfe2e8 event_id=3 covered_transfers_drained=N/A result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffffa8cee288 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffffa8cee2c8 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

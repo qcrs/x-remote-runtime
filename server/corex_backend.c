@@ -7,6 +7,8 @@ CUresult corex_backend_device_get(CUdevice *device, int ordinal) { return cuDevi
 CUresult corex_backend_device_name(char *name, int length, CUdevice device) { return cuDeviceGetName(name, length, device); }
 CUresult corex_backend_device_total_mem(size_t *bytes, CUdevice device) { return cuDeviceTotalMem(bytes, device); }
 CUresult corex_backend_device_attribute(int *value, CUdevice_attribute attribute, CUdevice device) { return cuDeviceGetAttribute(value, attribute, device); }
+CUresult corex_backend_device_pci_bus_id(char *pci_bus_id, int length, CUdevice device) { return cuDeviceGetPCIBusId(pci_bus_id, length, device); }
+CUresult corex_backend_device_get_by_pci_bus_id(CUdevice *device, const char *pci_bus_id) { return cuDeviceGetByPCIBusId(device, pci_bus_id); }
 CUresult corex_backend_context_create(CUcontext *context, unsigned int flags, CUdevice device) { return cuCtxCreate(context, flags, device); }
 CUresult corex_backend_context_destroy(CUcontext context) { return cuCtxDestroy(context); }
 CUresult corex_backend_context_sync(void) { return cuCtxSynchronize(); }

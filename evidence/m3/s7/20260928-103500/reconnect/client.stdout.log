@@ -1,0 +1,38 @@
+M1_S5_CHECK name=initial-connect actual=0 expected=0 result=PASS
+M1_S5_CHECK name=idle-server-kill-failing-call actual=999 expected=999 result=PASS
+M1_S5_CHECK name=reconnect-after-idle-kill actual=0 expected=0 result=PASS
+M1_S5_CHECK name=allocation-before-kill actual=0 expected=0 result=PASS
+M1_S5_CHECK name=stream-before-kill actual=0 expected=0 result=PASS
+M1_S5_CHECK name=event-before-kill actual=0 expected=0 result=PASS
+M1_S5_CHECK name=live-server-kill-failing-call actual=999 expected=999 result=PASS
+M1_S5_CHECK name=reconnect-after-live-kill actual=0 expected=0 result=PASS
+M1_S5_CHECK name=failed-generation-pointer-stale actual=17 expected=17 result=PASS
+M1_S5_CHECK name=failed-generation-stream-stale actual=400 expected=400 result=PASS
+M1_S5_CHECK name=failed-generation-event-stale actual=400 expected=400 result=PASS
+M1_S5_CHECK name=fresh-allocation actual=0 expected=0 result=PASS
+M1_S5_CHECK name=fresh-h2d actual=0 expected=0 result=PASS
+M1_S5_CHECK name=fresh-d2h actual=0 expected=0 result=PASS
+M1_S5_CHECK name=fresh-free actual=0 expected=0 result=PASS
+M1_S5_CHECK name=pre-protocol-test-disconnect actual=999 expected=999 result=PASS
+M1_S5_CHECK name=protocol-mismatch-during-hello actual=3 expected=3 result=PASS
+M1_S5_CHECK name=reconnect-after-protocol-mismatch actual=0 expected=0 result=PASS
+M1_S5_FAILURE_RECONNECT_RESULT=PASS
+G6A_VA_ARENA base=0xffef86c90000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=50082 protocol=CRX9 version=3 default_stream=LEGACY
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=2 host=127.0.0.1 port=50082 protocol=CRX9 version=3 default_stream=LEGACY
+G6A_CUDA_MALLOC ptr=0xffef86c90000 allocation_id=1 bytes=4 span=131072 result=PASS
+G6C_CUDA_STREAM_CREATE handle=0xffff86cbe288 stream_id=1 result=PASS
+G6C_CUDA_EVENT_CREATE handle=0xffff86cce288 event_id=1 result=PASS
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=3 host=127.0.0.1 port=50082 protocol=CRX9 version=3 default_stream=LEGACY
+G6A_CUDA_MALLOC ptr=0xffef86cb0000 allocation_id=1 bytes=4 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef86cb0000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=4 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef86cb0000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=4 result=PASS
+G6A_CUDA_FREE ptr=0xffef86cb0000 allocation_id=1 result=PASS tombstone=YES
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=5 host=127.0.0.1 port=50082 protocol=CRX9 version=3 default_stream=LEGACY
+M1_S2_RUNTIME_SHUTDOWN generation=5 state=DISCONNECTED result=PASS

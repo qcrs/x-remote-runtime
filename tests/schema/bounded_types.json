@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "abi": "COREX_REMOTE_CUDART_1.1",
+  "apis": [
+    {
+      "name": "corexSchemaBoundedTypesTest",
+      "opcode": 999,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "semantic_rpc",
+      "public_export": false,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "blob", "type": "bounded_bytes", "max_bytes": 16}
+      ],
+      "response": [
+        {"name": "text", "type": "bounded_string", "max_bytes": 32}
+      ],
+      "backend_binding": "",
+      "server_handler": "test_bounded_handler"
+    }
+  ]
+}

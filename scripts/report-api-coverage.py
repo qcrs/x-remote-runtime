@@ -5,6 +5,15 @@ import csv
 from collections import Counter, defaultdict
 from pathlib import Path
 
+LEDGER_STATUSES = (
+    "IMPLEMENTED",
+    "PARTIAL_IMPLEMENTED",
+    "GROUND_TRUTH_REQUIRED",
+    "BACKEND_UNSUPPORTED",
+    "DEPRECATED",
+    "OUT_OF_SCOPE_CURRENT",
+)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -13,11 +22,14 @@ def main():
     with args.ledger.open(newline="") as stream:
         rows = list(csv.DictReader(stream))
     statuses = Counter(row["current_status"] for row in rows)
+    unknown = sorted(set(statuses) - set(LEDGER_STATUSES))
+    if unknown:
+        raise SystemExit("unknown ledger statuses: " + ",".join(unknown))
     families = defaultdict(Counter)
     for row in rows:
         families[row["family"]][row["current_status"]] += 1
     print(f"TOTAL={len(rows)}")
-    for status in sorted(statuses):
+    for status in LEDGER_STATUSES:
         print(f"{status}={statuses[status]}")
     for family in sorted(families):
         summary = ",".join(f"{key}:{families[family][key]}" for key in sorted(families[family]))

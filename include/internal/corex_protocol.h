@@ -84,8 +84,10 @@ typedef enum {
     OP_GET_SHARED_MEM_CONFIG = 44,
     OP_FUNCTION_SET_ATTRIBUTE = 45,
     OP_FUNCTION_SET_CACHE_CONFIG = 46,
+    OP_DEVICE_GET_PCI_BUS_ID = 47,
+    OP_DEVICE_GET_BY_PCI_BUS_ID = 48,
     /* Sentinel: one past the highest assigned wire opcode. */
-    OP__COUNT               = 47,
+    OP__COUNT               = 49,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

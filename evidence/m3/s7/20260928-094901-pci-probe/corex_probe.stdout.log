@@ -1,0 +1,41 @@
+cuInit=0
+cuDeviceGet=0 device=0
+cuCtxCreate=0
+cuCtxGetFlags=0 flags=0
+cuCtxGetStreamPriorityRange=0 least=0 greatest=-1
+cuCtxGetLimit[0]=215 value=0
+cuCtxGetLimit[1]=0 value=5242880
+cuCtxGetLimit[2]=0 value=8388608
+cuCtxGetLimit[3]=215 value=0
+cuCtxGetLimit[4]=215 value=0
+cuCtxGetLimit[5]=215 value=0
+cuCtxGetLimit[6]=0 value=0
+cuCtxGetCacheConfig=0 value=0
+cuCtxGetSharedMemConfig=0 value=1
+cuDeviceGetAttribute[1]=0 value=4096
+cuDeviceGetAttribute[8]=0 value=131072
+cuDeviceGetAttribute[10]=0 value=64
+cuDeviceGetAttribute[13]=0 value=1500000
+cuDeviceGetAttribute[16]=0 value=16
+cuDeviceGetAttribute[36]=0 value=1600000
+cuDeviceGetAttribute[37]=0 value=2048
+cuDeviceGetAttribute[75]=0 value=7
+cuDeviceGetAttribute[76]=0 value=1
+cuDeviceGetAttribute[999]=0 value=0
+cuDeviceGetAttribute[invalid-device]=101
+cuDeviceGetPCIBusId=0 value=0000:81:00.0
+cuDeviceGetByPCIBusId=0 device=0
+cuDeviceGetPCIBusId[1]=1 byte=00
+cuDeviceGetPCIBusId[0]=1 byte=58
+cuDeviceGetByPCIBusId[unknown]=101
+cuDeviceGetByPCIBusId[empty]=1
+cuModuleLoadData=0
+cuModuleGetFunction=0
+cuFuncSetAttribute[8,0]=0
+cuFuncSetAttribute[9,50]=0
+cuFuncSetAttribute[7,0]=801
+cuFuncSetAttribute[8,-1]=0
+cuFuncSetAttribute[9,101]=0
+cuFuncSetCacheConfig[0]=0
+cuFuncSetCacheConfig[4]=1
+cuCtxDestroy=0

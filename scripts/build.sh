@@ -178,6 +178,20 @@ fi
     --cuda-path="$COREX" \
     -I"$COREX/include" \
     "${EXTRA[@]}" \
+    -c "$TESTS/device_pci.cu" \
+    -o "$OBJ/device_pci.o"
+
+"$GXX" \
+    "$OBJ/device_pci.o" \
+    -L"$DIST/lib" \
+    -lcorex_remote_cudart \
+    -Wl,-rpath,'$ORIGIN/../lib' \
+    -o "$DIST/bin/device_pci_app"
+
+"$CXX" -x ivcore \
+    --cuda-path="$COREX" \
+    -I"$COREX/include" \
+    "${EXTRA[@]}" \
     -pthread \
     -c "$TESTS/multithread_runtime.cu" \
     -o "$OBJ/multithread_runtime.o"

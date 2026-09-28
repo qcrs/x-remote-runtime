@@ -127,6 +127,8 @@ cudaError_t cudaSetDevice(int device);
 cudaError_t cudaDriverGetVersion(int *driverVersion);
 cudaError_t cudaRuntimeGetVersion(int *runtimeVersion);
 cudaError_t cudaDeviceGetAttribute(int *value, cudaDeviceAttr attr, int device);
+cudaError_t cudaDeviceGetPCIBusId(char *pciBusId, int len, int device);
+cudaError_t cudaDeviceGetByPCIBusId(int *device, const char *pciBusId);
 cudaError_t cudaGetDeviceFlags(unsigned int *flags);
 cudaError_t cudaDeviceGetStreamPriorityRange(int *leastPriority, int *greatestPriority);
 cudaError_t cudaDeviceGetLimit(size_t *value, cudaLimit limit);

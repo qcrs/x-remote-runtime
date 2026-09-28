@@ -17,6 +17,10 @@ CUresult corex_backend_device_name(char *name, int length, CUdevice device);
 CUresult corex_backend_device_total_mem(size_t *bytes, CUdevice device);
 CUresult corex_backend_device_attribute(int *value, CUdevice_attribute attribute,
                                         CUdevice device);
+CUresult corex_backend_device_pci_bus_id(char *pci_bus_id, int length,
+                                         CUdevice device);
+CUresult corex_backend_device_get_by_pci_bus_id(CUdevice *device,
+                                                const char *pci_bus_id);
 CUresult corex_backend_context_create(CUcontext *context, unsigned int flags,
                                       CUdevice device);
 CUresult corex_backend_context_destroy(CUcontext context);

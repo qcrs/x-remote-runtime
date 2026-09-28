@@ -11,6 +11,8 @@ PROTOCOL_NAMES = {
     "cudaStreamQuery": "OP_STREAM_QUERY",
     "cudaEventQuery": "OP_EVENT_QUERY",
     "cudaDeviceGetAttribute": "OP_DEVICE_GET_ATTRIBUTE",
+    "cudaDeviceGetPCIBusId": "OP_DEVICE_GET_PCI_BUS_ID",
+    "cudaDeviceGetByPCIBusId": "OP_DEVICE_GET_BY_PCI_BUS_ID",
     "cudaGetDeviceFlags": "OP_GET_DEVICE_FLAGS",
     "cudaDeviceGetStreamPriorityRange": "OP_GET_PRIORITY_RANGE",
     "cudaDeviceGetLimit": "OP_GET_LIMIT",

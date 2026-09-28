@@ -1,0 +1,5 @@
+G6A_VA_ARENA base=0xffef8b4c0000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=6
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=50080 protocol=CRX9 version=3 default_stream=LEGACY
+M3_S7_DEVICE_PCI=PASS bus_id=0000:81:00.0 device=0
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

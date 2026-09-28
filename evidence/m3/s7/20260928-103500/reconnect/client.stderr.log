@@ -1,0 +1,6 @@
+M1_S5_SESSION_FAILED generation=1 reason=RECV_HEADER reconnect=LAZY no_replay=YES
+M1_S5_SESSION_FAILED generation=2 reason=RECV_HEADER reconnect=LAZY no_replay=YES
+M1_S5_SESSION_FAILED generation=3 reason=RECV_HEADER reconnect=LAZY no_replay=YES
+G6E_RPC_PROTOCOL_MISMATCH opcode=27 request=14
+M1_S5_SESSION_FAILED generation=4 reason=PROTOCOL_MISMATCH reconnect=LAZY no_replay=YES
+M1_S5_SESSION_FAILED generation=5 reason=RECV_HEADER reconnect=LAZY no_replay=YES

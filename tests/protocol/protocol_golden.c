@@ -18,9 +18,20 @@ _Static_assert(OP_ALLOC == 1 && OP_H2D == 2 && OP_LAUNCH == 3 &&
                OP_D2H_ASYNC_SUBMIT == 23 && OP_TRANSFER_QUERY == 24 &&
                OP_TRANSFER_WAIT == 25 && OP_GET_DEVICE_INFO == 26,
                "V3 opcode assignment changed");
-_Static_assert(OP_HELLO == 27, "V3 HELLO opcode changed");
+_Static_assert(OP_HELLO == 27 && OP_D2D == 28 && OP_MEMSET == 29 &&
+               OP_MEMSET_ASYNC == 30 && OP_STREAM_GET_FLAGS == 31 &&
+               OP_CREATE_STREAM_PRIORITY == 32 && OP_STREAM_GET_PRIORITY == 33 &&
+               OP_EVENT_ELAPSED_TIME == 34 && OP_GET_DRIVER_VERSION == 35 &&
+               OP_GET_RUNTIME_VERSION == 36,
+               "M2/M3 opcode assignment changed");
 _Static_assert(OP_FUNCTION_ATTRIBUTES == 37 && OP_OCCUPANCY == 38 &&
-               OP_DEVICE_GET_ATTRIBUTE == 39 && OP__COUNT == 47,
+               OP_DEVICE_GET_ATTRIBUTE == 39 && OP_GET_DEVICE_FLAGS == 40 &&
+               OP_GET_PRIORITY_RANGE == 41 && OP_GET_LIMIT == 42 &&
+               OP_GET_CACHE_CONFIG == 43 && OP_GET_SHARED_MEM_CONFIG == 44 &&
+               OP_FUNCTION_SET_ATTRIBUTE == 45 &&
+               OP_FUNCTION_SET_CACHE_CONFIG == 46 &&
+               OP_DEVICE_GET_PCI_BUS_ID == 47 &&
+               OP_DEVICE_GET_BY_PCI_BUS_ID == 48 && OP__COUNT == 49,
                "M3/M3-S7 opcode assignment changed");
 
 static int test_hello(void)

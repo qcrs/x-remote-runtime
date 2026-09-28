@@ -7,9 +7,9 @@ probe order, not a support claim. An API moves to `IMPLEMENTED`,
 and the relevant semantic tests pass.
 
 The census contains 266 public Runtime declarations. The current implementation
-contains 41 fully implemented public APIs plus three partial APIs (memcpy
-directions and function attributes); the remaining declarations are deliberately not
-forwarded based on a CUDA signature alone.
+contains 43 fully implemented public APIs plus three partial APIs (`cudaMemcpy`,
+`cudaMemcpyAsync`, and `cudaFuncGetAttributes`); the remaining declarations are
+deliberately not forwarded based on a CUDA signature alone.
 
 ## Priority Model
 
@@ -35,9 +35,8 @@ runtime.
 1. Complete the `cudaMemcpy` and `cudaMemcpyAsync` direction matrix and update
    their ledger notes. Verify H2H, H2D, D2H, D2D, `Default`, zero-byte,
    overlap, bounds, explicit/default stream ordering, and async D2D behavior.
-2. Probe and, if CoreX matches, implement. M3-S7 completed the scalar/context
-   subset below; PCI identity APIs remain queued because their client string
-   DTO and validation path are not part of this slice:
+2. M3-S7 probed and implemented the device/context query subset below,
+   including PCI identity through bounded-string DTOs:
 
    - `cudaDeviceGetAttribute`
    - `cudaGetDeviceFlags`
@@ -276,6 +275,12 @@ Every wave follows the same sequence:
 
 The completion status is decided by evidence, not by the existence of a client
 symbol or a successful compile.
+
+## Roadmap Tracks
+
+The compatibility track is at M3-S7; its next dependency-ready slice is M4-S1
+pitched and two-dimensional memory. M6 is a separate productization/operations
+track and does not imply that M4 or M5 API families are complete.
 
 ## Current Next Step
 

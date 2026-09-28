@@ -1,0 +1,18 @@
+===== CoreX Remote Runtime Server =====
+GPU=Iluvatar MR-V100
+startup_modules=0
+startup_kernels=0
+protocol=CRX9 version=3 default_stream=LEGACY
+listen=127.0.0.1:50072
+SERVER_READY
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1

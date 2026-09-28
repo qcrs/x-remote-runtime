@@ -46,8 +46,25 @@ if python3 "$ROOT/scripts/generate-api-schema.py" --schema "$TMP/unknown-type.js
     exit 1
 fi
 grep -q 'unknown request field type' "$TMP/unknown-type.stderr"
+mkdir -p "$TMP/bounded"
+python3 "$ROOT/scripts/generate-api-schema.py" \
+    --schema "$ROOT/tests/schema/bounded_types.json" \
+    --output "$TMP/bounded/corex_api_schema.h" \
+    --test-output "$TMP/bounded/corex_api_schema_test.c"
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 \
+    -I"$ROOT/include/internal" -I"$TMP/bounded" \
+    "$TMP/bounded/corex_api_schema_test.c" -o "$TMP/bounded/test"
+"$TMP/bounded/test" >"$TMP/bounded.stdout"
+grep -q '^M3_S6_GENERATED_SCHEMA_TEST=PASS$' "$TMP/bounded.stdout"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-api-contracts.py" "$ROOT"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/report-api-coverage.py" \
+    "$ROOT/compat/cuda-api-ledger.csv" >"$TMP/coverage.txt"
+for status in IMPLEMENTED PARTIAL_IMPLEMENTED GROUND_TRUTH_REQUIRED BACKEND_UNSUPPORTED DEPRECATED OUT_OF_SCOPE_CURRENT; do
+    grep -Eq "^$status=[0-9]+$" "$TMP/coverage.txt"
+done
+grep -q '^BACKEND_UNSUPPORTED=0$' "$TMP/coverage.txt"
 cp "$TMP/one.h" "$OUT/generated.h"
 cp "$TMP/one.c" "$OUT/generated-test.c"
-printf 'REGENERATE_TWICE_ZERO_DIFF=PASS\nINVALID_SCHEMA_REJECTED=PASS\nDUPLICATE_API_REJECTED=PASS\nDUPLICATE_OPCODE_REJECTED=PASS\nUNKNOWN_FIELD_TYPE_REJECTED=PASS\nAPI_CONTRACTS=PASS\nRESULT=PASS\n' >"$OUT/00-RESULTS.txt"
+cp "$TMP/coverage.txt" "$OUT/API-COVERAGE.txt"
+printf 'REGENERATE_TWICE_ZERO_DIFF=PASS\nINVALID_SCHEMA_REJECTED=PASS\nDUPLICATE_API_REJECTED=PASS\nDUPLICATE_OPCODE_REJECTED=PASS\nUNKNOWN_FIELD_TYPE_REJECTED=PASS\nBOUNDED_BYTES_STRING_CODEC=PASS\nAPI_CONTRACTS=PASS\nCOVERAGE_STATUS_ZEROES=PASS\nRESULT=PASS\n' >"$OUT/00-RESULTS.txt"
 echo "M3_S6_SCHEMA_REPRODUCIBLE=PASS"
