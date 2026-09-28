@@ -1131,6 +1131,11 @@ static int remote_d2h_async_submit(
     return 0;
 }
 
+static int remote_memcpy2d_h2d_async(uint64_t id,uint64_t off,uint64_t pitch,uint64_t width,uint64_t height,uint64_t stream_id,const void *data,uint64_t *transfer_id)
+{uint64_t bytes=width*height;if(bytes>UINT32_MAX-48)return -1;uint32_t len=(uint32_t)(48+bytes);unsigned char*p=(unsigned char*)malloc(len);if(!p)return -1;size_t pos=0;corex_protocol_write_u64(p,&pos,id);corex_protocol_write_u64(p,&pos,off);corex_protocol_write_u64(p,&pos,pitch);corex_protocol_write_u64(p,&pos,width);corex_protocol_write_u64(p,&pos,height);corex_protocol_write_u64(p,&pos,stream_id);memcpy(p+pos,data,(size_t)bytes);unsigned char*r=NULL;uint32_t rl=0;int rc=rpc(g_fd,OP_MEMCPY_2D_H2D_ASYNC,p,len,&r,&rl);if(!rc&&rl==8)*transfer_id=corex_protocol_read_u64(r);else rc=-1;free(r);free(p);return rc;}
+static int remote_memcpy2d_d2h_async(uint64_t id,uint64_t off,uint64_t pitch,uint64_t width,uint64_t height,uint64_t stream_id,uint64_t *transfer_id)
+{unsigned char p[48];size_t pos=0;corex_protocol_write_u64(p,&pos,id);corex_protocol_write_u64(p,&pos,off);corex_protocol_write_u64(p,&pos,pitch);corex_protocol_write_u64(p,&pos,width);corex_protocol_write_u64(p,&pos,height);corex_protocol_write_u64(p,&pos,stream_id);unsigned char*r=NULL;uint32_t rl=0;int rc=rpc(g_fd,OP_MEMCPY_2D_D2H_ASYNC,p,sizeof(p),&r,&rl);if(!rc&&rl==8)*transfer_id=corex_protocol_read_u64(r);else rc=-1;free(r);return rc;}
+
 static int remote_transfer_query(uint64_t transfer_id, uint32_t *state_out)
 {
     if (!state_out)
@@ -1749,16 +1754,25 @@ static cudaError_t consume_hidden_transfer(HiddenTransfer *t)
         t->kind == HIDDEN_TRANSFER_D2H ? (uint32_t)t->bytes : 0u;
     void *dst = t->kind == HIDDEN_TRANSFER_D2H ? t->host_dst : NULL;
 
-    if (remote_transfer_wait(t->transfer_id, dst, expected) != 0)
+    if (t->kind != HIDDEN_TRANSFER_D2H_2D &&
+        remote_transfer_wait(t->transfer_id, dst, expected) != 0)
         G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+
+    if (t->kind == HIDDEN_TRANSFER_D2H_2D) {
+        unsigned char *flat = (unsigned char *)malloc(t->bytes);
+        if (!flat) G6E_RETURN(cudaErrorMemoryAllocation);
+        if (remote_transfer_wait(t->transfer_id, flat, (uint32_t)t->bytes) != 0) { free(flat); G6E_RETURN(map_last_rpc_error(cudaErrorUnknown)); }
+        for (size_t y=0; y<t->height; ++y) memcpy((unsigned char *)t->host_dst + y*t->host_pitch, flat + y*t->width, t->width);
+        free(flat);
+    }
 
     printf("G6C_TRANSFER_DRAIN transfer_id=%llu kind=%s origin_stream_slot=%zu seq=%llu bytes=%zu host_visible=%s retire=YES\n",
            (unsigned long long)t->transfer_id,
-           t->kind == HIDDEN_TRANSFER_H2D ? "H2D" : "D2H",
+           (t->kind == HIDDEN_TRANSFER_H2D || t->kind == HIDDEN_TRANSFER_H2D_2D) ? "H2D" : "D2H",
            t->origin_stream_slot,
            (unsigned long long)t->origin_stream_seq,
            t->bytes,
-           t->kind == HIDDEN_TRANSFER_D2H ? "YES" : "N/A");
+           (t->kind == HIDDEN_TRANSFER_D2H || t->kind == HIDDEN_TRANSFER_D2H_2D) ? "YES" : "N/A");
 
     memset(t, 0, sizeof(*t));
     return cudaSuccess;
@@ -2371,7 +2385,18 @@ static cudaError_t cudaMemset2D_locked(void *devPtr,size_t pitch,int value,size_
 { if(!width||!height)return cudaSuccess;if(!devPtr||value<0||value>255)G6E_RETURN(cudaErrorInvalidValue);cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);ResolvedRemotePtr r;if(resolve_remote_2d_region(devPtr,pitch,width,height,&r)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memset2d(r.allocation_id,r.byte_offset,pitch,(unsigned char)value,width,height)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));return cudaSuccess; }
 
 static cudaError_t cudaMemcpy2DAsync_locked(void *dst,size_t dpitch,const void *src,size_t spitch,size_t width,size_t height,cudaMemcpyKind kind,cudaStream_t stream)
-{ if(!width||!height)return cudaSuccess; G6EStreamView sv; if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle); int dr=pointer_in_remote_arena(dst),sr=pointer_in_remote_arena(src); if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;} cudaError_t r=cudaSuccess; if(kind==cudaMemcpyDeviceToDevice){ResolvedRemotePtr d,s;if(!dr||!sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK||resolve_remote_2d_region(src,spitch,width,height,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memcpy2d_async_d2d(d.allocation_id,d.byte_offset,dpitch,s.allocation_id,s.byte_offset,spitch,width,height,sv.stream_id)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}else r=cudaMemcpy2D_locked(dst,dpitch,src,spitch,width,height,kind);if(r==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}return r; }
+{
+    if(!width||!height)return cudaSuccess;
+    G6EStreamView sv;
+    if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    int dr=pointer_in_remote_arena(dst),sr=pointer_in_remote_arena(src); if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;}
+    if(kind==cudaMemcpyDeviceToDevice){ResolvedRemotePtr d,s;if(!dr||!sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK||resolve_remote_2d_region(src,spitch,width,height,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memcpy2d_async_d2d(d.allocation_id,d.byte_offset,dpitch,s.allocation_id,s.byte_offset,spitch,width,height,sv.stream_id)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}
+    else if(kind==cudaMemcpyHostToDevice){ResolvedRemotePtr d;if(sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);unsigned char*flat=(unsigned char*)malloc(width*height);if(!flat)G6E_RETURN(cudaErrorMemoryAllocation);for(size_t y=0;y<height;++y)memcpy(flat+y*width,(const unsigned char*)src+y*spitch,width);uint64_t transfer=0;if(remote_memcpy2d_h2d_async(d.allocation_id,d.byte_offset,dpitch,width,height,sv.stream_id,flat,&transfer)!=0){free(flat);G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}free(flat);HiddenTransfer*t=find_free_hidden_transfer();if(!t)G6E_RETURN(cudaErrorMemoryAllocation);memset(t,0,sizeof(*t));t->live=1;t->session_generation=g_active_session_generation;t->transfer_id=transfer;t->kind=HIDDEN_TRANSFER_H2D_2D;t->allocation_id=d.allocation_id;t->origin_stream_slot=sv.slot_index;t->origin_stream_seq=*sv.next_transfer_seq+1;t->submit_order=++g_transfer_submit_order;t->bytes=width*height;t->width=width;t->height=height;t->host_pitch=spitch;}
+    else if(kind==cudaMemcpyDeviceToHost){ResolvedRemotePtr s;if(dr||resolve_remote_2d_region(src,spitch,width,height,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);uint64_t transfer=0;if(remote_memcpy2d_d2h_async(s.allocation_id,s.byte_offset,spitch,width,height,sv.stream_id,&transfer)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));HiddenTransfer*t=find_free_hidden_transfer();if(!t)G6E_RETURN(cudaErrorMemoryAllocation);memset(t,0,sizeof(*t));t->live=1;t->session_generation=g_active_session_generation;t->transfer_id=transfer;t->kind=HIDDEN_TRANSFER_D2H_2D;t->allocation_id=s.allocation_id;t->origin_stream_slot=sv.slot_index;t->origin_stream_seq=*sv.next_transfer_seq+1;t->submit_order=++g_transfer_submit_order;t->host_dst=dst;t->bytes=width*height;t->width=width;t->height=height;t->host_pitch=dpitch;}
+    else if(kind==cudaMemcpyHostToHost){if(dr||sr)G6E_RETURN(cudaErrorInvalidValue);for(size_t y=0;y<height;++y)memmove((unsigned char*)dst+y*dpitch,(const unsigned char*)src+y*spitch,width);return cudaSuccess;}
+    else G6E_RETURN(cudaErrorInvalidMemcpyDirection);
+    uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;return cudaSuccess;
+}
 
 static cudaError_t cudaMemset2DAsync_locked(void *devPtr,size_t pitch,int value,size_t width,size_t height,cudaStream_t stream)
 { if(!width||!height)return cudaSuccess;G6EStreamView sv;if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle);cudaError_t r=cudaMemset2D_locked(devPtr,pitch,value,width,height);if(r==cudaSuccess){uint64_t seq=++(*sv.next_transfer_seq);sv.frontier[sv.slot_index]=seq;}return r; }

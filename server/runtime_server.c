@@ -46,6 +46,8 @@ static int configured_port(void)
 
 #define TRANSFER_KIND_H2D 1u
 #define TRANSFER_KIND_D2H 2u
+#define TRANSFER_KIND_H2D_2D 3u
+#define TRANSFER_KIND_D2H_2D 4u
 
 typedef struct {
     int used;
@@ -849,6 +851,24 @@ static int handle_memcpy_3d(ServerSession *session, int fd, uint32_t req_id,
 
 static int handle_memcpy_3d_sync_entry(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len){return handle_memcpy_3d(session,fd,req_id,payload,len,0);}
 static int handle_memcpy_3d_async_entry(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len){return handle_memcpy_3d(session,fd,req_id,payload,len,1);}
+
+static int handle_memcpy_2d_host_async(ServerSession *session, int fd, uint32_t req_id,
+                                       const unsigned char *payload, uint32_t len, int direction)
+{
+    if (!payload || len < 48) return send_response(fd, direction == 1 ? OP_MEMCPY_2D_H2D_ASYNC : OP_MEMCPY_2D_D2H_ASYNC, req_id, ST_BAD_REQUEST, NULL, 0);
+    uint64_t id=corex_protocol_read_u64(payload), off=corex_protocol_read_u64(payload+8), pitch=corex_protocol_read_u64(payload+16), width=corex_protocol_read_u64(payload+24), height=corex_protocol_read_u64(payload+32), stream_id=corex_protocol_read_u64(payload+40);
+    if (!width||!height||!pitch||width>pitch||width>SIZE_MAX||height>SIZE_MAX||width>UINT64_MAX/height) return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    uint64_t bytes=width*height; if (bytes>UINT32_MAX||((direction==1)&&(uint64_t)len!=48+bytes)||((direction==2)&&(len!=48))) return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    Allocation *a=find_allocation(session,id); StreamEntry *stream_entry=stream_id?find_stream(session,stream_id):NULL; if(!a||!stream_entry||off>a->size||height-1>(a->size-off)/pitch||width>a->size-off-(height-1)*pitch)return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    TransferEntry *entry=new_transfer_slot(session);if(!entry)return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_NO_RESOURCE,NULL,0);entry->kind=direction==1?TRANSFER_KIND_H2D_2D:TRANSFER_KIND_D2H_2D;entry->allocation_id=id;entry->stream_id=stream_id;entry->bytes=(size_t)bytes;
+    CUresult r=corex_backend_host_alloc(&entry->host_buffer,(size_t)bytes);if(r!=CUDA_SUCCESS){release_transfer(entry);return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_CUDA_ERROR,NULL,0);}if(direction==1)memcpy(entry->host_buffer,payload+48,(size_t)bytes);r=corex_backend_event_create(&entry->done_event,CU_EVENT_DEFAULT);if(r!=CUDA_SUCCESS){release_transfer(entry);return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_CUDA_ERROR,NULL,0);}
+    CUDA_MEMCPY2D copy;memset(&copy,0,sizeof(copy));copy.WidthInBytes=(size_t)width;copy.Height=(size_t)height;copy.srcPitch=direction==1?(size_t)width:(size_t)pitch;copy.dstPitch=direction==1?(size_t)pitch:(size_t)width;
+    if(direction==1){copy.srcMemoryType=CU_MEMORYTYPE_HOST;copy.srcHost=entry->host_buffer;copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=a->ptr+off;}else{copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=a->ptr+off;copy.dstMemoryType=CU_MEMORYTYPE_HOST;copy.dstHost=entry->host_buffer;}
+    r=corex_backend_copy_2d_async(&copy,stream_entry->stream);if(r==CUDA_SUCCESS)r=corex_backend_event_record(entry->done_event,stream_entry->stream);if(r!=CUDA_SUCCESS){(void)corex_backend_stream_sync(stream_entry->stream);release_transfer(entry);return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_CUDA_ERROR,NULL,0);}
+    uint64_t wire=corex_protocol_to_be64(entry->id);return send_response(fd,direction==1?OP_MEMCPY_2D_H2D_ASYNC:OP_MEMCPY_2D_D2H_ASYNC,req_id,ST_OK,&wire,sizeof(wire));
+}
+static int handle_memcpy_2d_h2d_async(ServerSession*s,int fd,uint32_t id,const unsigned char*p,uint32_t l){return handle_memcpy_2d_host_async(s,fd,id,p,l,1);}
+static int handle_memcpy_2d_d2h_async(ServerSession*s,int fd,uint32_t id,const unsigned char*p,uint32_t l){return handle_memcpy_2d_host_async(s,fd,id,p,l,2);}
 
 static int handle_memset_2d_sync_entry(ServerSession *session, int fd, uint32_t req_id,
                                        const unsigned char *payload, uint32_t len)
@@ -3320,14 +3340,14 @@ static int handle_transfer_wait(
         "bytes=%zu result=PASS retire=YES\n",
         req_id,
         (unsigned long long)transfer_id,
-        kind == TRANSFER_KIND_H2D
+        (kind == TRANSFER_KIND_H2D || kind == TRANSFER_KIND_H2D_2D)
             ? "H2D"
             : "D2H",
         bytes);
 
     int rc;
 
-    if (kind == TRANSFER_KIND_D2H) {
+    if (kind == TRANSFER_KIND_D2H || kind == TRANSFER_KIND_D2H_2D) {
         rc =
             send_response(
                 fd,
@@ -3734,6 +3754,8 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_MEMSET_2D_ASYNC, handle_memset_2d_async, CRX_CAP_LAYOUT_TRANSFER) \
     X(OP_MEMCPY_3D, handle_memcpy_3d_sync_entry, CRX_CAP_LAYOUT_TRANSFER) \
     X(OP_MEMCPY_3D_ASYNC, handle_memcpy_3d_async_entry, CRX_CAP_LAYOUT_TRANSFER) \
+    X(OP_MEMCPY_2D_H2D_ASYNC, handle_memcpy_2d_h2d_async, CRX_CAP_COPY_ASYNC) \
+    X(OP_MEMCPY_2D_D2H_ASYNC, handle_memcpy_2d_d2h_async, CRX_CAP_COPY_ASYNC) \
     X(OP_STREAM_GET_FLAGS, handle_stream_get_flags, CRX_CAP_STREAM_EVENT) \
     X(OP_CREATE_STREAM_PRIORITY, handle_create_stream_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_STREAM_GET_PRIORITY, handle_stream_get_priority, CRX_CAP_STREAM_EVENT) \

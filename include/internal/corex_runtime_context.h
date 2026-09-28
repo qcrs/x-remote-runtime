@@ -135,6 +135,8 @@ typedef struct {
 typedef enum {
     HIDDEN_TRANSFER_H2D = 1,
     HIDDEN_TRANSFER_D2H = 2,
+    HIDDEN_TRANSFER_H2D_2D = 3,
+    HIDDEN_TRANSFER_D2H_2D = 4,
 } HiddenTransferKind;
 
 typedef struct {
@@ -148,6 +150,9 @@ typedef struct {
     uint64_t submit_order;
     void *host_dst;
     size_t bytes;
+    size_t host_pitch;
+    size_t width;
+    size_t height;
 } HiddenTransfer;
 
 typedef enum {

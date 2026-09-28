@@ -34,8 +34,10 @@ _Static_assert(OP_FUNCTION_ATTRIBUTES == 37 && OP_OCCUPANCY == 38 &&
                OP_DEVICE_GET_BY_PCI_BUS_ID == 48 && OP_ALLOC_PITCHED == 49 &&
                OP_MEMCPY_2D == 50 && OP_MEMCPY_2D_ASYNC == 51 &&
                OP_MEMSET_2D == 52 && OP_MEMSET_2D_ASYNC == 53 && OP_D2D_ASYNC == 54 &&
-               OP_MEMCPY_3D == 55 && OP_MEMCPY_3D_ASYNC == 56 && OP__COUNT == 57,
-               "M3/M3-S7 opcode assignment changed");
+               OP_MEMCPY_3D == 55 && OP_MEMCPY_3D_ASYNC == 56 &&
+               OP_MEMCPY_2D_H2D_ASYNC == 57 && OP_MEMCPY_2D_D2H_ASYNC == 58 &&
+               OP__COUNT == 59,
+               "M3/M3-S7/layout opcode assignment changed");
 
 static int test_hello(void)
 {
