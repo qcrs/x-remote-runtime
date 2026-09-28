@@ -34,6 +34,8 @@ python3 "$ROOT/scripts/generate-api-schema.py" \
     --schema "$ROOT/schema/corex_api_schema.json" \
     --output "$ROOT/include/generated/corex_api_schema.h" \
     --test-output "$ROOT/tests/generated/corex_api_schema_test.c"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-api-contracts.py" "$ROOT"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-evidence-links.py" "$ROOT"
 
 GCC_MAJOR="$("$GXX" -dumpfullversion -dumpversion | cut -d. -f1)"
 EXTRA=()

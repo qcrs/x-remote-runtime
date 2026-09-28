@@ -6,9 +6,10 @@ probe order, not a support claim. An API moves to `IMPLEMENTED`,
 `PARTIAL_IMPLEMENTED`, or `BACKEND_UNSUPPORTED` only after the CoreX 4.4 probe
 and the relevant semantic tests pass.
 
-The census contains 266 public Runtime declarations. The current implementation
-contains 43 fully implemented public APIs plus three partial APIs (`cudaMemcpy`,
-`cudaMemcpyAsync`, and `cudaFuncGetAttributes`); the remaining declarations are
+The census contains 266 public Runtime declarations. At M3-S8 the ledger reports
+44 fully implemented public APIs and two partial APIs (`cudaMemcpyAsync` and
+`cudaFuncGetAttributes`). The authoritative counts come from
+`python3 scripts/report-api-coverage.py`; the remaining declarations are
 deliberately not forwarded based on a CUDA signature alone.
 
 ## Priority Model
@@ -278,7 +279,7 @@ symbol or a successful compile.
 
 ## Roadmap Tracks
 
-The compatibility track is at M3-S7; its next dependency-ready slice is M4-S1
+The compatibility track is at M3-S8; its next dependency-ready slice is M4-S1
 pitched and two-dimensional memory. M6 is a separate productization/operations
 track and does not imply that M4 or M5 API families are complete.
 

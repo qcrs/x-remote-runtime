@@ -13,6 +13,7 @@ LEDGER_STATUSES = (
     "DEPRECATED",
     "OUT_OF_SCOPE_CURRENT",
 )
+REPORT_ONLY_STATUSES = ("GROUND_TRUTH_BLOCKED",)
 
 
 def main():
@@ -28,9 +29,16 @@ def main():
     families = defaultdict(Counter)
     for row in rows:
         families[row["family"]][row["current_status"]] += 1
+    public_rows = [row for row in rows if row["target_surface"] == "PUBLIC_RUNTIME_API"]
     print(f"TOTAL={len(rows)}")
+    print(f"PUBLIC_RUNTIME_API_TOTAL={len(public_rows)}")
     for status in LEDGER_STATUSES:
         print(f"{status}={statuses[status]}")
+    for status in REPORT_ONLY_STATUSES:
+        print(f"{status}=0")
+    for status in ("IMPLEMENTED", "PARTIAL_IMPLEMENTED"):
+        public_count = sum(row["current_status"] == status for row in public_rows)
+        print(f"{status}_PUBLIC_RUNTIME_API={public_count}")
     for family in sorted(families):
         summary = ",".join(f"{key}:{families[family][key]}" for key in sorted(families[family]))
         print(f"FAMILY[{family}]={summary}")

@@ -3575,10 +3575,7 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_CREATE_STREAM_PRIORITY, handle_create_stream_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_STREAM_GET_PRIORITY, handle_stream_get_priority, CRX_CAP_STREAM_EVENT) \
     X(OP_EVENT_ELAPSED_TIME, handle_event_elapsed, CRX_CAP_STREAM_EVENT) \
-    X(OP_GET_DRIVER_VERSION, handle_driver_version, CRX_CAP_DEVICE_INFO) \
-    X(OP_GET_RUNTIME_VERSION, handle_runtime_version, CRX_CAP_DEVICE_INFO) \
     X(OP_FUNCTION_ATTRIBUTES, handle_function_attributes, CRX_CAP_MODULE_KERNEL) \
-    X(OP_OCCUPANCY, handle_occupancy, CRX_CAP_MODULE_KERNEL) \
     COREX_GENERATED_SERVER_HANDLER_REGISTRY(X) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 

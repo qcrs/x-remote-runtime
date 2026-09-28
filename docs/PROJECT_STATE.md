@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S7 complete; M4-S1 ready** (M1–M3 PASS locally).
+Current autonomous roadmap position: **M3-S8 complete; M4-S1 ready** (M1–M3 PASS locally).
 
 | Item | Current value |
 | --- | --- |
@@ -13,13 +13,14 @@ Current autonomous roadmap position: **M3-S7 complete; M4-S1 ready** (M1–M3 PA
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S7 (`m3/s7: add probed device and function runtime APIs`, this state commit) |
+| Last validated milestone | M3-S8 Compatibility Contract Hardening |
+| Previous PASS baseline | `8f1e423` (`m3/s7: complete bounded device query batch`) |
 | Current Slice | M4-S1 pitched and two-dimensional memory |
 | Blockers | None |
 | Next action | Begin Wave 1 pitched and two-dimensional memory probe |
 
 Compatibility and operations work are tracked independently. The compatibility
-track has completed M3-S7 and is ready for M4-S1; M6-S1 network configuration
+track has completed M3-S8 and is ready for M4-S1; M6-S1 network configuration
 and diagnostics remain an independent productization track, not evidence that
 M4/M5 API expansion is complete.
 
@@ -81,7 +82,7 @@ ABI/protocol, numerical, lifecycle, session-isolation, reconnect, and 8×100
 multithread gates passed. Evidence: `evidence/m2/s4/20260923-011245/`.
 
 M2-S5 adds the human-reviewed JSON schema at `schema/corex_api_schema.json`
-for three simple query/control APIs. The deterministic generator emits checked
+for the initial simple query/control API subset. The deterministic generator emits checked
 in metadata, bounded wire-payload adapters, handler/capability metadata, and a
 test skeleton. Unsupported schema values fail generation; two regenerations
 are byte-identical. Generated sync/stream-query/event-query positive and
@@ -126,14 +127,16 @@ kernel IDs and calls CoreX `cuFuncGetAttribute` for seven scalar attributes and
 the wire. Attributes use a fixed 28-byte network-order DTO and reconstruct the
 ABI-sensitive `cudaFuncAttributes` fields locally. Positive registered-kernel,
 null-argument, invalid-block-size, numerical, ABI/protocol, lifecycle,
-session-isolation, reconnect, and multithread gates passed. Evidence:
-`evidence/m3/s5/20260924-XXXXXX/`.
+session-isolation, reconnect, and multithread gates passed. Historical M3-S5
+evidence path was not preserved in the repository; the implementation and test
+claims remain represented by the committed source and later regression evidence.
 
-M3-S6 upgrades the reviewed schema to Codegen V2 for fixed-width scalar,
+M3-S6 upgrades the initial reviewed schema subset to Codegen V2 for fixed-width scalar,
 object-ID, and bounded DTO APIs. Generated metadata, size-bound validation,
 network-order codecs, server registry entries, typed client calls, ABI export
 coverage, and negative schema tests are reproducible. The schema now covers
-opcodes 4, 14, 19, and 39–48 while preserving opcodes 1–38.
+opcodes 4, 14, 19, 35, 36, and 38–48 while preserving the explicit legacy
+protocol assignments, including handwritten opcode 37.
 `scripts/verify-api-contracts.py` checks schema, ledger, protocol, and packaging
 consistency.
 
@@ -147,3 +150,12 @@ bounded-string codecs. CoreX 4.4 probe output is preserved under
 `evidence/m3/s7/`; supported and native unsupported limits are tested without
 guessing. `cudaFuncGetAttributes` is classified `PARTIAL_IMPLEMENTED` because
 three Runtime fields remain local defaults without a proven CoreX query.
+
+M3-S8 hardens the compatibility contract. Synchronous `cudaMemcpy` is now
+classified `IMPLEMENTED` for H2H, H2D, D2H, D2D, and unambiguous Default;
+`cudaMemcpyAsync` remains partial because D2D is explicitly unsupported, and
+`cudaFuncGetAttributes` remains partial because three fields are local defaults.
+Schema opcode symbols, protocol values, ledger entries, exports, coverage
+statistics, and documented evidence links are checked from their authoritative
+sources. New evidence follows `docs/EVIDENCE_POLICY.md` and is retained under
+`evidence/m3/s8/`.

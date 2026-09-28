@@ -3,7 +3,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-OUT="${OUT:-$ROOT/evidence/m2/s5/schema-$(date +%Y%m%d-%H%M%S)}"
+OUT="${OUT:-$ROOT/evidence/m3/s8/schema-$(date +%Y%m%d-%H%M%S)}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$OUT"
@@ -38,6 +38,22 @@ if python3 "$ROOT/scripts/generate-api-schema.py" --schema "$TMP/duplicate-opcod
     exit 1
 fi
 grep -q 'duplicate opcode 14' "$TMP/duplicate-opcode.stderr"
+sed '0,/"opcode_name": "OP_SYNC"/s//"opcode_name": "OP_STREAM_QUERY"/' "$ROOT/schema/corex_api_schema.json" >"$TMP/duplicate-opcode-name.json"
+if python3 "$ROOT/scripts/generate-api-schema.py" --schema "$TMP/duplicate-opcode-name.json" \
+    --output "$TMP/duplicate-opcode-name.h" --test-output "$TMP/duplicate-opcode-name.c" \
+    >"$TMP/duplicate-opcode-name.stdout" 2>"$TMP/duplicate-opcode-name.stderr"; then
+    echo "duplicate opcode name schema was accepted" >&2
+    exit 1
+fi
+grep -q 'duplicate opcode_name OP_STREAM_QUERY' "$TMP/duplicate-opcode-name.stderr"
+sed '0,/"opcode_name": "OP_SYNC"/s//"opcode_name": "bad"/' "$ROOT/schema/corex_api_schema.json" >"$TMP/invalid-opcode-name.json"
+if python3 "$ROOT/scripts/generate-api-schema.py" --schema "$TMP/invalid-opcode-name.json" \
+    --output "$TMP/invalid-opcode-name.h" --test-output "$TMP/invalid-opcode-name.c" \
+    >"$TMP/invalid-opcode-name.stdout" 2>"$TMP/invalid-opcode-name.stderr"; then
+    echo "invalid opcode name schema was accepted" >&2
+    exit 1
+fi
+grep -q 'opcode_name must match OP_' "$TMP/invalid-opcode-name.stderr"
 sed '0,/"type": "i32"/s//"type": "unknown_type"/' "$ROOT/schema/corex_api_schema.json" >"$TMP/unknown-type.json"
 if python3 "$ROOT/scripts/generate-api-schema.py" --schema "$TMP/unknown-type.json" \
     --output "$TMP/unknown-type.h" --test-output "$TMP/unknown-type.c" \
@@ -63,8 +79,25 @@ for status in IMPLEMENTED PARTIAL_IMPLEMENTED GROUND_TRUTH_REQUIRED BACKEND_UNSU
     grep -Eq "^$status=[0-9]+$" "$TMP/coverage.txt"
 done
 grep -q '^BACKEND_UNSUPPORTED=0$' "$TMP/coverage.txt"
-cp "$TMP/one.h" "$OUT/generated.h"
-cp "$TMP/one.c" "$OUT/generated-test.c"
+grep -q '^GROUND_TRUTH_BLOCKED=0$' "$TMP/coverage.txt"
+cmp "$TMP/one.h" "$ROOT/include/generated/corex_api_schema.h"
+cmp "$TMP/one.c" "$ROOT/tests/generated/corex_api_schema_test.c"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-evidence-links.py" "$ROOT"
+if find "$ROOT/evidence/m3/s8" -type f \( -name generated.h -o -name generated-test.c \) -print -quit | grep -q .; then
+    echo "new evidence contains copied generated artifacts" >&2
+    exit 1
+fi
 cp "$TMP/coverage.txt" "$OUT/API-COVERAGE.txt"
-printf 'REGENERATE_TWICE_ZERO_DIFF=PASS\nINVALID_SCHEMA_REJECTED=PASS\nDUPLICATE_API_REJECTED=PASS\nDUPLICATE_OPCODE_REJECTED=PASS\nUNKNOWN_FIELD_TYPE_REJECTED=PASS\nBOUNDED_BYTES_STRING_CODEC=PASS\nAPI_CONTRACTS=PASS\nCOVERAGE_STATUS_ZEROES=PASS\nRESULT=PASS\n' >"$OUT/00-RESULTS.txt"
-echo "M3_S6_SCHEMA_REPRODUCIBLE=PASS"
+(
+    cd "$ROOT"
+    sha256sum schema/corex_api_schema.json include/generated/corex_api_schema.h \
+        tests/generated/corex_api_schema_test.c
+) >"$OUT/MANIFEST.sha256"
+printf '%s\n' \
+    'python3 scripts/generate-api-schema.py (twice)' \
+    'python3 scripts/verify-api-contracts.py' \
+    'python3 scripts/report-api-coverage.py' \
+    'python3 scripts/verify-evidence-links.py' >"$OUT/COMMANDS.txt"
+printf 'SCHEMA_VERSION=2\nABI=COREX_REMOTE_CUDART_1.1\n' >"$OUT/ENVIRONMENT.txt"
+printf 'REGENERATE_TWICE_ZERO_DIFF=PASS\nGENERATED_TREE_CLEAN=PASS\nINVALID_SCHEMA_REJECTED=PASS\nDUPLICATE_API_REJECTED=PASS\nDUPLICATE_OPCODE_REJECTED=PASS\nUNKNOWN_FIELD_TYPE_REJECTED=PASS\nBOUNDED_BYTES_STRING_CODEC=PASS\nAPI_CONTRACTS=PASS\nCOVERAGE_STATUS_ZEROES=PASS\nRESULT=PASS\n' >"$OUT/00-RESULTS.txt"
+echo "M3_S8_SCHEMA_REPRODUCIBLE=PASS"

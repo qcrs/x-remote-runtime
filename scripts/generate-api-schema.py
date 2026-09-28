@@ -79,9 +79,10 @@ def load(path):
         fail("top-level abi is required")
     names = set()
     opcodes = set()
+    opcode_names = set()
     for api in data["apis"]:
         required = {
-            "name", "opcode", "capability_id", "implementation_class",
+            "name", "opcode_name", "opcode", "capability_id", "implementation_class",
             "public_export", "abi", "request", "response", "backend_binding",
             "server_handler",
         }
@@ -93,6 +94,12 @@ def load(path):
         if name in names:
             fail(f"duplicate API {name}")
         names.add(name)
+        opcode_name = api["opcode_name"]
+        if not isinstance(opcode_name, str) or not re.fullmatch(r"OP_[A-Z0-9_]+", opcode_name):
+            fail(f"{name}: opcode_name must match OP_[A-Z0-9_]+")
+        if opcode_name in opcode_names:
+            fail(f"duplicate opcode_name {opcode_name}")
+        opcode_names.add(opcode_name)
         if not isinstance(api["opcode"], int) or api["opcode"] <= 0 or api["opcode"] > 0xffffffff:
             fail(f"{name}: opcode must be an explicit positive u32")
         if api["opcode"] in opcodes:
@@ -304,7 +311,7 @@ def render(data):
     lines += [
         "} CorexGeneratedWireType;",
         "typedef struct { const char *name; uint32_t type; uint32_t min_wire_bytes; uint32_t max_wire_bytes; uint32_t max_payload_bytes; const char *object_kind; } CorexGeneratedFieldMetadata;",
-        "typedef struct { const char *name; uint32_t opcode; uint32_t capability_id; const char *implementation_class; uint32_t request_min_bytes; uint32_t request_max_bytes; uint32_t response_min_bytes; uint32_t response_max_bytes; const char *backend_binding; const char *server_handler; const CorexGeneratedFieldMetadata *request; size_t request_count; const CorexGeneratedFieldMetadata *response; size_t response_count; } CorexGeneratedApiMetadata;",
+        "typedef struct { const char *name; const char *opcode_name; uint32_t opcode; uint32_t capability_id; const char *implementation_class; uint32_t request_min_bytes; uint32_t request_max_bytes; uint32_t response_min_bytes; uint32_t response_max_bytes; const char *backend_binding; const char *server_handler; const CorexGeneratedFieldMetadata *request; size_t request_count; const CorexGeneratedFieldMetadata *response; size_t response_count; } CorexGeneratedApiMetadata;",
         "typedef int (*CorexGeneratedRpcCall)(uint32_t, const unsigned char *, uint32_t, unsigned char **, uint32_t *);",
     ]
     for api in apis:
@@ -321,7 +328,7 @@ def render(data):
     for api in apis:
         stem = c_identifier(api["name"])
         lines.append(
-            f"    {{\"{api['name']}\", {api['opcode']}u, {api['capability_id']}, \"{api['implementation_class']}\", "
+            f"    {{\"{api['name']}\", \"{api['opcode_name']}\", {api['opcode']}u, {api['capability_id']}, \"{api['implementation_class']}\", "
             f"{wire_bounds(api['request'])[0]}u, {wire_bounds(api['request'])[1]}u, "
             f"{wire_bounds(api['response'])[0]}u, {wire_bounds(api['response'])[1]}u, "
             f"\"{api['backend_binding'] or ''}\", \"{api['server_handler']}\", "

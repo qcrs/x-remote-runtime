@@ -4,6 +4,7 @@
   "apis": [
     {
       "name": "cudaDeviceSynchronize",
+      "opcode_name": "OP_SYNC",
       "opcode": 4,
       "capability_id": "CRX_CAP_STREAM_EVENT",
       "implementation_class": "semantic_rpc",
@@ -16,6 +17,7 @@
     },
     {
       "name": "cudaStreamQuery",
+      "opcode_name": "OP_STREAM_QUERY",
       "opcode": 14,
       "capability_id": "CRX_CAP_STREAM_EVENT",
       "implementation_class": "object_query",
@@ -32,6 +34,7 @@
     },
     {
       "name": "cudaEventQuery",
+      "opcode_name": "OP_EVENT_QUERY",
       "opcode": 19,
       "capability_id": "CRX_CAP_STREAM_EVENT",
       "implementation_class": "object_query",
@@ -47,7 +50,34 @@
       "server_handler": "handle_event_query"
     },
     {
+      "name": "cudaDriverGetVersion",
+      "opcode_name": "OP_GET_DRIVER_VERSION",
+      "opcode": 35,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [{"name": "version", "type": "u32"}],
+      "backend_binding": "cuDriverGetVersion",
+      "server_handler": "handle_driver_version"
+    },
+    {
+      "name": "cudaRuntimeGetVersion",
+      "opcode_name": "OP_GET_RUNTIME_VERSION",
+      "opcode": 36,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [{"name": "version", "type": "u32"}],
+      "backend_binding": "compatibility ABI version",
+      "server_handler": "handle_runtime_version"
+    },
+    {
       "name": "cudaDeviceGetAttribute",
+      "opcode_name": "OP_DEVICE_GET_ATTRIBUTE",
       "opcode": 39,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -65,6 +95,7 @@
     },
     {
       "name": "cudaGetDeviceFlags",
+      "opcode_name": "OP_GET_DEVICE_FLAGS",
       "opcode": 40,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -79,6 +110,7 @@
     },
     {
       "name": "cudaDeviceGetStreamPriorityRange",
+      "opcode_name": "OP_GET_PRIORITY_RANGE",
       "opcode": 41,
       "capability_id": "CRX_CAP_STREAM_EVENT",
       "implementation_class": "scalar_query",
@@ -94,6 +126,7 @@
     },
     {
       "name": "cudaDeviceGetLimit",
+      "opcode_name": "OP_GET_LIMIT",
       "opcode": 42,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -110,6 +143,7 @@
     },
     {
       "name": "cudaDeviceGetCacheConfig",
+      "opcode_name": "OP_GET_CACHE_CONFIG",
       "opcode": 43,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -124,6 +158,7 @@
     },
     {
       "name": "cudaDeviceGetSharedMemConfig",
+      "opcode_name": "OP_GET_SHARED_MEM_CONFIG",
       "opcode": 44,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -138,6 +173,7 @@
     },
     {
       "name": "cudaFuncSetAttribute",
+      "opcode_name": "OP_FUNCTION_SET_ATTRIBUTE",
       "opcode": 45,
       "capability_id": "CRX_CAP_MODULE_KERNEL",
       "implementation_class": "semantic_rpc",
@@ -154,6 +190,7 @@
     },
     {
       "name": "cudaFuncSetCacheConfig",
+      "opcode_name": "OP_FUNCTION_SET_CACHE_CONFIG",
       "opcode": 46,
       "capability_id": "CRX_CAP_MODULE_KERNEL",
       "implementation_class": "semantic_rpc",
@@ -168,7 +205,25 @@
       "server_handler": "handle_function_set_cache_config"
     },
     {
+      "name": "cudaOccupancyMaxActiveBlocksPerMultiprocessor",
+      "opcode_name": "OP_OCCUPANCY",
+      "opcode": 38,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "kernel", "type": "kernel_id", "object_kind": "kernel"},
+        {"name": "block_size", "type": "u32"},
+        {"name": "dynamic_shared", "type": "u64"}
+      ],
+      "response": [{"name": "blocks", "type": "i32"}],
+      "backend_binding": "cuOccupancyMaxActiveBlocksPerMultiprocessor",
+      "server_handler": "handle_occupancy"
+    },
+    {
       "name": "cudaDeviceGetPCIBusId",
+      "opcode_name": "OP_DEVICE_GET_PCI_BUS_ID",
       "opcode": 47,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",
@@ -185,6 +240,7 @@
     },
     {
       "name": "cudaDeviceGetByPCIBusId",
+      "opcode_name": "OP_DEVICE_GET_BY_PCI_BUS_ID",
       "opcode": 48,
       "capability_id": "CRX_CAP_DEVICE_INFO",
       "implementation_class": "scalar_query",

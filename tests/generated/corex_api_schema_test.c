@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 13u) return 1;
+    if (COREX_GENERATED_API_COUNT != 16u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -29,6 +29,22 @@ int main(void) {
     if (corex_generated_validate_response(19u, 3u) == 0) return 1;
     if (corex_generated_validate_response(19u, 5u) == 0) return 1;
     (void)corex_generated_cudaEventQuery_request_fields;
+    if (corex_generated_validate_payload(35u, 0u) != 0) return 1;
+    if (corex_generated_validate_payload(35u, 0u) != 0) return 1;
+    if (corex_generated_validate_response(35u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(35u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(35u, 1u) == 0) return 1;
+    if (corex_generated_validate_response(35u, 3u) == 0) return 1;
+    if (corex_generated_validate_response(35u, 5u) == 0) return 1;
+    (void)corex_generated_cudaDriverGetVersion_request_fields;
+    if (corex_generated_validate_payload(36u, 0u) != 0) return 1;
+    if (corex_generated_validate_payload(36u, 0u) != 0) return 1;
+    if (corex_generated_validate_response(36u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(36u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(36u, 1u) == 0) return 1;
+    if (corex_generated_validate_response(36u, 3u) == 0) return 1;
+    if (corex_generated_validate_response(36u, 5u) == 0) return 1;
+    (void)corex_generated_cudaRuntimeGetVersion_request_fields;
     if (corex_generated_validate_payload(39u, 8u) != 0) return 1;
     if (corex_generated_validate_payload(39u, 8u) != 0) return 1;
     if (corex_generated_validate_response(39u, 4u) != 0) return 1;
@@ -95,6 +111,15 @@ int main(void) {
     if (corex_generated_validate_payload(46u, 13u) == 0) return 1;
     if (corex_generated_validate_response(46u, 1u) == 0) return 1;
     (void)corex_generated_cudaFuncSetCacheConfig_request_fields;
+    if (corex_generated_validate_payload(38u, 20u) != 0) return 1;
+    if (corex_generated_validate_payload(38u, 20u) != 0) return 1;
+    if (corex_generated_validate_response(38u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(38u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(38u, 19u) == 0) return 1;
+    if (corex_generated_validate_payload(38u, 21u) == 0) return 1;
+    if (corex_generated_validate_response(38u, 3u) == 0) return 1;
+    if (corex_generated_validate_response(38u, 5u) == 0) return 1;
+    (void)corex_generated_cudaOccupancyMaxActiveBlocksPerMultiprocessor_request_fields;
     if (corex_generated_validate_payload(47u, 4u) != 0) return 1;
     if (corex_generated_validate_payload(47u, 4u) != 0) return 1;
     if (corex_generated_validate_response(47u, 4u) != 0) return 1;

@@ -9,7 +9,8 @@ shape and the backend binding that has already been reviewed.
 
 The schema is version 2 and each entry contains:
 
-- an explicit opcode, capability, implementation class, ABI, and export flag;
+- an explicit opcode symbol (`opcode_name`) and numeric opcode, capability,
+  implementation class, ABI, and export flag;
 - request and response fields with a closed wire-type vocabulary;
 - optional object kind metadata for remote IDs; and
 - a typed backend binding label for review and consistency checks.
@@ -18,8 +19,8 @@ Supported scalar/object wire types are `u32`, `i32`, `u64`, `i64`,
 `size_u64`, `bool_u32`, and the typed remote IDs. `bounded_bytes` and
 `bounded_string` carry an explicit length and schema maximum; strings are
 NUL-reconstructed locally and embedded wire NULs are rejected. Unknown types,
-duplicate names/opcodes, invalid capabilities, and malformed fields fail
-generation.
+duplicate names/opcode symbols/opcodes, invalid capabilities, and malformed
+fields fail generation.
 
 ## Generated boundary
 
@@ -42,8 +43,10 @@ Run `scripts/test-api-schema.sh` to prove deterministic regeneration, duplicate
 API/opcode and unknown-field rejection, bounded-codec behavior, and the
 fail-closed invalid-schema path.
 The same gate invokes `scripts/verify-api-contracts.py`, which checks that every
-schema API has a ledger row, a protocol opcode, and the expected ABI/export
-packaging entry.
+schema API has a ledger row, that `opcode_name=opcode` matches the explicit
+protocol enum and ledger `protocol_change`, and that the expected ABI/export
+packaging entries exist. Schema-managed ledger classes must have a schema entry;
+semantic state-machine classes remain handwritten by design.
 
 ## Adding an API
 
