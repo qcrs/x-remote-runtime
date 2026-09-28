@@ -50,6 +50,14 @@ cudaEventCreateWithFlags
 cudaEventElapsedTime
 cudaGetDeviceProperties
 cudaMemGetInfo
+cudaDeviceGetAttribute
+cudaGetDeviceFlags
+cudaDeviceGetStreamPriorityRange
+cudaDeviceGetLimit
+cudaDeviceGetCacheConfig
+cudaDeviceGetSharedMemConfig
+cudaFuncSetAttribute
+cudaFuncSetCacheConfig
 
 # Internal / hidden
 corexRemoteGetDeviceInfoInternal

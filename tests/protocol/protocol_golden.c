@@ -19,6 +19,9 @@ _Static_assert(OP_ALLOC == 1 && OP_H2D == 2 && OP_LAUNCH == 3 &&
                OP_TRANSFER_WAIT == 25 && OP_GET_DEVICE_INFO == 26,
                "V3 opcode assignment changed");
 _Static_assert(OP_HELLO == 27, "V3 HELLO opcode changed");
+_Static_assert(OP_FUNCTION_ATTRIBUTES == 37 && OP_OCCUPANCY == 38 &&
+               OP_DEVICE_GET_ATTRIBUTE == 39 && OP__COUNT == 47,
+               "M3/M3-S7 opcode assignment changed");
 
 static int test_hello(void)
 {

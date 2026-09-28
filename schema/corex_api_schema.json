@@ -1,30 +1,160 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "abi": "COREX_REMOTE_CUDART_1.1",
   "apis": [
     {
       "name": "cudaDeviceSynchronize",
-      "opcode": "OP_SYNC",
+      "opcode": 4,
       "capability_id": "CRX_CAP_STREAM_EVENT",
-      "wire_payload_bytes": 0,
-      "parameters": []
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [],
+      "backend_binding": "corex_backend_context_sync"
     },
     {
       "name": "cudaStreamQuery",
-      "opcode": "OP_STREAM_QUERY",
+      "opcode": 14,
       "capability_id": "CRX_CAP_STREAM_EVENT",
-      "wire_payload_bytes": 8,
-      "parameters": [
-        {"name": "stream", "direction": "in", "type": "u64", "object": "stream_id", "max_bytes": 8}
-      ]
+      "implementation_class": "object_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "stream", "type": "stream_id", "object_kind": "stream"}
+      ],
+      "response": [
+        {"name": "state", "type": "u32"}
+      ],
+      "backend_binding": "corex_backend_stream_query"
     },
     {
       "name": "cudaEventQuery",
-      "opcode": "OP_EVENT_QUERY",
+      "opcode": 19,
       "capability_id": "CRX_CAP_STREAM_EVENT",
-      "wire_payload_bytes": 8,
-      "parameters": [
-        {"name": "event", "direction": "in", "type": "u64", "object": "event_id", "max_bytes": 8}
-      ]
+      "implementation_class": "object_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "event", "type": "event_id", "object_kind": "event"}
+      ],
+      "response": [
+        {"name": "state", "type": "u32"}
+      ],
+      "backend_binding": "corex_backend_event_query"
+    },
+    {
+      "name": "cudaDeviceGetAttribute",
+      "opcode": 39,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "attribute", "type": "i32"},
+        {"name": "device", "type": "i32"}
+      ],
+      "response": [
+        {"name": "value", "type": "i32"}
+      ],
+      "backend_binding": "corex_backend_device_attribute"
+    },
+    {
+      "name": "cudaGetDeviceFlags",
+      "opcode": 40,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [
+        {"name": "flags", "type": "u32"}
+      ],
+      "backend_binding": "corex_backend_context_get_flags"
+    },
+    {
+      "name": "cudaDeviceGetStreamPriorityRange",
+      "opcode": 41,
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [
+        {"name": "least_priority", "type": "i32"},
+        {"name": "greatest_priority", "type": "i32"}
+      ],
+      "backend_binding": "corex_backend_stream_priority_range"
+    },
+    {
+      "name": "cudaDeviceGetLimit",
+      "opcode": 42,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "limit", "type": "i32"}
+      ],
+      "response": [
+        {"name": "value", "type": "size_u64"}
+      ],
+      "backend_binding": "corex_backend_context_get_limit"
+    },
+    {
+      "name": "cudaDeviceGetCacheConfig",
+      "opcode": 43,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [
+        {"name": "config", "type": "i32"}
+      ],
+      "backend_binding": "corex_backend_context_get_cache_config"
+    },
+    {
+      "name": "cudaDeviceGetSharedMemConfig",
+      "opcode": 44,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "scalar_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [],
+      "response": [
+        {"name": "config", "type": "i32"}
+      ],
+      "backend_binding": "corex_backend_context_get_shared_mem_config"
+    },
+    {
+      "name": "cudaFuncSetAttribute",
+      "opcode": 45,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "kernel", "type": "kernel_id", "object_kind": "kernel"},
+        {"name": "attribute", "type": "i32"},
+        {"name": "value", "type": "i32"}
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_function_set_attribute"
+    },
+    {
+      "name": "cudaFuncSetCacheConfig",
+      "opcode": 46,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {"name": "kernel", "type": "kernel_id", "object_kind": "kernel"},
+        {"name": "config", "type": "i32"}
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_function_set_cache_config"
     }
   ]
 }

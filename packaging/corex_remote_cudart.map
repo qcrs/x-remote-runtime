@@ -53,6 +53,14 @@ COREX_REMOTE_CUDART_1.1 {
     global:
         cudaGetDeviceProperties;
         cudaMemGetInfo;
+        cudaDeviceGetAttribute;
+        cudaGetDeviceFlags;
+        cudaDeviceGetStreamPriorityRange;
+        cudaDeviceGetLimit;
+        cudaDeviceGetCacheConfig;
+        cudaDeviceGetSharedMemConfig;
+        cudaFuncSetAttribute;
+        cudaFuncSetCacheConfig;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

@@ -34,6 +34,7 @@ typedef enum {
     ST_NO_RESOURCE    = 5,
     ST_ABI_MISMATCH   = 6,
     ST_METADATA_ERROR = 7,
+    ST_INVALID_DEVICE  = 8,
 } CorexProtocolStatus;
 
 typedef enum {
@@ -75,6 +76,16 @@ typedef enum {
     OP_GET_RUNTIME_VERSION = 36,
     OP_FUNCTION_ATTRIBUTES = 37,
     OP_OCCUPANCY            = 38,
+    OP_DEVICE_GET_ATTRIBUTE = 39,
+    OP_GET_DEVICE_FLAGS     = 40,
+    OP_GET_PRIORITY_RANGE   = 41,
+    OP_GET_LIMIT            = 42,
+    OP_GET_CACHE_CONFIG     = 43,
+    OP_GET_SHARED_MEM_CONFIG = 44,
+    OP_FUNCTION_SET_ATTRIBUTE = 45,
+    OP_FUNCTION_SET_CACHE_CONFIG = 46,
+    /* Sentinel: one past the highest assigned wire opcode. */
+    OP__COUNT               = 47,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

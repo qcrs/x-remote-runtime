@@ -1766,6 +1766,183 @@ static int handle_runtime_version(ServerSession *session, int fd, uint32_t req_i
                                   const unsigned char *payload, uint32_t len)
 { (void)session; (void)payload; if (len != 0) return send_response(fd, OP_GET_RUNTIME_VERSION, req_id, ST_BAD_REQUEST, NULL, 0); return handle_version_query(fd, req_id, OP_GET_RUNTIME_VERSION); }
 
+static int map_runtime_device_attribute(int value, CUdevice_attribute *attribute)
+{
+    if (!attribute) return -1;
+    switch (value) {
+    case 1:  *attribute = CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK; return 0;
+    case 8:  *attribute = CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK; return 0;
+    case 10: *attribute = CU_DEVICE_ATTRIBUTE_WARP_SIZE; return 0;
+    case 13: *attribute = CU_DEVICE_ATTRIBUTE_CLOCK_RATE; return 0;
+    case 16: *attribute = CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT; return 0;
+    case 36: *attribute = CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE; return 0;
+    case 37: *attribute = CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH; return 0;
+    case 75: *attribute = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR; return 0;
+    case 76: *attribute = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR; return 0;
+    default: return -1;
+    }
+}
+
+static int map_runtime_limit(int value, CUlimit *limit)
+{
+    if (!limit || value < 0 || value > 6) return -1;
+    *limit = (CUlimit)value;
+    return 0;
+}
+
+static int map_runtime_cache_config(int value, CUfunc_cache *config)
+{
+    if (!config || value < 0 || value > 3) return -1;
+    *config = (CUfunc_cache)value;
+    return 0;
+}
+
+static int map_runtime_function_attribute(int value, CUfunction_attribute *attribute)
+{
+    if (!attribute || (value != 8 && value != 9)) return -1;
+    *attribute = (CUfunction_attribute)value;
+    return 0;
+}
+
+static int handle_device_get_attribute(ServerSession *session, int fd, uint32_t req_id,
+                                       const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaDeviceGetAttributeRequest request;
+    CorexGeneratedcudaDeviceGetAttributeResponse response = {0};
+    CUdevice_attribute attribute;
+    int value = 0;
+    if (corex_generated_decode_cudaDeviceGetAttribute_request(payload, len, &request) != 0)
+        return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (request.device != 0)
+        return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_INVALID_DEVICE, NULL, 0);
+    if (map_runtime_device_attribute(request.attribute, &attribute) != 0)
+        return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_device_attribute(&value, attribute, g_device) != CUDA_SUCCESS)
+        return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_CUDA_ERROR, NULL, 0);
+    response.value = value;
+    unsigned char wire[4];
+    if (corex_generated_encode_cudaDeviceGetAttribute_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_DEVICE_GET_ATTRIBUTE, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_get_device_flags(ServerSession *session, int fd, uint32_t req_id,
+                                    const unsigned char *payload, uint32_t len)
+{
+    (void)session; (void)payload;
+    CorexGeneratedcudaGetDeviceFlagsResponse response = {0};
+    unsigned char wire[4];
+    if (len != 0)
+        return send_response(fd, OP_GET_DEVICE_FLAGS, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_context_get_flags(&response.flags) != CUDA_SUCCESS)
+        return send_response(fd, OP_GET_DEVICE_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
+    if (corex_generated_encode_cudaGetDeviceFlags_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_GET_DEVICE_FLAGS, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_GET_DEVICE_FLAGS, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_get_priority_range(ServerSession *session, int fd, uint32_t req_id,
+                                     const unsigned char *payload, uint32_t len)
+{
+    (void)session; (void)payload;
+    CorexGeneratedcudaDeviceGetStreamPriorityRangeResponse response = {0};
+    unsigned char wire[8];
+    if (len != 0)
+        return send_response(fd, OP_GET_PRIORITY_RANGE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_context_get_stream_priority_range(&response.least_priority,
+                                                        &response.greatest_priority) != CUDA_SUCCESS)
+        return send_response(fd, OP_GET_PRIORITY_RANGE, req_id, ST_CUDA_ERROR, NULL, 0);
+    if (corex_generated_encode_cudaDeviceGetStreamPriorityRange_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_GET_PRIORITY_RANGE, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_GET_PRIORITY_RANGE, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_get_limit(ServerSession *session, int fd, uint32_t req_id,
+                            const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaDeviceGetLimitRequest request;
+    CorexGeneratedcudaDeviceGetLimitResponse response = {0};
+    CUlimit limit;
+    if (corex_generated_decode_cudaDeviceGetLimit_request(payload, len, &request) != 0)
+        return send_response(fd, OP_GET_LIMIT, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (map_runtime_limit(request.limit, &limit) != 0)
+        return send_response(fd, OP_GET_LIMIT, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_context_get_limit(&response.value, limit) != CUDA_SUCCESS)
+        return send_response(fd, OP_GET_LIMIT, req_id, ST_CUDA_ERROR, NULL, 0);
+    unsigned char wire[8];
+    if (corex_generated_encode_cudaDeviceGetLimit_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_GET_LIMIT, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_GET_LIMIT, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_get_cache_config(ServerSession *session, int fd, uint32_t req_id,
+                                   const unsigned char *payload, uint32_t len)
+{
+    (void)session; (void)payload;
+    CorexGeneratedcudaDeviceGetCacheConfigResponse response = {0};
+    CUfunc_cache config;
+    unsigned char wire[4];
+    if (len != 0 || corex_backend_context_get_cache_config(&config) != CUDA_SUCCESS)
+        return send_response(fd, OP_GET_CACHE_CONFIG, req_id, len ? ST_BAD_REQUEST : ST_CUDA_ERROR, NULL, 0);
+    response.config = (int32_t)config;
+    if (corex_generated_encode_cudaDeviceGetCacheConfig_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_GET_CACHE_CONFIG, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_GET_CACHE_CONFIG, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_get_shared_mem_config(ServerSession *session, int fd, uint32_t req_id,
+                                        const unsigned char *payload, uint32_t len)
+{
+    (void)session; (void)payload;
+    CorexGeneratedcudaDeviceGetSharedMemConfigResponse response = {0};
+    CUsharedconfig config;
+    unsigned char wire[4];
+    if (len != 0 || corex_backend_context_get_shared_mem_config(&config) != CUDA_SUCCESS)
+        return send_response(fd, OP_GET_SHARED_MEM_CONFIG, req_id, len ? ST_BAD_REQUEST : ST_CUDA_ERROR, NULL, 0);
+    response.config = (int32_t)config;
+    if (corex_generated_encode_cudaDeviceGetSharedMemConfig_response(wire, sizeof(wire), &response) != 0)
+        return send_response(fd, OP_GET_SHARED_MEM_CONFIG, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_GET_SHARED_MEM_CONFIG, req_id, ST_OK, wire, sizeof(wire));
+}
+
+static int handle_function_set_attribute(ServerSession *session, int fd, uint32_t req_id,
+                                          const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaFuncSetAttributeRequest request;
+    CUfunction_attribute attribute;
+    KernelEntry *kernel;
+    if (corex_generated_decode_cudaFuncSetAttribute_request(payload, len, &request) != 0)
+        return send_response(fd, OP_FUNCTION_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    kernel = find_kernel(session, request.kernel);
+    if (!kernel)
+        return send_response(fd, OP_FUNCTION_SET_ATTRIBUTE, req_id, ST_NOT_FOUND, NULL, 0);
+    if (map_runtime_function_attribute(request.attribute, &attribute) != 0)
+        return send_response(fd, OP_FUNCTION_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_function_set_attribute(kernel->function, attribute, request.value) != CUDA_SUCCESS)
+        return send_response(fd, OP_FUNCTION_SET_ATTRIBUTE, req_id, ST_CUDA_ERROR, NULL, 0);
+    return send_response(fd, OP_FUNCTION_SET_ATTRIBUTE, req_id, ST_OK, NULL, 0);
+}
+
+static int handle_function_set_cache_config(ServerSession *session, int fd, uint32_t req_id,
+                                             const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaFuncSetCacheConfigRequest request;
+    CUfunc_cache config;
+    KernelEntry *kernel;
+    if (corex_generated_decode_cudaFuncSetCacheConfig_request(payload, len, &request) != 0)
+        return send_response(fd, OP_FUNCTION_SET_CACHE_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    kernel = find_kernel(session, request.kernel);
+    if (!kernel)
+        return send_response(fd, OP_FUNCTION_SET_CACHE_CONFIG, req_id, ST_NOT_FOUND, NULL, 0);
+    if (map_runtime_cache_config(request.config, &config) != 0)
+        return send_response(fd, OP_FUNCTION_SET_CACHE_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (corex_backend_function_set_cache_config(kernel->function, config) != CUDA_SUCCESS)
+        return send_response(fd, OP_FUNCTION_SET_CACHE_CONFIG, req_id, ST_CUDA_ERROR, NULL, 0);
+    return send_response(fd, OP_FUNCTION_SET_CACHE_CONFIG, req_id, ST_OK, NULL, 0);
+}
+
 static int handle_function_attributes(ServerSession *session, int fd, uint32_t req_id,
                                       const unsigned char *payload, uint32_t len)
 {
@@ -3252,11 +3429,19 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_GET_RUNTIME_VERSION, handle_runtime_version, CRX_CAP_DEVICE_INFO) \
     X(OP_FUNCTION_ATTRIBUTES, handle_function_attributes, CRX_CAP_MODULE_KERNEL) \
     X(OP_OCCUPANCY, handle_occupancy, CRX_CAP_MODULE_KERNEL) \
+    X(OP_DEVICE_GET_ATTRIBUTE, handle_device_get_attribute, CRX_CAP_DEVICE_INFO) \
+    X(OP_GET_DEVICE_FLAGS, handle_get_device_flags, CRX_CAP_DEVICE_INFO) \
+    X(OP_GET_PRIORITY_RANGE, handle_get_priority_range, CRX_CAP_STREAM_EVENT) \
+    X(OP_GET_LIMIT, handle_get_limit, CRX_CAP_DEVICE_INFO) \
+    X(OP_GET_CACHE_CONFIG, handle_get_cache_config, CRX_CAP_DEVICE_INFO) \
+    X(OP_GET_SHARED_MEM_CONFIG, handle_get_shared_mem_config, CRX_CAP_DEVICE_INFO) \
+    X(OP_FUNCTION_SET_ATTRIBUTE, handle_function_set_attribute, CRX_CAP_MODULE_KERNEL) \
+    X(OP_FUNCTION_SET_CACHE_CONFIG, handle_function_set_cache_config, CRX_CAP_MODULE_KERNEL) \
     SERVER_REGISTRY_DUPLICATE_TEST(X)
 
 #define REGISTRY_ENTRY(opcode, function, capability) \
     [opcode] = {function, capability},
-static const ServerHandlerEntry g_handlers[OP_OCCUPANCY + 1] = {
+static const ServerHandlerEntry g_handlers[OP__COUNT] = {
     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
 };
 #undef REGISTRY_ENTRY
@@ -3270,14 +3455,14 @@ static int server_registry_validate(void)
     default: break;
     }
 #undef UNIQUE_OPCODE_CASE
-    for (uint32_t opcode = OP_ALLOC; opcode <= OP_OCCUPANCY; ++opcode) {
+    for (uint32_t opcode = OP_ALLOC; opcode < OP__COUNT; ++opcode) {
         if (!g_handlers[opcode].handler ||
             g_handlers[opcode].capability_id > CRX_CAP_MODULE_KERNEL)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
         uint32_t opcode = corex_generated_apis[i].opcode;
-        if (opcode > OP_OCCUPANCY ||
+        if (opcode >= OP__COUNT ||
             g_handlers[opcode].capability_id != corex_generated_apis[i].capability_id)
             return -1;
     }

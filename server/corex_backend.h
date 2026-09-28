@@ -21,6 +21,12 @@ CUresult corex_backend_context_create(CUcontext *context, unsigned int flags,
                                       CUdevice device);
 CUresult corex_backend_context_destroy(CUcontext context);
 CUresult corex_backend_context_sync(void);
+CUresult corex_backend_context_get_flags(unsigned int *flags);
+CUresult corex_backend_context_get_stream_priority_range(int *least_priority,
+                                                         int *greatest_priority);
+CUresult corex_backend_context_get_limit(size_t *value, CUlimit limit);
+CUresult corex_backend_context_get_cache_config(CUfunc_cache *config);
+CUresult corex_backend_context_get_shared_mem_config(CUsharedconfig *config);
 CUresult corex_backend_mem_info(size_t *free_bytes, size_t *total_bytes);
 CUresult corex_backend_mem_alloc(CUdeviceptr *pointer, size_t bytes);
 CUresult corex_backend_mem_free(CUdeviceptr pointer);
@@ -58,6 +64,11 @@ CUresult corex_backend_module_function(CUfunction *function, CUmodule module,
                                        const char *name);
 CUresult corex_backend_function_attribute(int *value, CUfunction function,
                                           CUfunction_attribute attribute);
+CUresult corex_backend_function_set_attribute(CUfunction function,
+                                              CUfunction_attribute attribute,
+                                              int value);
+CUresult corex_backend_function_set_cache_config(CUfunction function,
+                                                 CUfunc_cache config);
 CUresult corex_backend_occupancy(int *blocks, CUfunction function,
                                  int block_size, size_t dynamic_shared);
 CUresult corex_backend_launch(CUfunction function,

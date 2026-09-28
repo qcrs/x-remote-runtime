@@ -10,6 +10,11 @@ CUresult corex_backend_device_attribute(int *value, CUdevice_attribute attribute
 CUresult corex_backend_context_create(CUcontext *context, unsigned int flags, CUdevice device) { return cuCtxCreate(context, flags, device); }
 CUresult corex_backend_context_destroy(CUcontext context) { return cuCtxDestroy(context); }
 CUresult corex_backend_context_sync(void) { return cuCtxSynchronize(); }
+CUresult corex_backend_context_get_flags(unsigned int *flags) { return cuCtxGetFlags(flags); }
+CUresult corex_backend_context_get_stream_priority_range(int *least_priority, int *greatest_priority) { return cuCtxGetStreamPriorityRange(least_priority, greatest_priority); }
+CUresult corex_backend_context_get_limit(size_t *value, CUlimit limit) { return cuCtxGetLimit(value, limit); }
+CUresult corex_backend_context_get_cache_config(CUfunc_cache *config) { return cuCtxGetCacheConfig(config); }
+CUresult corex_backend_context_get_shared_mem_config(CUsharedconfig *config) { return cuCtxGetSharedMemConfig(config); }
 CUresult corex_backend_mem_info(size_t *free_bytes, size_t *total_bytes) { return cuMemGetInfo(free_bytes, total_bytes); }
 CUresult corex_backend_mem_alloc(CUdeviceptr *pointer, size_t bytes) { return cuMemAlloc(pointer, bytes); }
 CUresult corex_backend_mem_free(CUdeviceptr pointer) { return cuMemFree(pointer); }
@@ -40,6 +45,8 @@ CUresult corex_backend_module_load(CUmodule *module, const void *image) { return
 CUresult corex_backend_module_unload(CUmodule module) { return cuModuleUnload(module); }
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module, const char *name) { return cuModuleGetFunction(function, module, name); }
 CUresult corex_backend_function_attribute(int *value, CUfunction function, CUfunction_attribute attribute) { return cuFuncGetAttribute(value, attribute, function); }
+CUresult corex_backend_function_set_attribute(CUfunction function, CUfunction_attribute attribute, int value) { return cuFuncSetAttribute(function, attribute, value); }
+CUresult corex_backend_function_set_cache_config(CUfunction function, CUfunc_cache config) { return cuFuncSetCacheConfig(function, config); }
 CUresult corex_backend_occupancy(int *blocks, CUfunction function, int block_size, size_t dynamic_shared) { return cuOccupancyMaxActiveBlocksPerMultiprocessor(blocks, function, block_size, dynamic_shared); }
 CUresult corex_backend_launch(CUfunction function, unsigned int grid_x, unsigned int grid_y, unsigned int grid_z, unsigned int block_x, unsigned int block_y, unsigned int block_z, unsigned int shared_bytes, CUstream stream, void **kernel_params, void **extra)
 {

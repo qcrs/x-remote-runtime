@@ -1,6 +1,6 @@
 # Project State
 
-Current autonomous roadmap position: **M6-S1 ready** (M1–M3 PASS locally).
+Current autonomous roadmap position: **M3-S7 complete; M4-S1 ready** (M1–M3 PASS locally).
 
 | Item | Current value |
 | --- | --- |
@@ -13,10 +13,10 @@ Current autonomous roadmap position: **M6-S1 ready** (M1–M3 PASS locally).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last PASS commit | M3-S5 (`m3/s5: add function attributes and occupancy`, this state commit) |
-| Current Slice | M6-S1 network configuration and diagnostics |
+| Last PASS commit | M3-S7 (`m3/s7: add probed device and function runtime APIs`, this state commit) |
+| Current Slice | M4-S1 pitched and two-dimensional memory |
 | Blockers | None |
-| Next action | Add explicit safe bind/endpoint configuration and a minimal health check |
+| Next action | Begin Wave 1 pitched and two-dimensional memory probe |
 
 The repository migration preserves the validated Runtime behavior. Gate 8
 history, patch scripts, and generated validation outputs are retained under
@@ -123,3 +123,20 @@ ABI-sensitive `cudaFuncAttributes` fields locally. Positive registered-kernel,
 null-argument, invalid-block-size, numerical, ABI/protocol, lifecycle,
 session-isolation, reconnect, and multithread gates passed. Evidence:
 `evidence/m3/s5/20260924-XXXXXX/`.
+
+M3-S6 upgrades the reviewed schema to Codegen V2 for fixed-width scalar and
+object-ID APIs. Generated metadata, network-order codecs, exact payload
+validation, registry coverage, ABI export coverage, and negative schema tests
+are reproducible. The schema now covers opcodes 4, 14, 19, and 39–46 while
+preserving opcodes 1–38. `scripts/verify-api-contracts.py` checks schema,
+ledger, protocol, and packaging consistency.
+
+M3-S7 adds CoreX-proven device/context queries and registered-kernel setters:
+`cudaDeviceGetAttribute`, `cudaGetDeviceFlags`,
+`cudaDeviceGetStreamPriorityRange`, `cudaDeviceGetLimit`,
+`cudaDeviceGetCacheConfig`, `cudaDeviceGetSharedMemConfig`,
+`cudaFuncSetAttribute`, and `cudaFuncSetCacheConfig`. CoreX 4.4 probe output
+is preserved in `evidence/m3/s7/20260928-084000/`; supported and native
+unsupported limits are tested without guessing. `cudaFuncGetAttributes` is
+classified `PARTIAL_IMPLEMENTED` because three Runtime fields remain local
+defaults without a proven CoreX query.

@@ -1,0 +1,27 @@
+cuInit=0
+count=1 r=0
+device=0 r=0
+ctx_create=-1142171952 r=0
+ctx_flags=0 r=0
+priority least=0 greatest=-1 r=0
+limit[0]=0 r=215
+limit[1]=5242880 r=0
+limit[2]=8388608 r=0
+limit[3]=8388608 r=215
+limit[4]=8388608 r=215
+limit[5]=8388608 r=215
+limit[6]=0 r=0
+cache=0 r=0
+shared=1 r=0
+pci=0000:81:00.0 r=0
+pci_reverse=0 r=0
+attr[1]=4096 r=0
+attr[8]=131072 r=0
+attr[10]=64 r=0
+attr[13]=1500000 r=0
+attr[16]=16 r=0
+attr[36]=1600000 r=0
+attr[37]=2048 r=0
+attr[75]=7 r=0
+attr[76]=1 r=0
+ctx_destroy=0

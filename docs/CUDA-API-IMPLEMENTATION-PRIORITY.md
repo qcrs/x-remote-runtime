@@ -7,7 +7,8 @@ probe order, not a support claim. An API moves to `IMPLEMENTED`,
 and the relevant semantic tests pass.
 
 The census contains 266 public Runtime declarations. The current implementation
-contains 34 public APIs; the remaining declarations are deliberately not
+contains 41 fully implemented public APIs plus three partial APIs (memcpy
+directions and function attributes); the remaining declarations are deliberately not
 forwarded based on a CUDA signature alone.
 
 ## Priority Model
@@ -34,7 +35,9 @@ runtime.
 1. Complete the `cudaMemcpy` and `cudaMemcpyAsync` direction matrix and update
    their ledger notes. Verify H2H, H2D, D2H, D2D, `Default`, zero-byte,
    overlap, bounds, explicit/default stream ordering, and async D2D behavior.
-2. Probe and, if CoreX matches, implement:
+2. Probe and, if CoreX matches, implement. M3-S7 completed the scalar/context
+   subset below; PCI identity APIs remain queued because their client string
+   DTO and validation path are not part of this slice:
 
    - `cudaDeviceGetAttribute`
    - `cudaGetDeviceFlags`
@@ -44,7 +47,8 @@ runtime.
    - `cudaDeviceGetSharedMemConfig`
    - `cudaDeviceGetPCIBusId`
    - `cudaDeviceGetByPCIBusId`
-3. Probe function configuration APIs using the existing registered-kernel token:
+3. Probe function configuration APIs using the existing registered-kernel token
+   (the two proven setters were completed in M3-S7):
 
    - `cudaFuncSetAttribute`
    - `cudaFuncSetCacheConfig`
@@ -281,4 +285,3 @@ The repository has passed M1-M3 locally. The next dependency-ready work is:
 2. If no second same-architecture host is available, record M6-S2 as
    environment-blocked and continue with Wave 1.
 3. Probe Wave 0 gaps, then begin M4-S1 pitched/2D memory.
-

@@ -6,6 +6,7 @@
 #include "corex_device_info.h"
 #include "corex_protocol.h"
 #include "corex_runtime_context.h"
+#include "corex_api_schema.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -380,6 +381,8 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback)
         return cudaErrorInvalidValue;
     case ST_NOT_FOUND:
         return cudaErrorInvalidResourceHandle;
+    case ST_INVALID_DEVICE:
+        return cudaErrorInvalidDevice;
     case ST_NO_RESOURCE:
         return cudaErrorMemoryAllocation;
     case ST_CUDA_ERROR:
@@ -468,6 +471,150 @@ static int remote_version_query(uint32_t opcode, int *version)
     unsigned char *response = NULL; uint32_t length = 0;
     if (rpc(g_fd, opcode, NULL, 0, &response, &length) != 0 || length != 4) { free(response); return -1; }
     *version = (int)corex_protocol_read_u32(response); free(response); return 0;
+}
+
+static int remote_device_get_attribute(int attribute, int device, int *value)
+{
+    CorexGeneratedcudaDeviceGetAttributeRequest request = {
+        .attribute = attribute, .device = device};
+    CorexGeneratedcudaDeviceGetAttributeResponse response;
+    unsigned char payload[8], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaDeviceGetAttribute_request(
+            payload, sizeof(payload), &request) != 0 ||
+        rpc(g_fd, OP_DEVICE_GET_ATTRIBUTE, payload, sizeof(payload),
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaDeviceGetAttribute_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *value = response.value;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_get_device_flags(unsigned int *flags)
+{
+    CorexGeneratedcudaGetDeviceFlagsRequest request = {0};
+    CorexGeneratedcudaGetDeviceFlagsResponse response;
+    unsigned char payload[1], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaGetDeviceFlags_request(
+            payload, 0, &request) != 0 ||
+        rpc(g_fd, OP_GET_DEVICE_FLAGS, NULL, 0,
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaGetDeviceFlags_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *flags = response.flags;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_get_priority_range(int *least_priority, int *greatest_priority)
+{
+    CorexGeneratedcudaDeviceGetStreamPriorityRangeRequest request = {0};
+    CorexGeneratedcudaDeviceGetStreamPriorityRangeResponse response;
+    unsigned char payload[1], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaDeviceGetStreamPriorityRange_request(
+            payload, 0, &request) != 0 ||
+        rpc(g_fd, OP_GET_PRIORITY_RANGE, NULL, 0,
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaDeviceGetStreamPriorityRange_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *least_priority = response.least_priority;
+    *greatest_priority = response.greatest_priority;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_get_limit(int limit, size_t *value)
+{
+    CorexGeneratedcudaDeviceGetLimitRequest request = {.limit = limit};
+    CorexGeneratedcudaDeviceGetLimitResponse response;
+    unsigned char payload[4], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaDeviceGetLimit_request(
+            payload, sizeof(payload), &request) != 0 ||
+        rpc(g_fd, OP_GET_LIMIT, payload, sizeof(payload),
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaDeviceGetLimit_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *value = (size_t)response.value;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_get_cache_config(int *config)
+{
+    CorexGeneratedcudaDeviceGetCacheConfigRequest request = {0};
+    CorexGeneratedcudaDeviceGetCacheConfigResponse response;
+    unsigned char payload[1], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaDeviceGetCacheConfig_request(
+            payload, 0, &request) != 0 ||
+        rpc(g_fd, OP_GET_CACHE_CONFIG, NULL, 0,
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaDeviceGetCacheConfig_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *config = response.config;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_get_shared_mem_config(int *config)
+{
+    CorexGeneratedcudaDeviceGetSharedMemConfigRequest request = {0};
+    CorexGeneratedcudaDeviceGetSharedMemConfigResponse response;
+    unsigned char payload[1], *wire_response = NULL;
+    uint32_t response_length = 0;
+    if (corex_generated_encode_cudaDeviceGetSharedMemConfig_request(
+            payload, 0, &request) != 0 ||
+        rpc(g_fd, OP_GET_SHARED_MEM_CONFIG, NULL, 0,
+            &wire_response, &response_length) != 0 ||
+        corex_generated_decode_cudaDeviceGetSharedMemConfig_response(
+            wire_response, response_length, &response) != 0) {
+        free(wire_response);
+        return -1;
+    }
+    *config = response.config;
+    free(wire_response);
+    return 0;
+}
+
+static int remote_function_set_attribute(uint64_t kernel_id, int attribute, int value)
+{
+    CorexGeneratedcudaFuncSetAttributeRequest request = {
+        .kernel = kernel_id, .attribute = attribute, .value = value};
+    unsigned char payload[16];
+    return corex_generated_encode_cudaFuncSetAttribute_request(
+               payload, sizeof(payload), &request) == 0 &&
+           rpc(g_fd, OP_FUNCTION_SET_ATTRIBUTE, payload, sizeof(payload), NULL, NULL) == 0
+        ? 0 : -1;
+}
+
+static int remote_function_set_cache_config(uint64_t kernel_id, int config)
+{
+    CorexGeneratedcudaFuncSetCacheConfigRequest request = {
+        .kernel = kernel_id, .config = config};
+    unsigned char payload[12];
+    return corex_generated_encode_cudaFuncSetCacheConfig_request(
+               payload, sizeof(payload), &request) == 0 &&
+           rpc(g_fd, OP_FUNCTION_SET_CACHE_CONFIG, payload, sizeof(payload), NULL, NULL) == 0
+        ? 0 : -1;
 }
 
 static int remote_function_attributes(uint64_t kernel_id, cudaFuncAttributes *attr)
@@ -1893,6 +2040,65 @@ static cudaError_t cudaRuntimeGetVersion_locked(int *version)
     return cudaSuccess;
 }
 
+static cudaError_t cudaDeviceGetAttribute_locked(int *value, cudaDeviceAttr attr, int device)
+{
+    if (!value) G6E_RETURN(cudaErrorInvalidValue);
+    if (device != 0) G6E_RETURN(cudaErrorInvalidDevice);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_device_get_attribute((int)attr, device, value) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaGetDeviceFlags_locked(unsigned int *flags)
+{
+    if (!flags) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_get_device_flags(flags) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetStreamPriorityRange_locked(int *least_priority, int *greatest_priority)
+{
+    if (!least_priority || !greatest_priority) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_get_priority_range(least_priority, greatest_priority) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetLimit_locked(size_t *value, cudaLimit limit)
+{
+    if (!value || (int)limit < 0 || (int)limit > 6) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    if (remote_get_limit((int)limit, value) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetCacheConfig_locked(cudaFuncCache *config)
+{
+    if (!config) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    int value = 0;
+    if (remote_get_cache_config(&value) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    *config = (cudaFuncCache)value;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaDeviceGetSharedMemConfig_locked(cudaSharedMemConfig *config)
+{
+    if (!config) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    int value = 0;
+    if (remote_get_shared_mem_config(&value) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    *config = (cudaSharedMemConfig)value;
+    return cudaSuccess;
+}
+
 static cudaError_t cudaFuncGetAttributes_locked(cudaFuncAttributes *attr, const void *func)
 {
     if (!attr || !func) G6E_RETURN(cudaErrorInvalidValue);
@@ -1902,6 +2108,30 @@ static cudaError_t cudaFuncGetAttributes_locked(cudaFuncAttributes *attr, const 
     memset(attr, 0, sizeof(*attr));
     if (remote_function_attributes(kernel->kernel_id, attr) != 0)
         G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaFuncSetAttribute_locked(const void *func, cudaFuncAttribute attr, int value)
+{
+    if (!func || ((int)attr != cudaFuncAttributeMaxDynamicSharedMemorySize &&
+                  (int)attr != cudaFuncAttributePreferredSharedMemoryCarveout))
+        G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel = resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if (remote_function_set_attribute(kernel->kernel_id, (int)attr, value) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaFuncSetCacheConfig_locked(const void *func, cudaFuncCache config)
+{
+    if (!func || (int)config < 0 || (int)config > 3) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel = resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    if (remote_function_set_cache_config(kernel->kernel_id, (int)config) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorInvalidValue));
     return cudaSuccess;
 }
 
@@ -3967,10 +4197,66 @@ cudaError_t cudaRuntimeGetVersion(int *version)
     corex_runtime_context_unlock(context); return result;
 }
 
+cudaError_t cudaDeviceGetAttribute(int *value, cudaDeviceAttr attr, int device)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetAttribute_locked(value, attr, device);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaGetDeviceFlags(unsigned int *flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaGetDeviceFlags_locked(flags);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaDeviceGetStreamPriorityRange(int *least_priority, int *greatest_priority)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetStreamPriorityRange_locked(least_priority, greatest_priority);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaDeviceGetLimit(size_t *value, cudaLimit limit)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetLimit_locked(value, limit);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaDeviceGetCacheConfig(cudaFuncCache *config)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetCacheConfig_locked(config);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaDeviceGetSharedMemConfig(cudaSharedMemConfig *config)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceGetSharedMemConfig_locked(config);
+    corex_runtime_context_unlock(context); return result;
+}
+
 cudaError_t cudaFuncGetAttributes(cudaFuncAttributes *attr, const void *func)
 {
     CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
     cudaError_t result = cudaFuncGetAttributes_locked(attr, func);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaFuncSetAttribute(const void *func, cudaFuncAttribute attr, int value)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaFuncSetAttribute_locked(func, attr, value);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaFuncSetCacheConfig(const void *func, cudaFuncCache config)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaFuncSetCacheConfig_locked(func, config);
     corex_runtime_context_unlock(context); return result;
 }
 

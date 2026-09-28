@@ -1,0 +1,3 @@
+COREX=/usr/local/corex-4.4.0
+SOURCE=/tmp/corex_probe.c
+/tmp/corex_probe

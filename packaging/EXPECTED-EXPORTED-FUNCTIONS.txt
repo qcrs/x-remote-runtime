@@ -43,3 +43,11 @@ corexRemoteModuleUnload
 corexRemoteRegisterKernel
 cudaGetDeviceProperties
 cudaMemGetInfo
+cudaDeviceGetAttribute
+cudaGetDeviceFlags
+cudaDeviceGetStreamPriorityRange
+cudaDeviceGetLimit
+cudaDeviceGetCacheConfig
+cudaDeviceGetSharedMemConfig
+cudaFuncSetAttribute
+cudaFuncSetCacheConfig

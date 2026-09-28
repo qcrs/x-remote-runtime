@@ -76,6 +76,7 @@ echo "GXX=$GXX"
 
 "$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -fPIC \
     -I"$INTERNAL" \
+    -I"$ROOT/include/generated" \
     -c "$SRC/corex_remote_cuda.c" \
     -o "$OBJ/corex_remote_cuda.o" \
     -pthread
@@ -158,6 +159,20 @@ fi
     -lcorex_remote_cudart \
     -Wl,-rpath,'$ORIGIN/../lib' \
     -o "$DIST/bin/device_identity_app"
+
+"$CXX" -x ivcore \
+    --cuda-path="$COREX" \
+    -I"$COREX/include" \
+    "${EXTRA[@]}" \
+    -c "$TESTS/device_config.cu" \
+    -o "$OBJ/device_config.o"
+
+"$GXX" \
+    "$OBJ/device_config.o" \
+    -L"$DIST/lib" \
+    -lcorex_remote_cudart \
+    -Wl,-rpath,'$ORIGIN/../lib' \
+    -o "$DIST/bin/device_config_app"
 
 "$CXX" -x ivcore \
     --cuda-path="$COREX" \

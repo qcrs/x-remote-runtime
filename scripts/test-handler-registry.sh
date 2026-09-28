@@ -8,7 +8,7 @@ COREX="${COREX:-/usr/local/corex-4.4.0}"
 mkdir -p "$OUT"
 
 if gcc -std=gnu11 -Wall -Wextra -Werror -DCOREX_TEST_DUPLICATE_OPCODE \
-    -I"$COREX/include" -I"$ROOT/include/internal" -fsyntax-only \
+    -I"$COREX/include" -I"$ROOT/include/internal" -I"$ROOT/include/generated" -fsyntax-only \
     "$ROOT/server/runtime_server.c" "$ROOT/server/corex_backend.c" \
     >"$OUT/duplicate.stdout.log" 2>"$OUT/duplicate.stderr.log"; then
     echo "M2_S3_DUPLICATE_OPCODE=UNDETECTED" >&2

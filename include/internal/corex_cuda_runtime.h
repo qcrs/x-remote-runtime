@@ -9,7 +9,9 @@ extern "C" {
 #endif
 
 /*
- * Gate 7C application-facing source-level CUDA Runtime subset.
+ * Canonical application-facing source-level CUDA Runtime compatibility
+ * declarations. Project-specific remote helpers live below this same facade
+ * so every public declaration has one source of truth.
  *
  * This header intentionally exposes only CUDA-style API plus the controlled
  * module/kernel registration helper retained from Gate 6D. Remote object IDs,
@@ -21,7 +23,7 @@ typedef enum cudaError {
     cudaErrorInvalidValue           = 1,
     cudaErrorMemoryAllocation       = 2,
     cudaErrorInitializationError    = 3,
-    cudaErrorInvalidDevice          = 10,
+    cudaErrorInvalidDevice          = 101,
     cudaErrorInvalidDevicePointer   = 17,
     cudaErrorInvalidMemcpyDirection = 21,
     cudaErrorInvalidResourceHandle  = 400,
@@ -37,6 +39,47 @@ typedef enum cudaMemcpyKind {
     cudaMemcpyDeviceToDevice = 3,
     cudaMemcpyDefault        = 4
 } cudaMemcpyKind;
+
+/* Only values proven against CoreX 4.4 are exposed in this compatibility ABI. */
+typedef enum cudaDeviceAttr {
+    cudaDevAttrMaxThreadsPerBlock = 1,
+    cudaDevAttrMaxSharedMemoryPerBlock = 8,
+    cudaDevAttrWarpSize = 10,
+    cudaDevAttrClockRate = 13,
+    cudaDevAttrMultiProcessorCount = 16,
+    cudaDevAttrMemoryClockRate = 36,
+    cudaDevAttrGlobalMemoryBusWidth = 37,
+    cudaDevAttrComputeCapabilityMajor = 75,
+    cudaDevAttrComputeCapabilityMinor = 76
+} cudaDeviceAttr;
+
+typedef enum cudaLimit {
+    cudaLimitStackSize = 0,
+    cudaLimitPrintfFifoSize = 1,
+    cudaLimitMallocHeapSize = 2,
+    cudaLimitDevRuntimeSyncDepth = 3,
+    cudaLimitDevRuntimePendingLaunchCount = 4,
+    cudaLimitMaxL2FetchGranularity = 5,
+    cudaLimitPersistingL2CacheSize = 6
+} cudaLimit;
+
+typedef enum cudaFuncAttribute {
+    cudaFuncAttributeMaxDynamicSharedMemorySize = 8,
+    cudaFuncAttributePreferredSharedMemoryCarveout = 9
+} cudaFuncAttribute;
+
+typedef enum cudaFuncCache {
+    cudaFuncCachePreferNone = 0,
+    cudaFuncCachePreferShared = 1,
+    cudaFuncCachePreferL1 = 2,
+    cudaFuncCachePreferEqual = 3
+} cudaFuncCache;
+
+typedef enum cudaSharedMemConfig {
+    cudaSharedMemBankSizeDefault = 0,
+    cudaSharedMemBankSizeFourByte = 1,
+    cudaSharedMemBankSizeEightByte = 2
+} cudaSharedMemConfig;
 
 typedef struct dim3 {
     unsigned int x;
@@ -83,7 +126,15 @@ cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
 cudaError_t cudaDriverGetVersion(int *driverVersion);
 cudaError_t cudaRuntimeGetVersion(int *runtimeVersion);
+cudaError_t cudaDeviceGetAttribute(int *value, cudaDeviceAttr attr, int device);
+cudaError_t cudaGetDeviceFlags(unsigned int *flags);
+cudaError_t cudaDeviceGetStreamPriorityRange(int *leastPriority, int *greatestPriority);
+cudaError_t cudaDeviceGetLimit(size_t *value, cudaLimit limit);
+cudaError_t cudaDeviceGetCacheConfig(cudaFuncCache *config);
+cudaError_t cudaDeviceGetSharedMemConfig(cudaSharedMemConfig *config);
 cudaError_t cudaFuncGetAttributes(cudaFuncAttributes *attr, const void *func);
+cudaError_t cudaFuncSetAttribute(const void *func, cudaFuncAttribute attr, int value);
+cudaError_t cudaFuncSetCacheConfig(const void *func, cudaFuncCache config);
 cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, const void *func, int blockSize, size_t dynamicSMemSize);
 
 cudaError_t cudaMalloc(void **devPtr, size_t size);
@@ -101,6 +152,10 @@ cudaError_t cudaMemcpyAsync(
     size_t count,
     cudaMemcpyKind kind,
     cudaStream_t stream);
+
+cudaError_t cudaMemset(void *devPtr, int value, size_t count);
+cudaError_t cudaMemsetAsync(
+    void *devPtr, int value, size_t count, cudaStream_t stream);
 
 cudaError_t cudaDeviceSynchronize(void);
 
@@ -154,6 +209,10 @@ cudaError_t cudaLaunchKernel(
 cudaError_t cudaGetLastError(void);
 cudaError_t cudaPeekAtLastError(void);
 const char *cudaGetErrorString(cudaError_t error);
+
+/* Test/debug helpers, not CUDA Runtime API. */
+size_t corexRemoteDebugLiveTransfers(void);
+void corexRemoteRuntimeShutdown(void);
 
 #ifdef __cplusplus
 }
