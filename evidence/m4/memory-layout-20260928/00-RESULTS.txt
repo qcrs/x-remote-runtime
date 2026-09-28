@@ -1,0 +1,8 @@
+BUILD=PASS
+API_CONTRACTS=PASS
+EVIDENCE_LINKS=PASS
+BACKEND_SEAM=PASS
+COREX_SYMBOLS=cuMemAllocPitch,cuMemcpy2D,cuMemcpy2DAsync,cuMemcpy3D,cuMemcpy3DAsync,cuMemcpyDtoDAsync,cuMemsetD2D8
+PITCH_ALLOC_RUNTIME=FALLBACK_LINEAR_PITCH_WIDTH
+MEMORY_LAYOUT_INTEGRATION=FAIL_D2H_2D_RUNTIME
+HARDWARE_NOTE=cuMemAllocPitch symbol exists but returns a runtime CUDA error on the target device; linear allocation fallback preserves pitch semantics. The representative D2H 2D smoke still returns an error and is not claimed as hardware PASS.
