@@ -8,11 +8,18 @@ COREX_REMOTE_CUDART_1.0 {
         cudaGetDevice;
         cudaSetDevice;
         cudaMalloc;
+        cudaMallocPitch;
         cudaFree;
         cudaMemcpy;
         cudaMemcpyAsync;
+        cudaMemcpy2D;
+        cudaMemcpy2DAsync;
+        cudaMemcpy3D;
+        cudaMemcpy3DAsync;
         cudaMemset;
         cudaMemsetAsync;
+        cudaMemset2D;
+        cudaMemset2DAsync;
         cudaDeviceSynchronize;
         cudaStreamCreate;
         cudaStreamCreateWithFlags;

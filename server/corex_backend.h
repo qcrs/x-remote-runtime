@@ -33,15 +33,24 @@ CUresult corex_backend_context_get_cache_config(CUfunc_cache *config);
 CUresult corex_backend_context_get_shared_mem_config(CUsharedconfig *config);
 CUresult corex_backend_mem_info(size_t *free_bytes, size_t *total_bytes);
 CUresult corex_backend_mem_alloc(CUdeviceptr *pointer, size_t bytes);
+CUresult corex_backend_mem_alloc_pitch(CUdeviceptr *pointer, size_t *pitch,
+                                        size_t width, size_t height,
+                                        unsigned int element_size);
 CUresult corex_backend_mem_free(CUdeviceptr pointer);
 CUresult corex_backend_host_alloc(void **pointer, size_t bytes);
 CUresult corex_backend_host_free(void *pointer);
 CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes);
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes);
 CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes);
+CUresult corex_backend_copy_d2d_async(CUdeviceptr dst, CUdeviceptr src, size_t bytes, CUstream stream);
 CUresult corex_backend_memset_d8(CUdeviceptr dst, unsigned char value, size_t bytes);
 CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value,
                                        size_t bytes, CUstream stream);
+CUresult corex_backend_memset_d2d8(CUdeviceptr dst, size_t pitch,
+                                    unsigned char value, size_t width, size_t height);
+CUresult corex_backend_memset_d2d8_async(CUdeviceptr dst, size_t pitch,
+                                          unsigned char value, size_t width,
+                                          size_t height, CUstream stream);
 CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src,
                                       size_t bytes, CUstream stream);
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src,

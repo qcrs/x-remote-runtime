@@ -19,14 +19,18 @@ CUresult corex_backend_context_get_cache_config(CUfunc_cache *config) { return c
 CUresult corex_backend_context_get_shared_mem_config(CUsharedconfig *config) { return cuCtxGetSharedMemConfig(config); }
 CUresult corex_backend_mem_info(size_t *free_bytes, size_t *total_bytes) { return cuMemGetInfo(free_bytes, total_bytes); }
 CUresult corex_backend_mem_alloc(CUdeviceptr *pointer, size_t bytes) { return cuMemAlloc(pointer, bytes); }
+CUresult corex_backend_mem_alloc_pitch(CUdeviceptr *pointer, size_t *pitch, size_t width, size_t height, unsigned int element_size) { return cuMemAllocPitch(pointer, pitch, width, height, element_size); }
 CUresult corex_backend_mem_free(CUdeviceptr pointer) { return cuMemFree(pointer); }
 CUresult corex_backend_host_alloc(void **pointer, size_t bytes) { return cuMemAllocHost(pointer, bytes); }
 CUresult corex_backend_host_free(void *pointer) { return cuMemFreeHost(pointer); }
 CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes) { return cuMemcpyHtoD(dst, src, bytes); }
 CUresult corex_backend_copy_d2h(void *dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoH(dst, src, bytes); }
 CUresult corex_backend_copy_d2d(CUdeviceptr dst, CUdeviceptr src, size_t bytes) { return cuMemcpyDtoD(dst, src, bytes); }
+CUresult corex_backend_copy_d2d_async(CUdeviceptr dst, CUdeviceptr src, size_t bytes, CUstream stream) { return cuMemcpyDtoDAsync(dst, src, bytes, stream); }
 CUresult corex_backend_memset_d8(CUdeviceptr dst, unsigned char value, size_t bytes) { return cuMemsetD8(dst, value, bytes); }
 CUresult corex_backend_memset_d8_async(CUdeviceptr dst, unsigned char value, size_t bytes, CUstream stream) { return cuMemsetD8Async(dst, value, bytes, stream); }
+CUresult corex_backend_memset_d2d8(CUdeviceptr dst, size_t pitch, unsigned char value, size_t width, size_t height) { return cuMemsetD2D8(dst, pitch, value, width, height); }
+CUresult corex_backend_memset_d2d8_async(CUdeviceptr dst, size_t pitch, unsigned char value, size_t width, size_t height, CUstream stream) { return cuMemsetD2D8Async(dst, pitch, value, width, height, stream); }
 CUresult corex_backend_copy_h2d_async(CUdeviceptr dst, const void *src, size_t bytes, CUstream stream) { return cuMemcpyHtoDAsync(dst, src, bytes, stream); }
 CUresult corex_backend_copy_d2h_async(void *dst, CUdeviceptr src, size_t bytes, CUstream stream) { return cuMemcpyDtoHAsync(dst, src, bytes, stream); }
 CUresult corex_backend_stream_create(CUstream *stream, unsigned int flags) { return cuStreamCreate(stream, flags); }

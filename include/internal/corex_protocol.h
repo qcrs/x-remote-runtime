@@ -86,8 +86,14 @@ typedef enum {
     OP_FUNCTION_SET_CACHE_CONFIG = 46,
     OP_DEVICE_GET_PCI_BUS_ID = 47,
     OP_DEVICE_GET_BY_PCI_BUS_ID = 48,
+    OP_ALLOC_PITCHED       = 49,
+    OP_MEMCPY_2D           = 50,
+    OP_MEMCPY_2D_ASYNC     = 51,
+    OP_MEMSET_2D           = 52,
+    OP_MEMSET_2D_ASYNC     = 53,
+    OP_D2D_ASYNC           = 54,
     /* Sentinel: one past the highest assigned wire opcode. */
-    OP__COUNT               = 49,
+    OP__COUNT               = 55,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u
@@ -113,6 +119,7 @@ typedef enum {
     CRX_CAP_STREAM_EVENT = 4,
     CRX_CAP_COPY_ASYNC = 5,
     CRX_CAP_MODULE_KERNEL = 6,
+    CRX_CAP_LAYOUT_TRANSFER = 7,
 } CorexCapabilityId;
 
 typedef struct {

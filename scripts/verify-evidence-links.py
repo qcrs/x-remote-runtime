@@ -18,10 +18,10 @@ def main():
                 errors.append(f"{doc}: placeholder evidence path {path}")
             elif not (root / path).exists():
                 errors.append(f"{doc}: missing evidence path {path}")
-    for evidence_root in (root / "evidence/m3/s8", root / "evidence/m4"):
-        if evidence_root.exists():
+    for evidence_root in (root / "evidence").glob("*"):
+        if evidence_root.is_dir():
             for artifact in evidence_root.rglob("*"):
-                if artifact.is_file() and artifact.name in {"generated.h", "generated-test.c"}:
+                if artifact.is_file() and artifact.name in {"generated.h", "generated-test.c"} and evidence_root.name not in {"gate8d", "m2"}:
                     errors.append(f"new evidence contains copied generated artifact {artifact}")
     if errors:
         for error in errors:

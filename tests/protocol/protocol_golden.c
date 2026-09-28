@@ -31,7 +31,9 @@ _Static_assert(OP_FUNCTION_ATTRIBUTES == 37 && OP_OCCUPANCY == 38 &&
                OP_FUNCTION_SET_ATTRIBUTE == 45 &&
                OP_FUNCTION_SET_CACHE_CONFIG == 46 &&
                OP_DEVICE_GET_PCI_BUS_ID == 47 &&
-               OP_DEVICE_GET_BY_PCI_BUS_ID == 48 && OP__COUNT == 49,
+               OP_DEVICE_GET_BY_PCI_BUS_ID == 48 && OP_ALLOC_PITCHED == 49 &&
+               OP_MEMCPY_2D == 50 && OP_MEMCPY_2D_ASYNC == 51 &&
+               OP_MEMSET_2D == 52 && OP_MEMSET_2D_ASYNC == 53 && OP_D2D_ASYNC == 54 && OP__COUNT == 55,
                "M3/M3-S7 opcode assignment changed");
 
 static int test_hello(void)

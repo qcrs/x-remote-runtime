@@ -29,7 +29,19 @@ typedef struct {
     uintptr_t virtual_base;
     size_t size;
     uint64_t allocation_id;
+    uint32_t layout_kind;
+    size_t logical_width_bytes;
+    size_t logical_height;
+    size_t logical_depth;
+    size_t pitch;
+    size_t slice_pitch;
 } VirtualAllocation;
+
+typedef enum {
+    COREX_LAYOUT_LINEAR = 0,
+    COREX_LAYOUT_PITCHED_2D = 1,
+    COREX_LAYOUT_PITCHED_3D = 2,
+} CorexMemoryLayoutKind;
 
 struct corexCudaStreamHandle {
     uint64_t cookie;

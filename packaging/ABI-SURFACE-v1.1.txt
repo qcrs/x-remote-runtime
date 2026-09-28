@@ -5,9 +5,14 @@ cudaGetDeviceCount
 cudaGetDevice
 cudaSetDevice
 cudaMalloc
+cudaMallocPitch
 cudaFree
 cudaMemcpy
 cudaMemcpyAsync
+cudaMemcpy2D
+cudaMemcpy2DAsync
+cudaMemcpy3D
+cudaMemcpy3DAsync
 cudaDeviceSynchronize
 cudaStreamCreate
 cudaStreamDestroy
@@ -42,6 +47,8 @@ cudaFuncGetAttributes
 cudaOccupancyMaxActiveBlocksPerMultiprocessor
 cudaMemset
 cudaMemsetAsync
+cudaMemset2D
+cudaMemset2DAsync
 cudaStreamCreateWithFlags
 cudaStreamCreateWithPriority
 cudaStreamGetFlags

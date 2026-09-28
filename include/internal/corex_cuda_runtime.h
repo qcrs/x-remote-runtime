@@ -121,6 +121,17 @@ typedef struct cudaFuncAttributes {
     int preferredShmemCarveout;
 } cudaFuncAttributes;
 
+typedef struct cudaExtent { size_t width, height, depth; } cudaExtent;
+typedef struct cudaPitchedPtr { void *ptr; size_t pitch, xsize, ysize; } cudaPitchedPtr;
+typedef struct cudaMemcpy3DParms {
+    cudaPitchedPtr srcPtr;
+    cudaPitchedPtr dstPtr;
+    cudaExtent extent;
+    cudaMemcpyKind kind;
+    const void *srcArray;
+    void *dstArray;
+} cudaMemcpy3DParms;
+
 cudaError_t cudaGetDeviceCount(int *count);
 cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
@@ -140,6 +151,7 @@ cudaError_t cudaFuncSetCacheConfig(const void *func, cudaFuncCache config);
 cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, const void *func, int blockSize, size_t dynamicSMemSize);
 
 cudaError_t cudaMalloc(void **devPtr, size_t size);
+cudaError_t cudaMallocPitch(void **devPtr, size_t *pitch, size_t width, size_t height);
 cudaError_t cudaFree(void *devPtr);
 
 cudaError_t cudaMemcpy(
@@ -154,6 +166,13 @@ cudaError_t cudaMemcpyAsync(
     size_t count,
     cudaMemcpyKind kind,
     cudaStream_t stream);
+cudaError_t cudaMemcpy2D(void *dst, size_t dpitch, const void *src, size_t spitch,
+                         size_t width, size_t height, cudaMemcpyKind kind);
+cudaError_t cudaMemcpy2DAsync(void *dst, size_t dpitch, const void *src, size_t spitch,
+                              size_t width, size_t height, cudaMemcpyKind kind,
+                              cudaStream_t stream);
+cudaError_t cudaMemcpy3D(const cudaMemcpy3DParms *p);
+cudaError_t cudaMemcpy3DAsync(const cudaMemcpy3DParms *p, cudaStream_t stream);
 
 cudaError_t cudaMemset(void *devPtr, int value, size_t count);
 cudaError_t cudaMemsetAsync(
@@ -207,6 +226,9 @@ cudaError_t cudaLaunchKernel(
     void **args,
     size_t sharedMem,
     cudaStream_t stream);
+cudaError_t cudaMemset2D(void *devPtr, size_t pitch, int value, size_t width, size_t height);
+cudaError_t cudaMemset2DAsync(void *devPtr, size_t pitch, int value, size_t width,
+                              size_t height, cudaStream_t stream);
 
 cudaError_t cudaGetLastError(void);
 cudaError_t cudaPeekAtLastError(void);
