@@ -1,0 +1,20 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_symbol_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/symbol-expansion/driver-probe
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 --cuda-device-only -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward /home/lvtong/corex-remote-runtime/tests/probes/corex_symbol_kernel.cu -o /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_kernel.cubin
+/home/lvtong/corex-remote-runtime/build/symbol-expansion/driver-probe /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_kernel.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 /home/lvtong/corex-remote-runtime/tests/integration/symbol_registration_capture.c -c -o /home/lvtong/corex-remote-runtime/build/symbol-expansion/capture.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/integration/symbol_expansion.cu -o /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion.o
+g++ /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion.o /home/lvtong/corex-remote-runtime/build/symbol-expansion/capture.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -ldl -o /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion_app
+readelf -dW /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion_app
+COREX_REMOTE_PORT=57179 dist/bin/runtime_server  # independent Popen PID=2112613
+/home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion_app
+/home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_expansion_app leave-module-live
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+python3 /home/lvtong/corex-remote-runtime/tests/integration/symbol_expansion_protocol.py /home/lvtong/corex-remote-runtime/build/symbol-expansion/symbol_kernel.cubin
+./scripts/build.sh > evidence/m4/symbol-expansion-20261012/build.stdout.log 2> evidence/m4/symbol-expansion-20261012/build.stderr.log
+OUT=build/symbol-checks/api-schema scripts/test-api-schema.sh
+OUT=build/symbol-checks/backend-seam scripts/test-backend-seam.sh
+OUT=build/symbol-checks/handler-registry scripts/test-handler-registry.sh
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-api-contracts.py .
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-evidence-links.py .
+git diff --check
+Goal audit: compare public support states to git show 757e9ab:compat/cuda-api-ledger.csv; verify checkpoint MANIFEST blobs at 83cfba2 and 91da4c0; results in FINAL_GOAL_AUDIT.txt

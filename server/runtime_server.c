@@ -54,6 +54,7 @@ typedef struct {
     uint64_t id;
     CUdeviceptr ptr;
     size_t size;
+    uint64_t parent_module_id; /* zero: owned allocation, otherwise module-owned */
     uint32_t layout_kind;
     size_t width;
     size_t height;
@@ -630,7 +631,7 @@ static void cleanup_session(ServerSession *session)
             "cleanup allocation_id=%llu\n",
             (unsigned long long)session->allocations[i].id);
 
-        if (session->allocations[i].ptr)
+        if (session->allocations[i].ptr && !session->allocations[i].parent_module_id)
             corex_backend_mem_free(session->allocations[i].ptr);
 
         memset(&session->allocations[i], 0, sizeof(session->allocations[i]));
@@ -1229,6 +1230,9 @@ static int handle_free(
     if (!a)
         return send_response(fd, OP_FREE, req_id, ST_NOT_FOUND, NULL, 0);
 
+    if(a->parent_module_id)
+        return send_response(fd,OP_FREE,req_id,ST_BAD_REQUEST,NULL,0);
+
     /*
      * Gate 5E invariant:
      * an AllocationID is never physically freed until all
@@ -1444,6 +1448,41 @@ static int handle_upload_library(ServerSession *session,int fd,uint32_t req_id,
                                  const unsigned char *payload,uint32_t len)
 { return handle_upload_image(session,fd,req_id,payload,len,OP_UPLOAD_LIBRARY); }
 
+/* Module globals enter the existing allocation registry as non-owning records. */
+static int handle_module_global(ServerSession *session,int fd,uint32_t req_id,
+                                 const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaGetSymbolAddressRequest request;
+    if(corex_generated_decode_cudaGetSymbolAddress_request(payload,len,&request)!=0 || !request.name_length)
+        return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,ST_BAD_REQUEST,NULL,0);
+    ModuleEntry *module=find_module(session,request.module);
+    if(!module) return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,ST_NOT_FOUND,NULL,0);
+    CUdeviceptr pointer=0;size_t bytes=0;
+    CUresult result=corex_backend_module_global(&pointer,&bytes,module->module,request.name);
+    if(result!=CUDA_SUCCESS)
+        return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,
+                            result==CUDA_ERROR_NOT_FOUND ? ST_SYMBOL_NOT_FOUND : ST_CUDA_ERROR,NULL,0);
+    if(!pointer || !bytes) return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,ST_CUDA_ERROR,NULL,0);
+    Allocation *allocation=NULL;
+    for(int i=0;i<MAX_ALLOCS;++i) {
+        Allocation *candidate=&session->allocations[i];
+        if(candidate->used && candidate->parent_module_id==module->id && candidate->ptr==pointer) {
+            allocation=candidate;break;
+        }
+    }
+    if(!allocation) {
+        allocation=new_allocation_slot(session);
+        if(!allocation) return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,ST_NO_RESOURCE,NULL,0);
+        allocation->ptr=pointer;allocation->size=bytes;allocation->parent_module_id=module->id;
+    }
+    CorexGeneratedcudaGetSymbolAddressResponse response={.allocation=allocation->id,.bytes=allocation->size};
+    unsigned char out[16];size_t encoded=0;
+    corex_generated_encode_cudaGetSymbolAddress_response(out,sizeof(out),&encoded,&response);
+    printf("MODULE_GLOBAL module=%llu allocation=%llu name=%s bytes=%zu owner=MODULE\n",
+           (unsigned long long)module->id,(unsigned long long)allocation->id,request.name,bytes);
+    return send_response(fd,OP_MODULE_GET_GLOBAL,req_id,ST_OK,out,(uint32_t)encoded);
+}
+
 static int handle_library_count(ServerSession *session,int fd,uint32_t req_id,
                                  const unsigned char *payload,uint32_t len)
 {
@@ -1612,6 +1651,10 @@ static int handle_unload_module(
         req_id,
         (unsigned long long)module_id,
         m->name);
+
+    for(int i=0;i<MAX_ALLOCS;++i)
+        if(session->allocations[i].used && session->allocations[i].parent_module_id==module_id)
+            memset(&session->allocations[i],0,sizeof(session->allocations[i]));
 
     free(m->image);
     memset(m, 0, sizeof(*m));

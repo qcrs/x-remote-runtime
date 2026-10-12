@@ -25,6 +25,7 @@ typedef enum cudaError {
     cudaErrorInitializationError    = 3,
     cudaErrorInvalidDevice          = 101,
     cudaErrorInvalidDevicePointer   = 17,
+    cudaErrorInvalidSymbol          = 13,
     cudaErrorInvalidMemcpyDirection = 21,
     cudaErrorInvalidResourceHandle  = 400,
     cudaErrorSymbolNotFound         = 500,
@@ -321,6 +322,14 @@ cudaError_t cudaThreadGetLimit(size_t *value,cudaLimit limit);
 cudaError_t cudaThreadSetLimit(cudaLimit limit,size_t value);
 cudaError_t cudaThreadGetCacheConfig(cudaFuncCache *config);
 cudaError_t cudaThreadSetCacheConfig(cudaFuncCache config);
+
+void __cudaRegisterVar(void **handle,char *host_var,char *device_address,const char *device_name,int ext,size_t size,int constant,int global);
+cudaError_t cudaGetSymbolAddress(void **pointer,const void *symbol);
+cudaError_t cudaGetSymbolSize(size_t *size,const void *symbol);
+cudaError_t cudaMemcpyToSymbol(const void *symbol,const void *src,size_t count,size_t offset,cudaMemcpyKind kind);
+cudaError_t cudaMemcpyFromSymbol(void *dst,const void *symbol,size_t count,size_t offset,cudaMemcpyKind kind);
+cudaError_t cudaMemcpyToSymbolAsync(const void *symbol,const void *src,size_t count,size_t offset,cudaMemcpyKind kind,cudaStream_t stream);
+cudaError_t cudaMemcpyFromSymbolAsync(void *dst,const void *symbol,size_t count,size_t offset,cudaMemcpyKind kind,cudaStream_t stream);
 
 #ifdef __cplusplus
 }

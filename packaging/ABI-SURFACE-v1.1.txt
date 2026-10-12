@@ -110,3 +110,10 @@ cudaThreadGetLimit
 cudaThreadSetLimit
 cudaThreadGetCacheConfig
 cudaThreadSetCacheConfig
+cudaGetSymbolAddress
+cudaGetSymbolSize
+cudaMemcpyToSymbol
+cudaMemcpyFromSymbol
+cudaMemcpyToSymbolAsync
+cudaMemcpyFromSymbolAsync
+__cudaRegisterVar

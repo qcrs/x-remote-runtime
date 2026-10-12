@@ -1,0 +1,12 @@
+driver-probe-compile=PASS
+device-image-compile=PASS
+driver-probe=PASS
+capture-compile=PASS
+public-client-compile=PASS
+public-client-link=PASS
+client-dependencies=PASS
+integration=PASS
+live-module-exit=PASS
+lifecycle=PASS
+protocol-integration=PASS
+SYMBOL_EXPANSION_RUN=PASS

@@ -1,0 +1,6 @@
+cudaGetSymbolAddress,cudaGetSymbolSize: scalar global and constant array, stable fake addresses, native size, pointer attributes, unknown symbol/null output, stale module symbol.
+cudaMemcpyToSymbol,cudaMemcpyFromSymbol: initialized readback, constant offsets, H2D/D2H/D2D/Default, kernel reads actual global+constant storage, invalid direction/bounds.
+cudaMemcpyToSymbolAsync,cudaMemcpyFromSymbolAsync: snapshot H2D staging, D2H deferred visibility, D2D/Default, requested/default streams, cross-stream event ordering, pending D2H on module unload, invalid stream.
+__cudaRegisterVar: real CoreX compiler static registration forwards through exported private ABI and generated opcode 73 to the independent server. Test-only interposition records the real parent handle for explicit unload; no Runtime state or transport is bypassed.
+Protocol: malformed, oversize/embedded-NUL/empty names, unknown module, absent symbol, stable AllocationID, reject FREE of module storage, invalidation after unload, live alias/module EOF cleanup.
+Lifecycle regression: existing session lifecycle suite rerun because allocations gained module ownership and unload gained transfer draining. Raw lifecycle client logs, batch server and family logs are retained here.

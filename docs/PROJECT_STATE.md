@@ -1,8 +1,8 @@
 # Project State
 
-Current compatibility position: **47-API capability expansion measured and closed**,
-including partial client Host Memory staging and generated context control RPCs
-(CoreX 4.4 / MR-V100).
+Current compatibility position: **26 additional public APIs supported** relative
+to `757e9ab`, completing the subsequent 25–40 API expansion target. The earlier
+47-API capability batch remains recorded below (CoreX 4.4 / MR-V100).
 
 | Item | Current value |
 | --- | --- |
@@ -15,11 +15,11 @@ including partial client Host Memory staging and generated context control RPCs
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last validated slice | 47-API compatibility expansion, 2026-10-12; public-ABI localhost CRX9 integration |
-| Previous PASS baseline | `536b608` (pointer-backed 3D completion) |
-| Current Slice | Host Memory, Array/Texture/Surface ground truth, context setters, stream attributes, pointer/value queries |
+| Last validated slice | Registered global/constant symbols, 2026-10-12; public-ABI localhost CRX9 integration |
+| Previous PASS baseline | `91da4c0` (libraries, identity and legacy controls); goal baseline `757e9ab` |
+| Current Slice | 3D fills, function/occupancy queries, libraries, kernel identities, legacy controls and registered symbols |
 | Scope boundary | Graph/Capture, Pools, IPC, Peer/Multi-device and External Interop excluded |
-| Next action | Batch closed; further compatibility work requires another selected family |
+| Next action | Implementation target reached; remaining limitations are classified in the ledger |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;
@@ -367,3 +367,51 @@ reads an initialized module global through native CoreX. Public Runtime symbol
 registration and non-owning fake-VA lifetime work remain pending; the final
 25–40 API target and completion audit are **not yet achieved**.
 Evidence: `evidence/m4/library-expansion-20261012/`.
+
+### Registered symbols and goal completion (2026-10-12)
+
+Six public symbol APIs reach PARTIAL_IMPLEMENTED: address/size queries and
+synchronous/asynchronous copies to/from a symbol. Together with the preceding
+two checkpoints, **26 public APIs** newly reach IMPLEMENTED (9) or
+PARTIAL_IMPLEMENTED (17) relative to `757e9ab`. The private `__cudaRegisterVar`
+hook supports this family and is excluded from the count. All actively
+investigated APIs have a terminal support classification; backend-unsupported
+and ground-truth-blocked entries do not count toward the target.
+
+CoreX resolves initialized global and constant storage through
+`cuModuleGetGlobal`; grouped Driver probes verify offset writes, H2D/D2H/D2D
+and stream ordering. Compiler variable registration resolves the existing
+remote module through generated opcode 73 and represents its native storage
+as a non-owning record in the existing allocation and fake-VA tables. Symbol
+copies use existing copy RPCs, TransferIDs, staging and stream/event frontiers.
+Native pointers never cross the protocol. `cudaFree` rejects module storage;
+module unload drains its pending host transfers and invalidates its aliases.
+Session cleanup lets the module own the native release.
+
+The supported slice is compiler-registered, non-managed global/constant
+variables in compiled CoreX modules with kernel metadata, one server context
+and device, and device names at most 127 bytes. Public name-string symbol
+lookup and managed-variable registration are excluded. Async behavior retains
+the existing staged host-buffer semantics. Returned addresses work with normal
+Runtime copies and pointer attribute queries, while remaining scoped to their
+module and session generation.
+
+Independent public shared-library clients → localhost socket → CRX9/V3 →
+server → CoreX validate all six APIs, constant offsets, Default direction,
+H2D/D2H/D2D, kernel reads, requested/default streams, event dependencies,
+deferred D2H host visibility, unload with a pending D2H, stale addresses,
+invalid bounds/directions/symbols/streams, and normal exit with live module
+storage. Wire tests validate bounded DTOs, stable IDs, missing symbols,
+module-owned free rejection, stale alias rejection and EOF cleanup. Build,
+exports, ABI, protocol fixtures, deterministic generation/rejection, backend
+seam and registry uniqueness pass. The existing lifecycle suite passes after
+the shared allocation/module lifetime changes. Historical multithread and
+failure/reconnect suites were not rerun; their shared policies were unchanged.
+
+The final audit checks the actual ledger delta, the prior committed evidence
+at its corresponding checkpoint, the current evidence, codegen reuse,
+handwritten ownership/ordering, and excluded families. The 25–40 API target is
+reached without expanding Graph/Capture, IPC, peer/multidevice or external
+interop. Detailed limitations remain in the authoritative ledger; the README
+keeps only the major capability summary. Evidence and final goal audit:
+`evidence/m4/symbol-expansion-20261012/`.

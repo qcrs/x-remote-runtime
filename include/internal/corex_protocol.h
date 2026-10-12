@@ -122,7 +122,9 @@ typedef enum {
     OP_LIBRARY_COUNT = 71,
     OP_LIBRARY_KERNEL_NAME = 72,
 
-    OP__COUNT               = 73,
+    OP_MODULE_GET_GLOBAL = 73,
+
+    OP__COUNT               = 74,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

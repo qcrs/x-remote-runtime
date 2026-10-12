@@ -77,6 +77,7 @@ CUresult corex_backend_event_sync(CUevent event);
 CUresult corex_backend_event_elapsed(float *milliseconds, CUevent start, CUevent end);
 CUresult corex_backend_module_load(CUmodule *module, const void *image);
 CUresult corex_backend_module_unload(CUmodule module);
+CUresult corex_backend_module_global(CUdeviceptr *pointer, size_t *bytes, CUmodule module, const char *name);
 CUresult corex_backend_module_function(CUfunction *function, CUmodule module,
                                        const char *name);
 CUresult corex_backend_function_attribute(int *value, CUfunction function,

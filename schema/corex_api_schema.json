@@ -688,6 +688,40 @@
         }
       ],
       "server_handler": "handle_library_kernel_name"
+    },
+    {
+      "name": "cudaGetSymbolAddress",
+      "opcode_name": "OP_MODULE_GET_GLOBAL",
+      "opcode": 73,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "module",
+          "type": "module_id",
+          "object_kind": "module"
+        },
+        {
+          "name": "name",
+          "type": "bounded_string",
+          "max_bytes": 127
+        }
+      ],
+      "response": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "bytes",
+          "type": "u64"
+        }
+      ],
+      "backend_binding": "corex_backend_module_global",
+      "server_handler": "handle_module_global"
     }
   ]
 }

@@ -29,6 +29,8 @@ typedef struct {
     uintptr_t virtual_base;
     size_t size;
     uint64_t allocation_id;
+    uint64_t parent_module_id; /* nonzero: module-owned global storage */
+    const void *host_symbol;
     uint32_t layout_kind;
     size_t logical_width_bytes;
     size_t logical_height;

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 29u) return 1;
+    if (COREX_GENERATED_API_COUNT != 30u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -247,6 +247,15 @@ int main(void) {
     if (corex_generated_validate_response(72u, 3u) == 0) return 1;
     if (corex_generated_validate_response(72u, 132u) == 0) return 1;
     (void)corex_generated_cudaLibraryEnumerateKernels_request_fields;
+    if (corex_generated_validate_payload(73u, 12u) != 0) return 1;
+    if (corex_generated_validate_payload(73u, 139u) != 0) return 1;
+    if (corex_generated_validate_response(73u, 16u) != 0) return 1;
+    if (corex_generated_validate_response(73u, 16u) != 0) return 1;
+    if (corex_generated_validate_payload(73u, 11u) == 0) return 1;
+    if (corex_generated_validate_payload(73u, 140u) == 0) return 1;
+    if (corex_generated_validate_response(73u, 15u) == 0) return 1;
+    if (corex_generated_validate_response(73u, 17u) == 0) return 1;
+    (void)corex_generated_cudaGetSymbolAddress_request_fields;
     if (COREX_GENERATED_CUDADEVICEGETPCIBUSID_RESPONSE_PCI_BUS_ID_MAX_BYTES != 32u) return 1;
     CorexGeneratedcudaDeviceGetPCIBusIdResponse input_cudaDeviceGetPCIBusId_response_pci_bus_id = {0}, output_cudaDeviceGetPCIBusId_response_pci_bus_id = {0};
     unsigned char wire_cudaDeviceGetPCIBusId_response_pci_bus_id[36u]; size_t wire_length_cudaDeviceGetPCIBusId_response_pci_bus_id = 0;
@@ -322,6 +331,31 @@ int main(void) {
     input_cudaLibraryEnumerateKernels_response_name.name[127u] = '\0';
     if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) != 0 ||
         wire_length_cudaLibraryEnumerateKernels_response_name != 131u) return 1;
+    if (COREX_GENERATED_CUDAGETSYMBOLADDRESS_REQUEST_NAME_MAX_BYTES != 127u) return 1;
+    CorexGeneratedcudaGetSymbolAddressRequest input_cudaGetSymbolAddress_request_name = {0}, output_cudaGetSymbolAddress_request_name = {0};
+    unsigned char wire_cudaGetSymbolAddress_request_name[139u]; size_t wire_length_cudaGetSymbolAddress_request_name = 0;
+    input_cudaGetSymbolAddress_request_name.name_length = 3u;
+    memcpy(input_cudaGetSymbolAddress_request_name.name, "abc", 3u);
+    if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) != 0 ||
+        corex_generated_decode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, wire_length_cudaGetSymbolAddress_request_name, &output_cudaGetSymbolAddress_request_name) != 0 ||
+        output_cudaGetSymbolAddress_request_name.name_length != 3u || memcmp(input_cudaGetSymbolAddress_request_name.name, output_cudaGetSymbolAddress_request_name.name, 3u) != 0) return 1;
+    input_cudaGetSymbolAddress_request_name.name_length = 128u;
+    if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) == 0) return 1;
+    input_cudaGetSymbolAddress_request_name.name_length = 3u;
+    memcpy(input_cudaGetSymbolAddress_request_name.name, "abc", 3u);
+    input_cudaGetSymbolAddress_request_name.name[3u] = 'x';
+    if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) == 0) return 1;
+    input_cudaGetSymbolAddress_request_name.name[3u] = '\0';
+    input_cudaGetSymbolAddress_request_name.name[2u] = '\0';
+    if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) == 0) return 1;
+    input_cudaGetSymbolAddress_request_name.name[2u] = "abc"[2];
+    wire_cudaGetSymbolAddress_request_name[14u] = 0;
+    if (corex_generated_decode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, wire_length_cudaGetSymbolAddress_request_name, &output_cudaGetSymbolAddress_request_name) == 0) return 1;
+    input_cudaGetSymbolAddress_request_name.name_length = 127u;
+    memset(input_cudaGetSymbolAddress_request_name.name, 'x', 127u);
+    input_cudaGetSymbolAddress_request_name.name[127u] = '\0';
+    if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) != 0 ||
+        wire_length_cudaGetSymbolAddress_request_name != 139u) return 1;
     if (corex_generated_validate_payload(999u, 0) == 0 ||
         corex_generated_validate_response(999u, 0) == 0 ||
         corex_generated_validate_payload(OP_STREAM_QUERY, 7) == 0) return 1;

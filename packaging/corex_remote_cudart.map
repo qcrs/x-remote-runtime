@@ -107,6 +107,13 @@ COREX_REMOTE_CUDART_1.1 {
         cudaThreadSetLimit;
         cudaThreadGetCacheConfig;
         cudaThreadSetCacheConfig;
+        cudaGetSymbolAddress;
+        cudaGetSymbolSize;
+        cudaMemcpyToSymbol;
+        cudaMemcpyFromSymbol;
+        cudaMemcpyToSymbolAsync;
+        cudaMemcpyFromSymbolAsync;
+        __cudaRegisterVar;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

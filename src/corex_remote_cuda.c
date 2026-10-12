@@ -114,6 +114,7 @@ static _Thread_local int g_last_rpc_transport_error = 0;
 
 static cudaError_t ensure_runtime_locked(void);
 static cudaError_t map_last_rpc_error(cudaError_t fallback);
+static cudaError_t drain_allocation_transfers_blocking(uint64_t allocation_id);
 static void mark_session_failed_locked(const char *reason);
 
 /* All callers of this helper are inside a locked RuntimeContext entry path. */
@@ -1648,10 +1649,21 @@ static cudaError_t module_unload_after_runtime(corexRemoteModule_t module)
         return cudaErrorInvalidResourceHandle;
 
     uint64_t module_id = h->module_id;
+    for(size_t i=0;i<G6A_MAX_ALLOCS;++i) {
+        VirtualAllocation *allocation=&g_allocs[i];
+        if(allocation->live && allocation->session_generation==g_active_session_generation &&
+           allocation->parent_module_id==module_id) {
+            cudaError_t result=drain_allocation_transfers_blocking(allocation->allocation_id);
+            if(result!=cudaSuccess)return result;
+        }
+    }
     if (remote_unload_module(module_id) != 0)
         return map_last_rpc_error(cudaErrorUnknown);
 
     invalidate_local_module_kernels(module_id);
+    for(size_t i=0;i<G6A_MAX_ALLOCS;++i)
+        if(g_allocs[i].live && g_allocs[i].session_generation==g_active_session_generation &&
+           g_allocs[i].parent_module_id==module_id) g_allocs[i].live=0;
     free(h->library_image);h->library_image=NULL;h->library_image_size=0;
     h->live = 0;
     h->module_id = 0;
@@ -2319,6 +2331,8 @@ static cudaError_t cudaFree_locked(void *devPtr)
     VirtualAllocation *slot = find_exact_live_base(devPtr);
     if (!slot)
         G6E_RETURN(cudaErrorInvalidDevicePointer);
+
+    if(slot->parent_module_id) G6E_RETURN(cudaErrorInvalidDevicePointer);
 
     uint64_t allocation_id = slot->allocation_id;
 
@@ -3984,6 +3998,78 @@ static void **__cudaRegisterFatBinary_locked(void *fatCubin)
     return (void **)reg;
 }
 
+/* Globals share the allocation/fake-VA registry; their native storage belongs
+ * to the module. Compiler hooks must preserve the caller's TLS error state. */
+static VirtualAllocation *find_registered_symbol(const void *symbol)
+{
+    if (!symbol) return NULL;
+    for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+        VirtualAllocation *allocation = &g_allocs[i];
+        if (allocation->live && allocation->session_generation == g_active_session_generation &&
+            allocation->parent_module_id && allocation->host_symbol == symbol)
+            return allocation;
+    }
+    return NULL;
+}
+
+static void __cudaRegisterVar_locked(void **handle, char *host_var,
+                                    const char *device_name, size_t size)
+{
+    G7CFatbinRegistration *reg = g7c_resolve_registration(handle);
+    if (!reg || (reg->state != G7C_REG_REMOTE_READY && reg->state != G7C_REG_LIVE) ||
+        !reg->remote_module || !host_var || !device_name || !size)
+        return;
+    size_t name_length = strlen(device_name);
+    if (!name_length || name_length > COREX_GENERATED_CUDAGETSYMBOLADDRESS_REQUEST_NAME_MAX_BYTES)
+        return;
+    if (find_registered_symbol(host_var)) return;
+
+    G7CHiddenErrorSnapshot snapshot = g7c_snapshot_hidden_error_state();
+    cudaError_t result = ensure_runtime();
+    VirtualAllocation *slot = NULL;
+    size_t aligned = 0, span = 0;
+    if (result == cudaSuccess) {
+        slot = find_free_slot();
+        if (!slot || align_up_size(size, (size_t)G6A_VA_ALIGNMENT, &aligned) != 0 ||
+            aligned > SIZE_MAX - (size_t)G6A_VA_GUARD_BYTES)
+            result = cudaErrorMemoryAllocation;
+        else {
+            span = aligned + (size_t)G6A_VA_GUARD_BYTES;
+            if (g_va_next > (size_t)G6A_VA_ARENA_BYTES ||
+                span > (size_t)G6A_VA_ARENA_BYTES - g_va_next)
+                result = cudaErrorMemoryAllocation;
+        }
+    }
+    if (result == cudaSuccess) {
+        CorexGeneratedcudaGetSymbolAddressRequest request = {.module = reg->module_id_snapshot,
+                                                             .name_length = (uint32_t)name_length};
+        memcpy(request.name, device_name, name_length + 1);
+        CorexGeneratedcudaGetSymbolAddressResponse response;
+        if (corex_generated_call_cudaGetSymbolAddress(generated_rpc_call, &request, &response) != 0)
+            result = map_last_rpc_error(cudaErrorInvalidSymbol);
+        else if (!response.allocation || response.bytes != size)
+            result = cudaErrorInvalidSymbol;
+        else {
+            memset(slot, 0, sizeof(*slot));
+            slot->live = 1;
+            slot->session_generation = g_active_session_generation;
+            slot->virtual_base = (uintptr_t)(g_va_arena + g_va_next);
+            slot->size = size;
+            slot->allocation_id = response.allocation;
+            slot->parent_module_id = reg->module_id_snapshot;
+            slot->host_symbol = host_var;
+            slot->layout_kind = COREX_LAYOUT_LINEAR;
+            slot->logical_width_bytes = size;
+            slot->logical_height = slot->logical_depth = 1;
+            slot->pitch = slot->slice_pitch = size;
+            g_va_next += span;
+        }
+    }
+    g7c_restore_hidden_error_state(snapshot);
+    fprintf(stderr, "REGISTER_VAR name=%s module=%llu bytes=%zu result=%d\n",
+            device_name, (unsigned long long)reg->module_id_snapshot, size, (int)result);
+}
+
 static void __cudaRegisterFunction_locked(
     void **fatCubinHandle,
     const char *hostFun,
@@ -4437,6 +4523,8 @@ const char *cudaGetErrorString(cudaError_t error)
         return "cudaErrorInvalidDevice";
     case cudaErrorInvalidDevicePointer:
         return "cudaErrorInvalidDevicePointer";
+    case cudaErrorInvalidSymbol:
+        return "cudaErrorInvalidSymbol";
     case cudaErrorInvalidMemcpyDirection:
         return "cudaErrorInvalidMemcpyDirection";
     case cudaErrorInvalidResourceHandle:
@@ -4983,6 +5071,100 @@ void **__cudaRegisterFatBinary(void *fatCubin)
     CorexRuntimeContext *context = corex_runtime_context_get();
     corex_runtime_context_lock(context);
     void **result = __cudaRegisterFatBinary_locked(fatCubin);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+void __cudaRegisterVar(void **handle, char *host_var, char *device_address,
+                       const char *device_name, int ext, size_t size, int constant, int global)
+{
+    (void)device_address; (void)ext; (void)constant; (void)global;
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    __cudaRegisterVar_locked(handle, host_var, device_name, size);
+    corex_runtime_context_unlock(context);
+}
+
+static cudaError_t symbol_address_locked(const void *symbol, size_t count, size_t offset, void **address)
+{
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    VirtualAllocation *allocation = find_registered_symbol(symbol);
+    if (!allocation) G6E_RETURN(cudaErrorInvalidSymbol);
+    if (offset > allocation->size || count > allocation->size - offset)
+        G6E_RETURN(cudaErrorInvalidValue);
+    *address = (void *)(allocation->virtual_base + offset);
+    return cudaSuccess;
+}
+
+cudaError_t cudaGetSymbolAddress(void **pointer, const void *symbol)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = pointer ? symbol_address_locked(symbol, 0, 0, pointer) : record_error(cudaErrorInvalidValue);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaGetSymbolSize(size_t *size, const void *symbol)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    void *address = NULL;
+    cudaError_t result = size ? symbol_address_locked(symbol, 0, 0, &address) : record_error(cudaErrorInvalidValue);
+    if (result == cudaSuccess) *size = find_registered_symbol(symbol)->size;
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static cudaError_t symbol_copy_locked(const void *symbol, void *other, size_t count,
+                                     size_t offset, cudaMemcpyKind kind, cudaStream_t stream,
+                                     int to_symbol, int async)
+{
+    void *address = NULL;
+    cudaError_t result = symbol_address_locked(symbol, count, offset, &address);
+    if (result != cudaSuccess) return result;
+    if (kind != cudaMemcpyDefault && kind != cudaMemcpyDeviceToDevice &&
+        kind != (to_symbol ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost))
+        G6E_RETURN(cudaErrorInvalidMemcpyDirection);
+    void *dst = to_symbol ? address : other;
+    const void *src = to_symbol ? other : address;
+    return async ? cudaMemcpyAsync_locked(dst, src, count, kind, stream) :
+                   cudaMemcpy_locked(dst, src, count, kind);
+}
+
+cudaError_t cudaMemcpyToSymbol(const void *symbol, const void *src, size_t count, size_t offset, cudaMemcpyKind kind)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = symbol_copy_locked(symbol, (void *)src, count, offset, kind, NULL, 1, 0);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemcpyFromSymbol(void *dst, const void *symbol, size_t count, size_t offset, cudaMemcpyKind kind)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = symbol_copy_locked(symbol, dst, count, offset, kind, NULL, 0, 0);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemcpyToSymbolAsync(const void *symbol, const void *src, size_t count, size_t offset, cudaMemcpyKind kind, cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = symbol_copy_locked(symbol, (void *)src, count, offset, kind, stream, 1, 1);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemcpyFromSymbolAsync(void *dst, const void *symbol, size_t count, size_t offset, cudaMemcpyKind kind, cudaStream_t stream)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = symbol_copy_locked(symbol, dst, count, offset, kind, stream, 0, 1);
     corex_runtime_context_unlock(context);
     return result;
 }

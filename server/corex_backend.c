@@ -1,5 +1,8 @@
 #include "corex_backend.h"
 
+CUresult corex_backend_module_global(CUdeviceptr *pointer, size_t *bytes, CUmodule module, const char *name)
+{ return cuModuleGetGlobal(pointer,bytes,module,name); }
+
 CUresult corex_backend_occupancy_flags(int *blocks, CUfunction function, int block_size,
                                        size_t dynamic_shared, unsigned int flags)
 { return cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(blocks, function, block_size, dynamic_shared, flags); }

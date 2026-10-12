@@ -1,0 +1,24 @@
+FINAL_GOAL_AUDIT=PASS
+GOAL_BASE_HEAD=757e9ab
+PUBLIC_SUPPORTED_DELTA=26 (9 IMPLEMENTED, 17 PARTIAL_IMPLEMENTED)
+PRIVATE_ABI_NOT_COUNTED=__cudaRegisterVar
+TARGET_RANGE_25_TO_40=REACHED
+BASELINE_NOT_RECOUNTED=PASS (CSV support-state delta by public target surface)
+PREVIOUS_CHECKPOINT_BLOB_HASHES_VERIFIED=120; checked at 83cfba2 and 91da4c0, preserving historical manifests
+ACTIVELY_INVESTIGATED_TERMINAL_CLASSIFICATIONS=PASS (32 ledger rows including private ABI)
+UNSUPPORTED_BLOCKED_ENTRIES_EXCLUDED_FROM_TARGET=PASS
+EXCLUDED_SUBSYSTEMS=No Graph/capture, IPC, peer/multidevice or external interop expansion
+SCHEMA_REUSE=Generated module-global name/ID/size codec, RPC adapter, registry metadata, payload guards; existing copy RPCs reused
+HANDWRITTEN_SEMANTICS=Non-owning allocation records, parent module/host symbol identity, fake VA, hidden-error preservation, transfer draining and alias invalidation
+EXISTING_RUNTIME_MACHINERY_REUSED=RuntimeContext, ServerSession, backend seam, allocation/module/kernel registries, monotonic fake VA, streams/frontiers, TransferID/staging
+NATIVE_GROUND_TRUTH=Grouped family probe passes global/constant read/write, offsets, copy directions and stream order; prior native limitations preserved
+REMOTE_SUPPORT_TOPOLOGY=Independent public shared-library clients -> 127.0.0.1 socket -> CRX9/V3 -> runtime_server -> CoreX Driver; client ELF has no libcudart dependency
+FAMILY_VALIDATION=Six symbol APIs, kernel readback, staging visibility, stream/event dependencies, owned lifetime and protocol trust boundaries PASS
+REQUIRED_CHECKS=Build, exports/ABI, protocol fixtures, schema determinism/rejection, backend seam, handler uniqueness PASS
+SHARED_LIFECYCLE_REGRESSION=PASS; allocation/module ownership changed
+REGRESSION_SCOPE=No historical multithread/reconnect reruns; shared scheduling/reconnect policies unchanged
+DOCUMENTATION=Ledger, PROJECT_STATE and high-level README aligned; earlier checkpoint notes retained as history
+EVIDENCE_STORAGE=One evidence set for each substantial batch; logs/manifests/CSV/results only, no binaries/build trees/generated source copies
+MATERIAL_LIMITATIONS=Compiled metadata-bearing CoreX modules, one context/device, registered non-managed symbols <=127-byte names, staged async host semantics; prior library unload workaround, occupancy flag and blocked backend entries retained
+POST_COMMIT_REQUIREMENT=Verify committed artifacts and clean worktree live before marking the goal complete
+
