@@ -1,0 +1,2 @@
+cudaGetDeviceCount=0 count=1
+cudaCtxResetPersistingL2Cache=1

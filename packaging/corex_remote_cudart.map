@@ -87,6 +87,11 @@ COREX_REMOTE_CUDART_1.1 {
         cudaGetErrorName;
         cudaStreamGetAttribute;
         cudaStreamSetAttribute;
+        cudaMemset3D;
+        cudaMemset3DAsync;
+        cudaFuncSetSharedMemConfig;
+        cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags;
+        cudaOccupancyMaxPotentialBlockSize;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

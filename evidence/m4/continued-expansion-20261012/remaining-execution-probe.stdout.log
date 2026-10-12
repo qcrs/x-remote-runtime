@@ -1,0 +1,11 @@
+reset()=1
+cuLibraryLoadFromFile(&lib,argv[1],NULL,NULL,0,NULL,NULL,0)=0
+cuLibraryGetKernel(&kernel,lib,"m1s2_lifecycle_kernel")=0
+cuKernelGetFunction(&f,kernel)=0
+cuLibraryUnload(lib)=0
+cuLaunchCooperativeKernel(func,1,1,1,1,1,1,0,NULL,args)=801
+cuCtxSynchronize()=0
+cuMemcpyDtoH(&out,ptr,4)=0
+COOPERATIVE_DATA=41
+cuDeviceGetAttribute(&supported,CU_DEVICE_ATTRIBUTE_COOPERATIVE_LAUNCH,dev)=0
+COOPERATIVE_ATTRIBUTE=0

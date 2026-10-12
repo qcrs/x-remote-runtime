@@ -1,5 +1,14 @@
 #include "corex_backend.h"
 
+CUresult corex_backend_occupancy_flags(int *blocks, CUfunction function, int block_size,
+                                       size_t dynamic_shared, unsigned int flags)
+{ return cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(blocks, function, block_size, dynamic_shared, flags); }
+CUresult corex_backend_occupancy_potential(int *grid, int *block, CUfunction function,
+                                           size_t dynamic_shared, int block_limit)
+{ return cuOccupancyMaxPotentialBlockSize(grid, block, function, NULL, dynamic_shared, block_limit); }
+CUresult corex_backend_function_set_shared_config(CUfunction function, CUsharedconfig config)
+{ return cuFuncSetSharedMemConfig(function, config); }
+
 CUresult corex_backend_init(void) { return cuInit(0); }
 CUresult corex_backend_driver_version(int *version) { return cuDriverGetVersion(version); }
 CUresult corex_backend_device_count(int *count) { return cuDeviceGetCount(count); }

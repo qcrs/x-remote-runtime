@@ -295,6 +295,12 @@ const char *cudaGetErrorString(cudaError_t error);
 size_t corexRemoteDebugLiveTransfers(void);
 void corexRemoteRuntimeShutdown(void);
 
+cudaError_t cudaMemset3D(cudaPitchedPtr ptr, int value, cudaExtent extent);
+cudaError_t cudaMemset3DAsync(cudaPitchedPtr ptr, int value, cudaExtent extent, cudaStream_t stream);
+cudaError_t cudaFuncSetSharedMemConfig(const void *func, cudaSharedMemConfig config);
+cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(int *blocks, const void *func, int block_size, size_t dynamic_shared, unsigned int flags);
+cudaError_t cudaOccupancyMaxPotentialBlockSize(int *grid, int *block, const void *func, size_t dynamic_shared, int block_limit);
+
 #ifdef __cplusplus
 }
 #endif

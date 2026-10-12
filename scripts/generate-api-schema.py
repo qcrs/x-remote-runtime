@@ -16,6 +16,7 @@ CAPABILITIES = {
     "CRX_CAP_STREAM_EVENT",
     "CRX_CAP_COPY_ASYNC",
     "CRX_CAP_MODULE_KERNEL",
+    "CRX_CAP_LAYOUT_TRANSFER",
 }
 IMPLEMENTATION_CLASSES = {"client_only", "scalar_query", "object_query", "semantic_rpc"}
 TYPES = {

@@ -1,0 +1,15 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_execution_fill_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/execution-fill/driver-probe
+/home/lvtong/corex-remote-runtime/build/execution-fill/driver-probe /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/execution_fill.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -o /home/lvtong/corex-remote-runtime/build/execution-fill/execution_fill_app
+COREX_REMOTE_PORT=59799 dist/bin/runtime_server  # independent Popen PID=2082765
+/home/lvtong/corex-remote-runtime/build/execution-fill/execution_fill_app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+python3 /home/lvtong/corex-remote-runtime/tests/integration/execution_fill_protocol.py
+./scripts/build.sh > evidence/m4/continued-expansion-20261012/build.stdout.log 2> evidence/m4/continued-expansion-20261012/build.stderr.log
+OUT=/tmp/continued-schema ./scripts/test-api-schema.sh
+OUT=/tmp/continued-backend ./scripts/test-backend-seam.sh
+OUT=/tmp/continued-registry ./scripts/test-handler-registry.sh
+gcc -O2 -Wall -Wextra -Werror -I/usr/local/corex-4.4.0/include tests/probes/corex_remaining_execution_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -ldl -o /tmp/corex_remaining_execution_probe
+/tmp/corex_remaining_execution_probe build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -I/usr/local/corex-4.4.0/include /tmp/corex_control_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /tmp/corex_control_runtime_probe
+/tmp/corex_control_runtime_probe
+# Control Runtime probe source is retained unchanged at tests/probes/corex_control_runtime_probe.c.

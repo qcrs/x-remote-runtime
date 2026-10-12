@@ -441,6 +441,200 @@
       "response": [],
       "backend_binding": "corex_backend_stream_set_attribute",
       "server_handler": "handle_stream_set_attribute"
+    },
+    {
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "name": "cudaMemset3D",
+      "opcode_name": "OP_MEMSET_3D",
+      "opcode": 65,
+      "capability_id": "CRX_CAP_LAYOUT_TRANSFER",
+      "request": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "offset",
+          "type": "u64"
+        },
+        {
+          "name": "pitch",
+          "type": "u64"
+        },
+        {
+          "name": "slice",
+          "type": "u64"
+        },
+        {
+          "name": "width",
+          "type": "u64"
+        },
+        {
+          "name": "height",
+          "type": "u64"
+        },
+        {
+          "name": "depth",
+          "type": "u64"
+        },
+        {
+          "name": "value",
+          "type": "u32"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_memset_3d_sync",
+      "backend_binding": "corex_backend_memset_d2d8"
+    },
+    {
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "name": "cudaMemset3DAsync",
+      "opcode_name": "OP_MEMSET_3D_ASYNC",
+      "opcode": 66,
+      "capability_id": "CRX_CAP_LAYOUT_TRANSFER",
+      "request": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "offset",
+          "type": "u64"
+        },
+        {
+          "name": "pitch",
+          "type": "u64"
+        },
+        {
+          "name": "slice",
+          "type": "u64"
+        },
+        {
+          "name": "width",
+          "type": "u64"
+        },
+        {
+          "name": "height",
+          "type": "u64"
+        },
+        {
+          "name": "depth",
+          "type": "u64"
+        },
+        {
+          "name": "value",
+          "type": "u32"
+        },
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_memset_3d_async",
+      "backend_binding": "corex_backend_memset_d2d8_async"
+    },
+    {
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "name": "cudaFuncSetSharedMemConfig",
+      "opcode_name": "OP_FUNCTION_SET_SHARED_CONFIG",
+      "opcode": 67,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "request": [
+        {
+          "name": "kernel",
+          "type": "kernel_id",
+          "object_kind": "kernel"
+        },
+        {
+          "name": "config",
+          "type": "i32"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_function_set_shared_config",
+      "backend_binding": "corex_backend_function_set_shared_config"
+    },
+    {
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "name": "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags",
+      "opcode_name": "OP_OCCUPANCY_FLAGS",
+      "opcode": 68,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "request": [
+        {
+          "name": "kernel",
+          "type": "kernel_id",
+          "object_kind": "kernel"
+        },
+        {
+          "name": "block_size",
+          "type": "i32"
+        },
+        {
+          "name": "dynamic_shared",
+          "type": "u64"
+        },
+        {
+          "name": "flags",
+          "type": "u32"
+        }
+      ],
+      "response": [
+        {
+          "name": "blocks",
+          "type": "i32"
+        }
+      ],
+      "server_handler": "handle_occupancy_flags",
+      "backend_binding": "corex_backend_occupancy_flags"
+    },
+    {
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "name": "cudaOccupancyMaxPotentialBlockSize",
+      "opcode_name": "OP_OCCUPANCY_POTENTIAL",
+      "opcode": 69,
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "request": [
+        {
+          "name": "kernel",
+          "type": "kernel_id",
+          "object_kind": "kernel"
+        },
+        {
+          "name": "dynamic_shared",
+          "type": "u64"
+        },
+        {
+          "name": "block_limit",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "grid",
+          "type": "i32"
+        },
+        {
+          "name": "block",
+          "type": "i32"
+        }
+      ],
+      "server_handler": "handle_occupancy_potential",
+      "backend_binding": "corex_backend_occupancy_potential"
     }
   ]
 }

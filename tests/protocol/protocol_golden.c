@@ -43,7 +43,9 @@ _Static_assert(OP_FUNCTION_ATTRIBUTES == 37 && OP_OCCUPANCY == 38 &&
 _Static_assert(OP_SET_LIMIT == 59 && OP_SET_CACHE_CONFIG == 60 &&
                OP_SET_SHARED_MEM_CONFIG == 61 && OP_STREAM_COPY_ATTRIBUTES == 62 &&
                OP_STREAM_GET_ATTRIBUTE == 63 && OP_STREAM_SET_ATTRIBUTE == 64 &&
-               OP__COUNT == 65, "compatibility expansion opcode assignment changed");
+               OP_MEMSET_3D == 65 && OP_MEMSET_3D_ASYNC == 66 &&
+               OP_FUNCTION_SET_SHARED_CONFIG == 67 && OP_OCCUPANCY_FLAGS == 68 &&
+               OP_OCCUPANCY_POTENTIAL == 69 && OP__COUNT == 70, "compatibility expansion opcode assignment changed");
 
 static int test_hello(void)
 {

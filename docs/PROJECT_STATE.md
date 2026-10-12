@@ -269,3 +269,40 @@ Historical multithread/reconnect/lifecycle suites were not rerun: their shared
 mechanisms were reused without changes. Six malformed pre-existing ledger CSV
 rows were repaired and the API-contract check now rejects malformed rows.
 Evidence: `evidence/m4/compat-expansion-20261012/`.
+
+## Continued compatibility expansion (2026-10-12, active)
+
+The active goal uses `757e9ab` as its additional-API baseline. The first
+checkpoint adds **five supported APIs**: `cudaMemset3D`, `cudaMemset3DAsync`,
+`cudaFuncSetSharedMemConfig`, and `cudaOccupancyMaxPotentialBlockSize` are
+IMPLEMENTED; `cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags` is
+PARTIAL_IMPLEMENTED. Its default flag succeeds; the disable-caching-override
+flag returns NotSupported as measured on CoreX. Unsupported results do not
+count toward the 25–40 additional supported API target.
+
+Generated scalar/object-ID codecs and registry entries use new opcodes 65–69.
+3D fill ownership and bounds remain handwritten, reusing the live allocation
+registry and checked 3D region helper. One RPC submits native per-slice fills;
+Async uses the requested backend stream and existing frontier. Byte values
+truncate to the low eight bits, padding stays untouched, and pitch is ignored
+for single-row, single-slice extents. No host staging or alternate allocation
+mechanism was introduced.
+
+The grouped Driver probe measures fill data/padding, all function shared-bank
+settings, and occupancy queries. Independent public-library client → localhost
+socket → CRX9/V3 → server → CoreX validation passes sync and async fill,
+same-stream deferred D2H retirement, default-stream fill, interior addresses,
+invalid extents, stale streams/kernels, occupancy parity, and bounded/malformed
+wire requests. Build, public exports, protocol golden fixtures, generated-code
+determinism/rejection checks, backend seam and handler uniqueness pass.
+Historical regression suites were not rerun because shared lifetime/transport
+mechanisms were reused unchanged.
+
+A second grouped execution probe measured cooperative launch as unsupported
+(Driver 801, capability attribute 0), and persisting-cache reset as blocked
+(Driver and native Runtime InvalidValue; no public Driver declaration).
+Native library file loading, kernel lookup and kernel-to-function conversion
+succeed and identify the next practical family, using the existing module and
+kernel registry infrastructure. Library Runtime expansion remains pending;
+the implementation target and final completion audit are **not yet achieved**.
+Evidence for this checkpoint: `evidence/m4/continued-expansion-20261012/`.

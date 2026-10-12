@@ -9,7 +9,8 @@ The current validated baseline supports allocation and copies, streams and
 events, asynchronous transfers, automatic compiler registration, kernel ABI
 acquisition, ordinary `kernel<<<...>>>` launches, device identity queries, a
 versioned shared library, and an installable SDK. It also supports pitched/3D
-pointer-backed memory, context configuration, and partial client page-locked
+pointer-backed memory and fills, function/occupancy queries, context
+configuration, and partial client page-locked
 host staging with remote copies. Array allocation, texture objects, and managed
 allocation are unavailable on the measured CoreX backend.
 

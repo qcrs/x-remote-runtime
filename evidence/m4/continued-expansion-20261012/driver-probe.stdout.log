@@ -1,0 +1,33 @@
+cuInit(0)=0
+cuDeviceGet(&dev,0)=0
+cuCtxCreate(&ctx,0,dev)=0
+cuStreamCreate(&stream,CU_STREAM_NON_BLOCKING)=0
+cuMemAlloc(&ptr,384)=0
+cuMemcpyHtoD(ptr,expected,sizeof(expected))=0
+slice-fill async=0 z=0 result=0
+slice-fill async=0 z=1 result=0
+slice-fill async=0 z=2 result=0
+cuStreamSynchronize(stream)=0
+cuMemcpyDtoH(output,ptr,sizeof(output))=0
+FILL_DATA_AND_PADDING async=0 PASS
+cuMemcpyHtoD(ptr,expected,sizeof(expected))=0
+slice-fill async=1 z=0 result=0
+slice-fill async=1 z=1 result=0
+slice-fill async=1 z=2 result=0
+cuStreamSynchronize(stream)=0
+cuMemcpyDtoH(output,ptr,sizeof(output))=0
+FILL_DATA_AND_PADDING async=1 PASS
+cuModuleLoad(&module,argv[1])=0
+cuModuleGetFunction(&func,module,"m1s2_lifecycle_kernel")=0
+FUNCTION_SHARED_CONFIG config=0 result=0
+FUNCTION_SHARED_CONFIG config=1 result=0
+FUNCTION_SHARED_CONFIG config=2 result=0
+OCCUPANCY_FLAGS flags=0 result=0 blocks=64
+OCCUPANCY_FLAGS flags=1 result=801 blocks=-1
+OCCUPANCY_FLAGS flags=2 result=1 blocks=-1
+OCCUPANCY_POTENTIAL result=0 grid=32 block=4096
+cuModuleUnload(module)=0
+cuMemFree(ptr)=0
+cuStreamDestroy(stream)=0
+cuCtxDestroy(ctx)=0
+EXECUTION_FILL_PROBE=COMPLETE

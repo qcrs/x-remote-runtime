@@ -2405,6 +2405,91 @@ static ResolveResult resolve_remote_3d_region(const void *ptr, cudaPos position,
     return RESOLVE_INVALID;
 }
 
+static cudaError_t cudaMemset3D_locked(cudaPitchedPtr pointer, int value,
+                                      cudaExtent extent, cudaStream_t stream, int async)
+{
+    if (!extent.width || !extent.height || !extent.depth) return cudaSuccess;
+    if (!pointer.ptr) G6E_RETURN(cudaErrorInvalidValue);
+    size_t pitch=pointer.pitch, slice=0;
+    /* CUDA ignores pitch for a single row. Other extents use ysize as slice stride. */
+    if (extent.height==1 && extent.depth==1) pitch=slice=extent.width;
+    else {
+        if (!pitch || pointer.ysize>SIZE_MAX/pitch) G6E_RETURN(cudaErrorInvalidValue);
+        slice=pitch*pointer.ysize;
+    }
+    cudaError_t init=ensure_runtime();
+    if (init!=cudaSuccess) G6E_RETURN(init);
+    ResolvedRemotePtr remote;
+    ResolveResult rr=resolve_remote_3d_region(pointer.ptr,(cudaPos){0,0,0},pitch,slice,extent,&remote);
+    if (rr!=RESOLVE_OK) G6E_RETURN(map_resolve_error(rr));
+    G6EStreamView view={0};
+    int rc;
+    if (async) {
+        if (get_stream_view(stream,&view)!=0) G6E_RETURN(cudaErrorInvalidResourceHandle);
+        apply_legacy_default_ordering(&view);
+        CorexGeneratedcudaMemset3DAsyncRequest request={
+            .allocation=remote.allocation_id,.offset=remote.byte_offset,.pitch=pitch,.slice=slice,
+            .width=extent.width,.height=extent.height,.depth=extent.depth,
+            .value=(unsigned char)value,.stream=view.stream_id};
+        CorexGeneratedcudaMemset3DAsyncResponse response={0};
+        rc=corex_generated_call_cudaMemset3DAsync(generated_rpc_call,&request,&response);
+    } else {
+        CorexGeneratedcudaMemset3DRequest request={
+            .allocation=remote.allocation_id,.offset=remote.byte_offset,.pitch=pitch,.slice=slice,
+            .width=extent.width,.height=extent.height,.depth=extent.depth,.value=(unsigned char)value};
+        CorexGeneratedcudaMemset3DResponse response={0};
+        rc=corex_generated_call_cudaMemset3D(generated_rpc_call,&request,&response);
+    }
+    if (rc!=0) G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    if (async) view.frontier[view.slot_index]=++(*view.next_transfer_seq);
+    return cudaSuccess;
+}
+
+static cudaError_t cudaFuncSetSharedMemConfig_locked(const void *func, cudaSharedMemConfig config)
+{
+    if (!func || (int)config<0 || (int)config>2) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel=resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaFuncSetSharedMemConfigRequest request={.kernel=kernel->kernel_id,.config=config};
+    CorexGeneratedcudaFuncSetSharedMemConfigResponse response={0};
+    if (corex_generated_call_cudaFuncSetSharedMemConfig(generated_rpc_call,&request,&response)!=0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaOccupancyFlags_locked(int *blocks, const void *func, int block_size,
+                                            size_t dynamic_shared, unsigned int flags)
+{
+    if (!blocks || !func || block_size<=0 || flags>1) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel=resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlagsRequest request={
+        .kernel=kernel->kernel_id,.block_size=block_size,.dynamic_shared=dynamic_shared,.flags=flags};
+    CorexGeneratedcudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlagsResponse response;
+    if(corex_generated_call_cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(generated_rpc_call,&request,&response)!=0)
+        G6E_RETURN(map_last_rpc_error(flags ? cudaErrorNotSupported : cudaErrorUnknown));
+    *blocks=response.blocks;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaOccupancyPotential_locked(int *grid, int *block, const void *func,
+                                                size_t dynamic_shared, int block_limit)
+{
+    if (!grid || !block || !func || block_limit<0) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel=resolve_kernel_reference(func);
+    if (!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaOccupancyMaxPotentialBlockSizeRequest request={
+        .kernel=kernel->kernel_id,.dynamic_shared=dynamic_shared,.block_limit=block_limit};
+    CorexGeneratedcudaOccupancyMaxPotentialBlockSizeResponse response;
+    if(corex_generated_call_cudaOccupancyMaxPotentialBlockSize(generated_rpc_call,&request,&response)!=0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    *grid=response.grid;*block=response.block;
+    return cudaSuccess;
+}
+
 static cudaError_t cudaMallocPitch_locked(void **devPtr, size_t *pitch, size_t width, size_t height)
 {
     if(!devPtr||!pitch||!width||!height) G6E_RETURN(cudaErrorInvalidValue);
@@ -5347,4 +5432,49 @@ cudaError_t cudaStreamSetAttribute(cudaStream_t stream, cudaStreamAttrID attr, c
     CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
     cudaError_t result = cudaStreamSetAttribute_locked(stream, attr, value);
     corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaMemset3D(cudaPitchedPtr ptr,int value,cudaExtent extent)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=cudaMemset3D_locked(ptr,value,extent,NULL,0);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMemset3DAsync(cudaPitchedPtr ptr,int value,cudaExtent extent,cudaStream_t stream)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=cudaMemset3D_locked(ptr,value,extent,stream,1);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaFuncSetSharedMemConfig(const void *func,cudaSharedMemConfig config)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=cudaFuncSetSharedMemConfig_locked(func,config);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(int *blocks,const void *func,int block_size,size_t dynamic_shared,unsigned int flags)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=cudaOccupancyFlags_locked(blocks,func,block_size,dynamic_shared,flags);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaOccupancyMaxPotentialBlockSize(int *grid,int *block,const void *func,size_t dynamic_shared,int block_limit)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=cudaOccupancyPotential_locked(grid,block,func,dynamic_shared,block_limit);
+    corex_runtime_context_unlock(context);
+    return result;
 }

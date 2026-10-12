@@ -111,7 +111,13 @@ typedef enum {
     OP_STREAM_GET_ATTRIBUTE = 63,
     OP_STREAM_SET_ATTRIBUTE = 64,
     /* Sentinel: one past the highest assigned wire opcode. */
-    OP__COUNT               = 65,
+    OP_MEMSET_3D = 65,
+    OP_MEMSET_3D_ASYNC = 66,
+    OP_FUNCTION_SET_SHARED_CONFIG = 67,
+    OP_OCCUPANCY_FLAGS = 68,
+    OP_OCCUPANCY_POTENTIAL = 69,
+
+    OP__COUNT               = 70,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

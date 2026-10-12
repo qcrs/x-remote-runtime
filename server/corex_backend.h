@@ -88,6 +88,12 @@ CUresult corex_backend_function_set_cache_config(CUfunction function,
                                                  CUfunc_cache config);
 CUresult corex_backend_occupancy(int *blocks, CUfunction function,
                                  int block_size, size_t dynamic_shared);
+CUresult corex_backend_occupancy_flags(int *blocks, CUfunction function,
+                                       int block_size, size_t dynamic_shared,
+                                       unsigned int flags);
+CUresult corex_backend_occupancy_potential(int *grid, int *block, CUfunction function,
+                                           size_t dynamic_shared, int block_limit);
+CUresult corex_backend_function_set_shared_config(CUfunction function, CUsharedconfig config);
 CUresult corex_backend_launch(CUfunction function,
                               unsigned int grid_x, unsigned int grid_y,
                               unsigned int grid_z, unsigned int block_x,

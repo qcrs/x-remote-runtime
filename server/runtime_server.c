@@ -2515,6 +2515,108 @@ static int handle_stream_set_attribute(ServerSession *session, int fd, uint32_t 
     return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, status, NULL, 0);
 }
 
+/* Generated wire codecs; allocation bounds and slice ordering stay handwritten. */
+static int handle_memset_3d(ServerSession *session, int fd, uint32_t req_id,
+                            const unsigned char *payload, uint32_t len, int async)
+{
+    CorexGeneratedcudaMemset3DAsyncRequest request = {0};
+    uint32_t opcode = async ? OP_MEMSET_3D_ASYNC : OP_MEMSET_3D;
+    if (async) {
+        if (corex_generated_decode_cudaMemset3DAsync_request(payload, len, &request) != 0)
+            return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
+    } else {
+        CorexGeneratedcudaMemset3DRequest sync;
+        if (corex_generated_decode_cudaMemset3D_request(payload, len, &sync) != 0)
+            return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
+        request.allocation=sync.allocation; request.offset=sync.offset;
+        request.pitch=sync.pitch; request.slice=sync.slice; request.width=sync.width;
+        request.height=sync.height; request.depth=sync.depth; request.value=sync.value;
+    }
+    Allocation *allocation = find_allocation(session, request.allocation);
+    StreamEntry *stream = request.stream ? find_stream(session, request.stream) : NULL;
+    if ((request.stream && !stream) || request.value > 255 ||
+        !request.width || !request.height || !request.depth ||
+        !valid_3d_allocation(allocation, request.offset, request.pitch, request.slice,
+                             request.width, request.height, request.depth))
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult result = CUDA_SUCCESS;
+    for (uint64_t z=0; z<request.depth && result==CUDA_SUCCESS; ++z) {
+        CUdeviceptr pointer=allocation->ptr+request.offset+z*request.slice;
+        result=async ? corex_backend_memset_d2d8_async(pointer, request.pitch,
+                        (unsigned char)request.value, request.width, request.height,
+                        stream ? stream->stream : NULL) :
+                       corex_backend_memset_d2d8(pointer, request.pitch,
+                        (unsigned char)request.value, request.width, request.height);
+    }
+    printf("MEMSET_3D request=%u async=%d slices=%llu stream=%llu result=%d\n",
+           req_id, async, (unsigned long long)request.depth,
+           (unsigned long long)request.stream, (int)result);
+    return send_response(fd, opcode, req_id, result==CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_memset_3d_sync(ServerSession *session, int fd, uint32_t req_id,
+                                 const unsigned char *payload, uint32_t len)
+{ return handle_memset_3d(session, fd, req_id, payload, len, 0); }
+static int handle_memset_3d_async(ServerSession *session, int fd, uint32_t req_id,
+                                  const unsigned char *payload, uint32_t len)
+{ return handle_memset_3d(session, fd, req_id, payload, len, 1); }
+
+static int handle_function_set_shared_config(ServerSession *session, int fd, uint32_t req_id,
+                                              const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaFuncSetSharedMemConfigRequest request;
+    if (corex_generated_decode_cudaFuncSetSharedMemConfig_request(payload, len, &request)!=0 ||
+        request.config<0 || request.config>2)
+        return send_response(fd, OP_FUNCTION_SET_SHARED_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    KernelEntry *kernel=find_kernel(session, request.kernel);
+    if (!kernel) return send_response(fd, OP_FUNCTION_SET_SHARED_CONFIG, req_id, ST_NOT_FOUND, NULL, 0);
+    CUresult result=corex_backend_function_set_shared_config(kernel->function, (CUsharedconfig)request.config);
+    return send_response(fd, OP_FUNCTION_SET_SHARED_CONFIG, req_id,
+                         result==CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_occupancy_flags(ServerSession *session, int fd, uint32_t req_id,
+                                  const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlagsRequest request;
+    if (corex_generated_decode_cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_request(payload,len,&request)!=0 ||
+        request.block_size<=0 || request.dynamic_shared>SIZE_MAX || request.flags>1)
+        return send_response(fd, OP_OCCUPANCY_FLAGS, req_id, ST_BAD_REQUEST, NULL, 0);
+    KernelEntry *kernel=find_kernel(session,request.kernel);
+    if (!kernel) return send_response(fd, OP_OCCUPANCY_FLAGS, req_id, ST_NOT_FOUND, NULL, 0);
+    int blocks=0;
+    CUresult result=corex_backend_occupancy_flags(&blocks,kernel->function,request.block_size,
+                                                (size_t)request.dynamic_shared,request.flags);
+    if (result!=CUDA_SUCCESS) return send_response(fd,OP_OCCUPANCY_FLAGS,req_id,
+                                      result==CUDA_ERROR_INVALID_VALUE ? ST_BAD_REQUEST : ST_CUDA_ERROR,NULL,0);
+    CorexGeneratedcudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlagsResponse response={.blocks=blocks};
+    unsigned char out[4];
+    size_t encoded=0;
+    corex_generated_encode_cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_response(out,sizeof(out),&encoded,&response);
+    return send_response(fd,OP_OCCUPANCY_FLAGS,req_id,ST_OK,out,sizeof(out));
+}
+
+static int handle_occupancy_potential(ServerSession *session, int fd, uint32_t req_id,
+                                      const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaOccupancyMaxPotentialBlockSizeRequest request;
+    if (corex_generated_decode_cudaOccupancyMaxPotentialBlockSize_request(payload,len,&request)!=0 ||
+        request.block_limit<0 || request.dynamic_shared>SIZE_MAX)
+        return send_response(fd,OP_OCCUPANCY_POTENTIAL,req_id,ST_BAD_REQUEST,NULL,0);
+    KernelEntry *kernel=find_kernel(session,request.kernel);
+    if (!kernel) return send_response(fd,OP_OCCUPANCY_POTENTIAL,req_id,ST_NOT_FOUND,NULL,0);
+    int grid=0,block=0;
+    CUresult result=corex_backend_occupancy_potential(&grid,&block,kernel->function,
+                                                   (size_t)request.dynamic_shared,request.block_limit);
+    if (result!=CUDA_SUCCESS) return send_response(fd,OP_OCCUPANCY_POTENTIAL,req_id,
+                                   result==CUDA_ERROR_INVALID_VALUE ? ST_BAD_REQUEST : ST_CUDA_ERROR,NULL,0);
+    CorexGeneratedcudaOccupancyMaxPotentialBlockSizeResponse response={.grid=grid,.block=block};
+    unsigned char out[8];
+    size_t encoded=0;
+    corex_generated_encode_cudaOccupancyMaxPotentialBlockSize_response(out,sizeof(out),&encoded,&response);
+    return send_response(fd,OP_OCCUPANCY_POTENTIAL,req_id,ST_OK,out,sizeof(out));
+}
+
 static int handle_occupancy(ServerSession *session, int fd, uint32_t req_id,
                             const unsigned char *payload, uint32_t len)
 {
