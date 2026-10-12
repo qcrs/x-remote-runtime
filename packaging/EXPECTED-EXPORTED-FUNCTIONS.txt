@@ -111,3 +111,17 @@ cudaLaunchKernelExC
 cudaConfigureCall
 cudaLaunchHostFunc
 cudaStreamAddCallback
+cudaDeviceGetDefaultMemPool
+cudaDeviceGetMemPool
+cudaDeviceSetMemPool
+cudaMemPoolCreate
+cudaMemPoolDestroy
+cudaMemPoolTrimTo
+cudaMemPoolGetAttribute
+cudaMemPoolSetAttribute
+cudaMemPoolGetAccess
+cudaMemPoolSetAccess
+cudaMallocAsync
+cudaMallocFromPoolAsync
+cudaFreeAsync
+cudaGetDriverEntryPoint

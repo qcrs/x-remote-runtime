@@ -17,6 +17,7 @@ CAPABILITIES = {
     "CRX_CAP_COPY_ASYNC",
     "CRX_CAP_MODULE_KERNEL",
     "CRX_CAP_LAYOUT_TRANSFER",
+    "CRX_CAP_MEMORY_POOLS",
 }
 IMPLEMENTATION_CLASSES = {"client_only", "scalar_query", "object_query", "semantic_rpc"}
 TYPES = {
@@ -31,8 +32,9 @@ TYPES = {
     "event_id": ("uint64_t", 8, "event_id"),
     "module_id": ("uint64_t", 8, "module_id"),
     "kernel_id": ("uint64_t", 8, "kernel_id"),
+    "pool_id": ("uint64_t", 8, "pool_id"),
 }
-OBJECT_KINDS = {"allocation", "stream", "event", "module", "kernel"}
+OBJECT_KINDS = {"allocation", "stream", "event", "module", "kernel", "pool"}
 BOUNDED_TYPES = {"bounded_bytes", "bounded_string"}
 
 

@@ -26,6 +26,7 @@ def family_for(name):
     rules = [
         ("Graph", "Graph"), ("MemPool", "Memory Pool / Async Allocation"),
         ("MallocAsync", "Memory Pool / Async Allocation"),
+        ("MallocFromPoolAsync", "Memory Pool / Async Allocation"),
         ("FreeAsync", "Memory Pool / Async Allocation"),
         ("Stream", "Stream"), ("Event", "Event"), ("Memcpy", "Memcpy"),
         ("Memset", "Linear Memory"), ("Malloc", "Linear Memory"),

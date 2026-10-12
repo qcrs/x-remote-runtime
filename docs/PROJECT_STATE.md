@@ -1,17 +1,17 @@
 # Project State
 
-Current goal: exhaust practical core Runtime compatibility, then implement native
-Memory Pools and stream-ordered allocation on CoreX 4.4 / MR-V100. The preceding
-26-API target is complete; this broader goal remains **active**.
+The core Runtime and Memory Pool / stream-ordered allocation goal is complete
+on CoreX 4.4 / MR-V100, within the measured limits in the ledger. The final
+requirements audit is in `evidence/m5/memory-pools-20261012/GOAL_AUDIT.md`.
 
 | Item | Current value |
 | --- | --- |
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
 | Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
 | Goal baseline | `cf5f8a8` |
-| Last validated slice | Remaining core controls, launches and host callbacks; 2026-10-12 |
+| Last validated slice | Native Memory Pools / stream-ordered allocation; 2026-10-12 |
 | Scope boundary | Graph/Capture, IPC, Peer/Multi-device and External Interop excluded |
-| Next action | Native Memory Pool and Async Allocation subsystem; prerequisite probes succeed |
+| Core/pool compatibility | Practical APIs in the requested families are exhausted; measured limits remain in the ledger |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;
@@ -437,9 +437,10 @@ unchanged; status 10 explicitly represents NotSupported.
 
 Pageable-memory access is reported as supported natively, but stream memory
 attachment cannot attach client pages to the independent server context;
-managed allocations are already unsupported. Driver entry queries return
-native process-local function pointers and opaque export tables lack a remote
-ABI, so both are accurately blocked without exposing unusable pointers.
+managed allocations are already unsupported. At this checkpoint, Driver entry
+queries were blocked because native pointers cannot serve remote clients; the
+bounded client adapters described in the closeout below supersede that status.
+Opaque export tables still lack a public remote ABI and remain blocked.
 IPC/multidevice/interop APIs remain excluded even when census families label
 some of them Device/Event/Memcpy. Graph user objects remain excluded.
 
@@ -447,7 +448,102 @@ Validation: build/ABI/protocol, deterministic generation/rejection, backend
 seam and handler uniqueness, grouped Driver/native Runtime probes, independent
 public-library localhost integration, lifecycle and session-isolation checks.
 The latter two are justified by context teardown and callback ownership changes.
+The 8×100 multithread suite also passes after the mutex condition gate changed;
+only its result lines and full-output hash are retained.
 The grouped pool prerequisite probe succeeds for native default/current/custom
 pools, allocation, asynchronous free (including a normal linear allocation),
 attributes, trim and access. Pool support is not yet claimed remotely.
 Evidence: `evidence/m4/remaining-core-20261012/`.
+
+## Native Memory Pools and stream-ordered allocation closeout (2026-10-12)
+
+The practical family now supports **13 public APIs**: default/current device
+pool queries and selection, pool creation/destruction/trim, attributes and
+owning-device access, and cudaMallocAsync/cudaMallocFromPoolAsync/cudaFreeAsync.
+Seven are IMPLEMENTED and six PARTIAL_IMPLEMENTED. Pool import/export and
+pointer sharing are IPC, explicitly outside this goal; those four entries are
+marked OUT_OF_SCOPE_CURRENT without a capability claim. cudaMallocFromPoolAsync
+is now correctly grouped with this family in the ledger/census.
+
+CoreX reports MEMORY_POOLS_SUPPORTED=1 and both Driver and native Runtime
+allocation primitives succeed. Generated opcodes 75–87 provide bounded scalar,
+PoolID, AllocationID and StreamID codecs, typed calls and handler registration.
+HELLO advertises capability 8 only when the native device supports pools. The
+client rejects pool operations on legacy/non-advertising peers. Pool property
+and access-descriptor ABI layouts are checked against the installed header;
+no native pointer or struct crosses CRX9.
+
+Pool tokens use RuntimeContext generation ownership and monotonic tombstones;
+ServerSession owns the native custom pools. Async allocation uses the same
+linear allocation/fake-VA helper and server AllocationID table as cudaMalloc.
+Native stream ordering and existing event/frontier dependencies determine when
+an allocation may be used or freed. Successful async free invalidates its
+client and server identity immediately, while independent TransferID staging
+remains available for normal query/wait/frontier retirement. Ordinary linear
+allocations can be asynchronously freed; synchronized pool allocations can be
+ordinarily freed. Module storage cannot be freed through either path.
+
+Native pool destruction with a live allocation is measured to defer backend
+release. The pool token disappears, existing allocations stay usable and can
+be freed, and destroying the selected pool restores default selection. No
+alternate allocator, deferred-free queue or stream-lifetime mechanism was
+introduced. Session cleanup synchronizes native work, retires staging, frees
+live allocations, restores the native default-pool attributes/selection, trims
+reservations and destroys custom pools. Default-pool thresholds survive native
+context recreation on CoreX, so restoring their snapshot is necessary for
+independent session isolation. Failure invalidation and reset also tombstone
+client pool handles without reusing their storage.
+
+Measured limitations are explicit: native reuse setters return success but
+read back zero, so enabling reuse returns NotSupported; release thresholds and
+high-water reset work. Native TrimTo alone retains cached memory even after
+stream completion. Zero-target trim temporarily sets release threshold zero,
+synchronizes the context through the existing backend seam, calls native trim
+and restores the saved threshold; the probe and public client confirm actual
+reservation release. Live allocations remain valid. Nonzero targets retain
+native best-effort behavior and remain partial; no temporary threshold can
+reclaim below their required minimum. Native usage/high-water counters account allocation
+granules (2 MiB for a small allocation), so attribute queries are partial CUDA
+accounting. Owning-device permissions stay ReadWrite even after native None/
+Read setters; those changes are rejected. Empty access lists return measured InvalidValue. Zero-byte cudaMallocAsync
+returns null and null async free succeeds locally, matching the measured native
+Runtime; the underlying Driver rejects both with InvalidValue. The separate
+cudaMallocFromPoolAsync entry returns InvalidValue for zero bytes in both
+native Runtime and Driver, and the remote facade preserves that result. Only pinned,
+device-zero, non-exportable pools are supported; peer access and IPC remain
+excluded.
+
+Independent public-library client → localhost → CRX9 → server → CoreX tests
+cover all 13 APIs, native current/default identity, attributes and exact output
+widths, event ordering across streams, H2D/D2D/D2H and kernel use, deferred host
+visibility after async free and pool destruction, ordinary/async free
+interoperability, default streams, fake-address uniqueness, stale tokens,
+reset, malformed/invalid wire requests, normal exit and EOF session isolation.
+Lifecycle/session isolation pass after allocation ownership changes. The
+failure/reconnect suite now covers pool and async-pointer invalidation and fresh
+pool identities after a server restart. A controlled negative protocol peer
+proves callback error delivery, skipped host functions on errors and rejection
+of pool RPCs on a legacy peer; it is not used as positive CoreX support evidence.
+Build, public ABI/exports, protocol fixtures, deterministic schema generation/
+rejection, handler uniqueness and backend seam pass. Historical multithread
+validation was completed once for the core callback mutex change and is not
+repeated for unchanged locking in this pool slice.
+
+The closeout also adds partial cudaGetDriverEntryPoint support. Six queried
+client functions (cuMemAlloc, cuMemFree, cuMemcpyHtoD, cuMemcpyDtoH,
+cuMemcpyDtoD and cuCtxSynchronize) delegate to the existing Runtime allocation,
+copy and synchronization paths. They accept the same fake pointers, share the
+single implicit RuntimeContext and translate errors to CUresult. Default and
+legacy query flags work; PTDS and other symbols return NotSupported with null
+output. This is not a general Driver context or native-pointer compatibility
+surface. A grouped native query/invocation probe and an independent public
+localhost test verify mixed Runtime/Driver allocations, copies and errors.
+
+The full audit covers the named core families, explicit name-based exclusions
+for census misclassifications, all practical pool APIs, measured blockers,
+codegen/ownership reuse, localhost evidence, documentation and commit hygiene.
+No remaining eligible API is GROUND_TRUTH_REQUIRED or DEPRECATED. Relative to
+cf5f8a8, 21 public APIs newly become supported, and cudaMemcpyAsync's previously
+implemented D2D path is verified and accurately classified. Backend-unsupported
+and blocked results are excluded from the implementation count.
+Evidence and audit: `evidence/m5/memory-pools-20261012/`.

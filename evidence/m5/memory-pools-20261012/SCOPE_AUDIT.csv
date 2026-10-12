@@ -1,0 +1,144 @@
+api_name,family,status,scope
+cudaChooseDevice,Device,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaConfigureCall,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaCreateChannelDesc,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaCtxResetPersistingL2Cache,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaDeviceGetAttribute,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetByPCIBusId,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetCacheConfig,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetDefaultMemPool,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetLimit,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetMemPool,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetNvSciSyncAttributes,Device,GROUND_TRUTH_REQUIRED,External Interop
+cudaDeviceGetP2PAttribute,Device,GROUND_TRUTH_REQUIRED,Peer/Multi-device
+cudaDeviceGetPCIBusId,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetSharedMemConfig,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceGetStreamPriorityRange,Stream,IMPLEMENTED,IN_SCOPE
+cudaDeviceReset,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceSetCacheConfig,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceSetLimit,Device,IMPLEMENTED,IN_SCOPE
+cudaDeviceSetMemPool,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaDeviceSetSharedMemConfig,Device,IMPLEMENTED,IN_SCOPE
+cudaEventCreate,Event,IMPLEMENTED,IN_SCOPE
+cudaEventCreateWithFlags,Event,IMPLEMENTED,IN_SCOPE
+cudaEventDestroy,Event,IMPLEMENTED,IN_SCOPE
+cudaEventElapsedTime,Event,IMPLEMENTED,IN_SCOPE
+cudaEventQuery,Event,IMPLEMENTED,IN_SCOPE
+cudaEventRecord,Event,IMPLEMENTED,IN_SCOPE
+cudaEventSynchronize,Event,IMPLEMENTED,IN_SCOPE
+cudaFree,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaFreeAsync,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaFreeHost,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaFreeMipmappedArray,Linear Memory,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaFuncGetAttributes,Function,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaFuncSetAttribute,Function,IMPLEMENTED,IN_SCOPE
+cudaFuncSetCacheConfig,Function,IMPLEMENTED,IN_SCOPE
+cudaFuncSetSharedMemConfig,Execution,IMPLEMENTED,IN_SCOPE
+cudaGetChannelDesc,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaGetDevice,Device,IMPLEMENTED,IN_SCOPE
+cudaGetDeviceCount,Device,IMPLEMENTED,IN_SCOPE
+cudaGetDeviceFlags,Device,IMPLEMENTED,IN_SCOPE
+cudaGetDeviceProperties,Device,IMPLEMENTED,IN_SCOPE
+cudaGetDriverEntryPoint,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaGetErrorName,Error,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaGetErrorString,Error,IMPLEMENTED,IN_SCOPE
+cudaGetExportTable,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaGetFuncBySymbol,Execution,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaGetKernel,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaGetLastError,Error,IMPLEMENTED,IN_SCOPE
+cudaGetSymbolAddress,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaGetSymbolSize,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaHostAlloc,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaHostGetDevicePointer,Host Memory,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaHostGetFlags,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaHostRegister,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaHostUnregister,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaIpcGetEventHandle,Event,GROUND_TRUTH_REQUIRED,IPC
+cudaIpcOpenEventHandle,Event,GROUND_TRUTH_REQUIRED,IPC
+cudaKernelSetAttributeForDevice,Device,BACKEND_UNSUPPORTED,IN_SCOPE
+cudaLaunchCooperativeKernel,Execution,BACKEND_UNSUPPORTED,IN_SCOPE
+cudaLaunchCooperativeKernelMultiDevice,Execution,GROUND_TRUTH_REQUIRED,Peer/Multi-device
+cudaLaunchHostFunc,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLaunchKernel,Execution,IMPLEMENTED,IN_SCOPE
+cudaLaunchKernelExC,Execution,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryEnumerateKernels,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryGetKernel,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryGetKernelCount,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryLoadData,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryLoadFromFile,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaLibraryUnload,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMalloc,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMalloc3DArray,Linear Memory,BACKEND_UNSUPPORTED,IN_SCOPE
+cudaMallocAsync,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaMallocFromPoolAsync,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaMallocHost,Host Memory,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMallocManaged,Linear Memory,BACKEND_UNSUPPORTED,IN_SCOPE
+cudaMallocMipmappedArray,Linear Memory,BACKEND_UNSUPPORTED,IN_SCOPE
+cudaMemAdvise,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemPoolCreate,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPoolDestroy,Memory Pool / Async Allocation,IMPLEMENTED,IN_SCOPE
+cudaMemPoolExportPointer,Memory Pool / Async Allocation,OUT_OF_SCOPE_CURRENT,IPC
+cudaMemPoolExportToShareableHandle,Memory Pool / Async Allocation,OUT_OF_SCOPE_CURRENT,IPC
+cudaMemPoolGetAccess,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPoolGetAttribute,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPoolImportFromShareableHandle,Memory Pool / Async Allocation,OUT_OF_SCOPE_CURRENT,IPC
+cudaMemPoolImportPointer,Memory Pool / Async Allocation,OUT_OF_SCOPE_CURRENT,IPC
+cudaMemPoolSetAccess,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPoolSetAttribute,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPoolTrimTo,Memory Pool / Async Allocation,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemPrefetchAsync,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemRangeGetAttribute,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemRangeGetAttributes,Other Runtime,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpy,Memcpy,IMPLEMENTED,IN_SCOPE
+cudaMemcpy2DArrayToArray,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpy2DFromArrayAsync,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpy2DToArrayAsync,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpy3DPeer,Memcpy,GROUND_TRUTH_REQUIRED,Peer/Multi-device
+cudaMemcpy3DPeerAsync,Memcpy,GROUND_TRUTH_REQUIRED,Peer/Multi-device
+cudaMemcpyArrayToArray,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpyAsync,Memcpy,IMPLEMENTED,IN_SCOPE
+cudaMemcpyFromArrayAsync,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpyFromSymbol,Memcpy,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemcpyFromSymbolAsync,Memcpy,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemcpyToArrayAsync,Memcpy,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaMemcpyToSymbol,Memcpy,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemcpyToSymbolAsync,Memcpy,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaMemset,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMemset2D,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMemset2DAsync,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMemset3D,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMemset3DAsync,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaMemsetAsync,Linear Memory,IMPLEMENTED,IN_SCOPE
+cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags,Execution,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaPeekAtLastError,Error,IMPLEMENTED,IN_SCOPE
+cudaPointerGetAttributes,Other Runtime,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaSetDevice,Device,IMPLEMENTED,IN_SCOPE
+cudaSetDeviceFlags,Device,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaSetDoubleForDevice,Device,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaSetDoubleForHost,Host Memory,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaSetValidDevices,Device,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaStreamAddCallback,Stream,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaStreamAttachMemAsync,Stream,GROUND_TRUTH_BLOCKED,IN_SCOPE
+cudaStreamCopyAttributes,Stream,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaStreamCreate,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamCreateWithFlags,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamCreateWithPriority,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamDestroy,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamGetAttribute,Stream,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaStreamGetCaptureInfo,Stream,GROUND_TRUTH_REQUIRED,Graph/Capture
+cudaStreamGetCaptureInfo_v2,Stream,GROUND_TRUTH_REQUIRED,Graph/Capture
+cudaStreamGetFlags,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamGetPriority,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamQuery,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamSetAttribute,Stream,PARTIAL_IMPLEMENTED,IN_SCOPE
+cudaStreamSynchronize,Stream,IMPLEMENTED,IN_SCOPE
+cudaStreamUpdateCaptureDependencies,Stream,GROUND_TRUTH_REQUIRED,Graph/Capture
+cudaThreadExchangeStreamCaptureMode,Stream,GROUND_TRUTH_REQUIRED,Graph/Capture
+cudaThreadExit,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaThreadGetCacheConfig,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaThreadGetLimit,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaThreadSetCacheConfig,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaThreadSetLimit,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaThreadSynchronize,Other Runtime,IMPLEMENTED,IN_SCOPE
+cudaUserObjectCreate,Other Runtime,GROUND_TRUTH_REQUIRED,Graph
+cudaUserObjectRelease,Other Runtime,GROUND_TRUTH_REQUIRED,Graph

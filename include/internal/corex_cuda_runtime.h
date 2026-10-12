@@ -54,7 +54,8 @@ typedef enum cudaDeviceAttr {
     cudaDevAttrMemoryClockRate = 36,
     cudaDevAttrGlobalMemoryBusWidth = 37,
     cudaDevAttrComputeCapabilityMajor = 75,
-    cudaDevAttrComputeCapabilityMinor = 76
+    cudaDevAttrComputeCapabilityMinor = 76,
+    cudaDevAttrMemoryPoolsSupported = 115
 } cudaDeviceAttr;
 
 typedef enum cudaLimit {
@@ -93,6 +94,30 @@ typedef struct dim3 {
 
 typedef struct corexCudaStreamHandle *cudaStream_t;
 typedef struct corexCudaEventHandle  *cudaEvent_t;
+typedef struct corexCudaPoolHandle *cudaMemPool_t;
+enum cudaMemPoolAttr {
+    cudaMemPoolReuseFollowEventDependencies = 1,
+    cudaMemPoolReuseAllowOpportunistic = 2,
+    cudaMemPoolReuseAllowInternalDependencies = 3,
+    cudaMemPoolAttrReleaseThreshold = 4,
+    cudaMemPoolAttrReservedMemCurrent = 5,
+    cudaMemPoolAttrReservedMemHigh = 6,
+    cudaMemPoolAttrUsedMemCurrent = 7,
+    cudaMemPoolAttrUsedMemHigh = 8,
+};
+enum cudaMemLocationType { cudaMemLocationTypeInvalid = 0, cudaMemLocationTypeDevice = 1 };
+enum cudaMemAccessFlags { cudaMemAccessFlagsProtNone = 0, cudaMemAccessFlagsProtRead = 1, cudaMemAccessFlagsProtReadWrite = 3 };
+enum cudaMemAllocationType { cudaMemAllocationTypeInvalid = 0, cudaMemAllocationTypePinned = 1 };
+enum cudaMemAllocationHandleType { cudaMemHandleTypeNone = 0, cudaMemHandleTypePosixFileDescriptor = 1 };
+struct cudaMemLocation { enum cudaMemLocationType type; int id; };
+struct cudaMemAccessDesc { struct cudaMemLocation location; enum cudaMemAccessFlags flags; };
+struct cudaMemPoolProps {
+    enum cudaMemAllocationType allocType;
+    enum cudaMemAllocationHandleType handleTypes;
+    struct cudaMemLocation location;
+    void *win32SecurityAttributes;
+    unsigned char reserved[64];
+};
 typedef struct corexRemoteModuleHandle *corexRemoteModule_t;
 
 #define cudaStreamDefault 0x0u
@@ -241,10 +266,24 @@ cudaError_t cudaDeviceSynchronize(void);
 cudaError_t cudaDeviceReset(void);
 cudaError_t cudaThreadExit(void);
 cudaError_t cudaSetDeviceFlags(unsigned int flags);
+cudaError_t cudaGetDriverEntryPoint(const char *symbol, void **entry, unsigned long long flags);
 cudaError_t cudaConfigureCall(dim3 grid, dim3 block, size_t shared, cudaStream_t stream);
 cudaError_t cudaLaunchHostFunc(cudaStream_t stream, void (*function)(void *), void *data);
 cudaError_t cudaStreamAddCallback(cudaStream_t stream,
     void (*callback)(cudaStream_t, cudaError_t, void *), void *data, unsigned int flags);
+cudaError_t cudaDeviceGetDefaultMemPool(cudaMemPool_t *pool, int device);
+cudaError_t cudaDeviceGetMemPool(cudaMemPool_t *pool, int device);
+cudaError_t cudaDeviceSetMemPool(int device, cudaMemPool_t pool);
+cudaError_t cudaMemPoolCreate(cudaMemPool_t *pool, const struct cudaMemPoolProps *props);
+cudaError_t cudaMemPoolDestroy(cudaMemPool_t pool);
+cudaError_t cudaMemPoolTrimTo(cudaMemPool_t pool, size_t bytes);
+cudaError_t cudaMemPoolGetAttribute(cudaMemPool_t pool, enum cudaMemPoolAttr attr, void *value);
+cudaError_t cudaMemPoolSetAttribute(cudaMemPool_t pool, enum cudaMemPoolAttr attr, void *value);
+cudaError_t cudaMemPoolGetAccess(enum cudaMemAccessFlags *flags, cudaMemPool_t pool, struct cudaMemLocation *location);
+cudaError_t cudaMemPoolSetAccess(cudaMemPool_t pool, const struct cudaMemAccessDesc *desc, size_t count);
+cudaError_t cudaMallocAsync(void **ptr, size_t bytes, cudaStream_t stream);
+cudaError_t cudaMallocFromPoolAsync(void **ptr, size_t bytes, cudaMemPool_t pool, cudaStream_t stream);
+cudaError_t cudaFreeAsync(void *ptr, cudaStream_t stream);
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream);
 cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags);

@@ -84,3 +84,33 @@ CUresult corex_backend_stream_copy_attributes(CUstream dst, CUstream src) { retu
 
 CUresult corex_backend_stream_get_attribute(CUstream stream, CUstreamAttrID attr, CUstreamAttrValue *value) { return cuStreamGetAttribute(stream, attr, value); }
 CUresult corex_backend_stream_set_attribute(CUstream stream, CUstreamAttrID attr, const CUstreamAttrValue *value) { return cuStreamSetAttribute(stream, attr, value); }
+
+CUresult corex_backend_device_default_pool(CUmemoryPool *pool, CUdevice device) { return cuDeviceGetDefaultMemPool(pool,device); }
+CUresult corex_backend_device_get_pool(CUmemoryPool *pool, CUdevice device) { return cuDeviceGetMemPool(pool,device); }
+CUresult corex_backend_device_set_pool(CUdevice device, CUmemoryPool pool) { return cuDeviceSetMemPool(device,pool); }
+CUresult corex_backend_pool_create(CUmemoryPool *pool, const CUmemPoolProps *props) { return cuMemPoolCreate(pool,props); }
+CUresult corex_backend_pool_destroy(CUmemoryPool pool) { return cuMemPoolDestroy(pool); }
+CUresult corex_backend_pool_trim(CUmemoryPool pool, size_t bytes)
+{
+    if (bytes) return cuMemPoolTrimTo(pool,bytes);
+    /* CoreX's native TrimTo leaves cached blocks reserved even after stream
+     * completion. Its zero-threshold synchronization path really releases
+     * them. Use that measured path for zero-target trim, preserving policy;
+     * nonzero targets stay native so we never reclaim below their minimum. */
+    uint64_t threshold=0,zero=0;
+    CUresult result=cuMemPoolGetAttribute(pool,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&threshold);
+    if (result!=CUDA_SUCCESS) return result;
+    result=cuMemPoolSetAttribute(pool,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&zero);
+    if (result!=CUDA_SUCCESS) return result;
+    result=cuCtxSynchronize();
+    if (result==CUDA_SUCCESS) result=cuMemPoolTrimTo(pool,0);
+    CUresult restored=cuMemPoolSetAttribute(pool,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&threshold);
+    return result==CUDA_SUCCESS?restored:result;
+}
+CUresult corex_backend_pool_get_attribute(CUmemoryPool pool, CUmemPool_attribute attr, void *value) { return cuMemPoolGetAttribute(pool,attr,value); }
+CUresult corex_backend_pool_set_attribute(CUmemoryPool pool, CUmemPool_attribute attr, void *value) { return cuMemPoolSetAttribute(pool,attr,value); }
+CUresult corex_backend_pool_get_access(CUmemAccess_flags *flags, CUmemoryPool pool, CUmemLocation *location) { return cuMemPoolGetAccess(flags,pool,location); }
+CUresult corex_backend_pool_set_access(CUmemoryPool pool, const CUmemAccessDesc *desc, size_t count) { return cuMemPoolSetAccess(pool,desc,count); }
+CUresult corex_backend_mem_alloc_async(CUdeviceptr *ptr, size_t bytes, CUstream stream) { return cuMemAllocAsync(ptr,bytes,stream); }
+CUresult corex_backend_mem_alloc_from_pool_async(CUdeviceptr *ptr, size_t bytes, CUmemoryPool pool, CUstream stream) { return cuMemAllocFromPoolAsync(ptr,bytes,pool,stream); }
+CUresult corex_backend_mem_free_async(CUdeviceptr ptr, CUstream stream) { return cuMemFreeAsync(ptr,stream); }

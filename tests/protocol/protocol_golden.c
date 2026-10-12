@@ -46,7 +46,9 @@ _Static_assert(OP_SET_LIMIT == 59 && OP_SET_CACHE_CONFIG == 60 &&
                OP_MEMSET_3D == 65 && OP_MEMSET_3D_ASYNC == 66 &&
                OP_FUNCTION_SET_SHARED_CONFIG == 67 && OP_OCCUPANCY_FLAGS == 68 &&
                OP_OCCUPANCY_POTENTIAL == 69 && OP_UPLOAD_LIBRARY == 70 &&
-               OP_LIBRARY_COUNT == 71 && OP_LIBRARY_KERNEL_NAME == 72 && OP_MODULE_GET_GLOBAL == 73 && OP_SET_DEVICE_FLAGS == 74 && OP__COUNT == 75, "compatibility expansion opcode assignment changed");
+               OP_LIBRARY_COUNT == 71 && OP_LIBRARY_KERNEL_NAME == 72 && OP_MODULE_GET_GLOBAL == 73 && OP_SET_DEVICE_FLAGS == 74 && OP_DEVICE_DEFAULT_POOL == 75 &&
+               OP_ALLOC_ASYNC == 85 && OP_ALLOC_FROM_POOL_ASYNC == 86 &&
+               OP_FREE_ASYNC == 87 && OP__COUNT == 88, "compatibility expansion opcode assignment changed");
 
 static int test_hello(void)
 {

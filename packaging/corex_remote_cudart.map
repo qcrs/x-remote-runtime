@@ -119,8 +119,22 @@ COREX_REMOTE_CUDART_1.1 {
         cudaThreadExit;
         cudaLaunchKernelExC;
         cudaConfigureCall;
+        cudaGetDriverEntryPoint;
         cudaLaunchHostFunc;
         cudaStreamAddCallback;
+        cudaDeviceGetDefaultMemPool;
+        cudaDeviceGetMemPool;
+        cudaDeviceSetMemPool;
+        cudaMemPoolCreate;
+        cudaMemPoolDestroy;
+        cudaMemPoolTrimTo;
+        cudaMemPoolGetAttribute;
+        cudaMemPoolSetAttribute;
+        cudaMemPoolGetAccess;
+        cudaMemPoolSetAccess;
+        cudaMallocAsync;
+        cudaMallocFromPoolAsync;
+        cudaFreeAsync;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

@@ -10,6 +10,15 @@ int main(void) {
  SHOW(cudaMemPoolCreate(&custom,&props));printf("DEFAULT_POOL_PRESENT=%d CURRENT_POOL_PRESENT=%d CUSTOM_POOL_PRESENT=%d\n",pool!=NULL,current!=NULL,custom!=NULL);
  SHOW(cudaMallocAsync(&ptr,4096,stream));if(ptr)SHOW(cudaFreeAsync(ptr,stream));
  ptr=NULL;SHOW(cudaMallocAsync(&ptr,0,stream));printf("ZERO_ALLOC_NULL=%d\n",ptr==NULL);SHOW(cudaFreeAsync(NULL,stream));
- if(custom){SHOW(cudaMallocFromPoolAsync(&ptr,4096,custom,stream));if(ptr)SHOW(cudaFreeAsync(ptr,stream));SHOW(cudaStreamSynchronize(stream));SHOW(cudaMemPoolDestroy(custom));}
+ if(custom){
+  SHOW(cudaGetLastError());ptr=NULL;SHOW(cudaMallocFromPoolAsync(&ptr,0,custom,stream));printf("ZERO_POOL_ALLOC_NULL=%d\n",ptr==NULL);
+  for(int a=1;a<=4;++a){unsigned long long value=a==4?4194304:1,read=0;
+   SHOW(cudaMemPoolSetAttribute(custom,(enum cudaMemPoolAttr)a,&value));
+   SHOW(cudaMemPoolGetAttribute(custom,(enum cudaMemPoolAttr)a,&read));printf("RUNTIME_ATTR_%d_READBACK=%llu\n",a,read);
+  }
+  struct cudaMemLocation loc={cudaMemLocationTypeDevice,0};enum cudaMemAccessFlags access=99;
+  SHOW(cudaMemPoolGetAccess(&access,custom,&loc));printf("RUNTIME_ACCESS=%u\n",access);
+  SHOW(cudaMallocFromPoolAsync(&ptr,4096,custom,stream));if(ptr)SHOW(cudaFreeAsync(ptr,stream));SHOW(cudaStreamSynchronize(stream));SHOW(cudaMemPoolDestroy(custom));
+ }
  SHOW(cudaStreamDestroy(stream));return 0;
 }

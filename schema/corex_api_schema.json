@@ -740,6 +740,360 @@
       "response": [],
       "server_handler": "handle_set_device_flags",
       "backend_binding": "corex_backend_context_create"
+    },
+    {
+      "name": "cudaDeviceGetDefaultMemPool",
+      "opcode_name": "OP_DEVICE_DEFAULT_POOL",
+      "opcode": 75,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        }
+      ],
+      "server_handler": "handle_device_default_pool",
+      "backend_binding": "corex_backend_device_default_pool"
+    },
+    {
+      "name": "cudaDeviceGetMemPool",
+      "opcode_name": "OP_DEVICE_GET_POOL",
+      "opcode": 76,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        }
+      ],
+      "server_handler": "handle_device_get_pool",
+      "backend_binding": "corex_backend_device_get_pool"
+    },
+    {
+      "name": "cudaDeviceSetMemPool",
+      "opcode_name": "OP_DEVICE_SET_POOL",
+      "opcode": 77,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        },
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_device_set_pool",
+      "backend_binding": "corex_backend_device_set_pool"
+    },
+    {
+      "name": "cudaMemPoolCreate",
+      "opcode_name": "OP_POOL_CREATE",
+      "opcode": 78,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "allocation_type",
+          "type": "u32"
+        },
+        {
+          "name": "location_type",
+          "type": "u32"
+        },
+        {
+          "name": "device",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        }
+      ],
+      "server_handler": "handle_pool_create",
+      "backend_binding": "corex_backend_pool_create"
+    },
+    {
+      "name": "cudaMemPoolDestroy",
+      "opcode_name": "OP_POOL_DESTROY",
+      "opcode": 79,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_pool_destroy",
+      "backend_binding": "corex_backend_pool_destroy"
+    },
+    {
+      "name": "cudaMemPoolTrimTo",
+      "opcode_name": "OP_POOL_TRIM",
+      "opcode": 80,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "bytes",
+          "type": "u64"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_pool_trim",
+      "backend_binding": "corex_backend_pool_trim"
+    },
+    {
+      "name": "cudaMemPoolGetAttribute",
+      "opcode_name": "OP_POOL_GET_ATTRIBUTE",
+      "opcode": 81,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "attribute",
+          "type": "u32"
+        }
+      ],
+      "response": [
+        {
+          "name": "value",
+          "type": "u64"
+        }
+      ],
+      "server_handler": "handle_pool_get_attribute",
+      "backend_binding": "corex_backend_pool_get_attribute"
+    },
+    {
+      "name": "cudaMemPoolSetAttribute",
+      "opcode_name": "OP_POOL_SET_ATTRIBUTE",
+      "opcode": 82,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "attribute",
+          "type": "u32"
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_pool_set_attribute",
+      "backend_binding": "corex_backend_pool_set_attribute"
+    },
+    {
+      "name": "cudaMemPoolGetAccess",
+      "opcode_name": "OP_POOL_GET_ACCESS",
+      "opcode": 83,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "location_type",
+          "type": "u32"
+        },
+        {
+          "name": "device",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "flags",
+          "type": "u32"
+        }
+      ],
+      "server_handler": "handle_pool_get_access",
+      "backend_binding": "corex_backend_pool_get_access"
+    },
+    {
+      "name": "cudaMemPoolSetAccess",
+      "opcode_name": "OP_POOL_SET_ACCESS",
+      "opcode": 84,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "count",
+          "type": "u32"
+        },
+        {
+          "name": "location_type",
+          "type": "u32"
+        },
+        {
+          "name": "device",
+          "type": "i32"
+        },
+        {
+          "name": "flags",
+          "type": "u32"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_pool_set_access",
+      "backend_binding": "corex_backend_pool_set_access"
+    },
+    {
+      "name": "cudaMallocAsync",
+      "opcode_name": "OP_ALLOC_ASYNC",
+      "opcode": 85,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "bytes",
+          "type": "u64"
+        },
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        }
+      ],
+      "response": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        }
+      ],
+      "server_handler": "handle_alloc_async",
+      "backend_binding": "corex_backend_mem_alloc_async"
+    },
+    {
+      "name": "cudaMallocFromPoolAsync",
+      "opcode_name": "OP_ALLOC_FROM_POOL_ASYNC",
+      "opcode": 86,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "bytes",
+          "type": "u64"
+        },
+        {
+          "name": "pool",
+          "type": "pool_id",
+          "object_kind": "pool"
+        },
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        }
+      ],
+      "response": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        }
+      ],
+      "server_handler": "handle_alloc_from_pool_async",
+      "backend_binding": "corex_backend_mem_alloc_from_pool_async"
+    },
+    {
+      "name": "cudaFreeAsync",
+      "opcode_name": "OP_FREE_ASYNC",
+      "opcode": 87,
+      "capability_id": "CRX_CAP_MEMORY_POOLS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_free_async",
+      "backend_binding": "corex_backend_mem_free_async"
     }
   ]
 }

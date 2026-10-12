@@ -1,0 +1,23 @@
+FILE=build/memory-pools/lifecycle/00-RESULTS.txt SHA256=a6bc81096b3f1aa21275e1e896d23445700f208d831fd15893694c225ab42604
+SEQUENTIAL_CONNECTIONS=PASS
+SESSION_A_LIVE_OBJECT_CLEANUP=PASS
+SESSION_A_OBJECTS_HIDDEN_FROM_B=PASS
+SESSION_B_EMPTY_INITIAL_STATE=PASS
+SESSION_B_COUNTERS_RESTART=PASS
+RESULT=PASS
+FILE=build/memory-pools/lifecycle/client.stderr.log SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+FILE=build/memory-pools/lifecycle/client.stdout.log SHA256=9451e724770cd4be6c96a72596bfcd8aa7ff56c1b8cb50cd1fc92235fcee5902
+M1_S4_CHECK name=session-a-alloc actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-stream actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-event actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-module actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-kernel actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-allocation-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-stream-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-event-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-kernel-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-kernel-cache-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-b-alloc actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-b-stream actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-b-close actual=0 expected=0 result=PASS
+M1_S4_SERVER_SESSION_ISOLATION=PASS

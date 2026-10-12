@@ -1,0 +1,210 @@
+G6A_VA_ARENA base=0xffef87560000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=8
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=60277 protocol=CRX9 version=3 default_stream=LEGACY
+cudaDeviceGetAttribute(&supported,cudaDevAttrMemoryPoolsSupported,0)=0
+cudaDeviceGetDefaultMemPool(&default_pool,0)=0
+cudaDeviceGetMemPool(&current,0)=0
+cudaMemPoolCreate(&pool,&props)=0
+cudaDeviceSetMemPool(0,pool)=0
+cudaDeviceGetMemPool(&current,0)=0
+cudaDeviceGetDefaultMemPool(&current,0)=0
+cudaMemPoolSetAttribute(pool,cudaMemPoolAttrReleaseThreshold,&threshold)=0
+cudaMemPoolGetAttribute(pool,cudaMemPoolAttrReleaseThreshold,&read)=0
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=801 expected=801
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=801 expected=801
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=0
+cudaMemPoolSetAttribute(pool,(enum cudaMemPoolAttr)a,&small.value)=801 expected=801
+cudaMemPoolGetAccess(&flags,pool,&location)=0
+cudaMemPoolSetAccess(pool,&access,1)=0
+cudaMemPoolSetAccess(pool,&access,1)=801 expected=801
+cudaMemPoolSetAccess(pool,NULL,0)=1 expected=1
+G6C_CUDA_STREAM_CREATE handle=0xffff87765390 stream_id=1 result=PASS
+cudaStreamCreate(&first)=0
+G6C_CUDA_STREAM_CREATE handle=0xffff877653d0 stream_id=2 result=PASS
+cudaStreamCreateWithFlags(&second,cudaStreamNonBlocking)=0
+cudaEventCreateWithFlags(&event,cudaEventDisableTiming)=0
+G6A_CUDA_MALLOC ptr=0xffef87560000 allocation_id=1 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,first)=0
+G6A_PTR_RESOLVE ptr=0xffef87560000 allocation_id=1 offset=0 bytes=1
+cudaPointerGetAttributes(&attributes,a)=0
+G6A_PTR_RESOLVE ptr=0xffef87560000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=H2D transfer_id=1 stream_id=1 stream_slot=0 seq=2 allocation_id=1 offset=0 bytes=64 hidden=YES
+cudaMemcpyAsync(a,source,64,cudaMemcpyHostToDevice,first)=0
+G6E_CUDA_EVENT_RECORD event_handle=0xffff87775390 event_id=1 stream_handle=0xffff87765390 stream_id=1 frontier_snapshot=YES result=PASS
+cudaEventRecord(event,first)=0
+G6E_CUDA_STREAM_WAIT_EVENT stream_handle=0xffff877653d0 stream_id=2 event_handle=0xffff87775390 event_id=1 causal_frontier_merged=YES result=PASS
+cudaStreamWaitEvent(second,event,0)=0
+G6A_CUDA_MALLOC ptr=0xffef87580000 allocation_id=2 bytes=64 span=131072 result=PASS
+cudaMallocFromPoolAsync((void**)&b,64,default_pool,second)=0
+G6A_PTR_RESOLVE ptr=0xffef87580000 allocation_id=2 offset=0 bytes=64
+G6A_PTR_RESOLVE ptr=0xffef87560000 allocation_id=1 offset=0 bytes=64
+cudaMemcpyAsync(b,a,64,cudaMemcpyDeviceToDevice,second)=0
+G6A_PTR_RESOLVE ptr=0xffef87580000 allocation_id=2 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=2 stream_id=2 stream_slot=1 seq=3 allocation_id=2 offset=0 bytes=64 host_dst=0xffffcae37598 hidden=YES
+cudaMemcpyAsync(host,b,64,cudaMemcpyDeviceToHost,second)=0
+cudaFreeAsync(b,second)=0
+cudaPointerGetAttributes(&attributes,b)=1 expected=1
+cudaMemsetAsync(b,1,64,second)=17 expected=17
+cudaFreeAsync(b,second)=17 expected=17
+G6E_CUDA_EVENT_RECORD event_handle=0xffff87775390 event_id=1 stream_handle=0xffff877653d0 stream_id=2 frontier_snapshot=YES result=PASS
+cudaEventRecord(event,second)=0
+G6E_CUDA_STREAM_WAIT_EVENT stream_handle=0xffff87765390 stream_id=1 event_handle=0xffff87775390 event_id=1 causal_frontier_merged=YES result=PASS
+cudaStreamWaitEvent(first,event,0)=0
+cudaFreeAsync(a,first)=0
+G6C_TRANSFER_DRAIN transfer_id=1 kind=H2D origin_stream_slot=0 seq=2 bytes=64 host_visible=N/A retire=YES
+G6C_TRANSFER_DRAIN transfer_id=2 kind=D2H origin_stream_slot=1 seq=3 bytes=64 host_visible=YES retire=YES
+G6E_CUDA_EVENT_SYNC handle=0xffff87775390 event_id=1 host_visible=YES result=PASS
+cudaEventSynchronize(event)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff87765390 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(first)=0
+cudaMemPoolTrimTo(pool,0)=0
+cudaMemPoolGetAttribute(pool,cudaMemPoolAttrReleaseThreshold,&read)=0
+cudaMemPoolGetAttribute(pool,cudaMemPoolAttrReservedMemCurrent,&read)=0
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)attr,&read)=0
+NATIVE_POOL_METRIC_5=0
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)attr,&read)=0
+NATIVE_POOL_METRIC_6=2097152
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)attr,&read)=0
+NATIVE_POOL_METRIC_7=0
+cudaMemPoolGetAttribute(pool,(enum cudaMemPoolAttr)attr,&read)=0
+NATIVE_POOL_METRIC_8=2097152
+cudaMemPoolSetAttribute(pool,cudaMemPoolAttrUsedMemHigh,&read)=0
+cudaMemPoolGetAttribute(pool,cudaMemPoolAttrUsedMemHigh,&read)=0
+cudaMemPoolSetAttribute(pool,cudaMemPoolAttrUsedMemCurrent,&read)=1 expected=1
+cudaMemPoolSetAttribute(pool,cudaMemPoolAttrUsedMemHigh,&read)=1 expected=1
+G6A_CUDA_MALLOC ptr=0xffef875a0000 allocation_id=3 bytes=64 span=131072 result=PASS
+cudaMallocFromPoolAsync(&ordinary_free,64,pool,first)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff87765390 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(first)=0
+G6A_CUDA_FREE ptr=0xffef875a0000 allocation_id=3 result=PASS tombstone=YES
+cudaFree(ordinary_free)=0
+G6A_CUDA_MALLOC ptr=0xffef875c0000 allocation_id=4 bytes=64 span=131072 result=PASS
+cudaMallocFromPoolAsync((void**)&a,64,pool,first)=0
+G6A_PTR_RESOLVE ptr=0xffef875c0000 allocation_id=4 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=4 offset=0 value=89 bytes=64 stream_id=1 result=PASS
+cudaMemsetAsync(a,0x59,64,first)=0
+G6A_PTR_RESOLVE ptr=0xffef875c0000 allocation_id=4 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=3 stream_id=1 stream_slot=0 seq=7 allocation_id=4 offset=0 bytes=64 host_dst=0xffffcae37598 hidden=YES
+cudaMemcpyAsync(host,a,64,cudaMemcpyDeviceToHost,first)=0
+cudaMemPoolTrimTo(pool,0)=0
+G6A_PTR_RESOLVE ptr=0xffef875c0000 allocation_id=4 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=4 offset=0 value=89 bytes=64 stream_id=1 result=PASS
+cudaMemsetAsync(a,0x59,64,first)=0
+G6A_PTR_RESOLVE ptr=0xffef875c0000 allocation_id=4 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=4 stream_id=1 stream_slot=0 seq=9 allocation_id=4 offset=0 bytes=64 host_dst=0xffffcae37598 hidden=YES
+cudaMemcpyAsync(host,a,64,cudaMemcpyDeviceToHost,first)=0
+cudaMemPoolDestroy(pool)=0
+cudaDeviceGetMemPool(&current,0)=0
+cudaMemPoolTrimTo(pool,0)=400 expected=400
+cudaFreeAsync(a,first)=0
+G6C_TRANSFER_DRAIN transfer_id=3 kind=D2H origin_stream_slot=0 seq=7 bytes=64 host_visible=YES retire=YES
+G6C_TRANSFER_DRAIN transfer_id=4 kind=D2H origin_stream_slot=0 seq=9 bytes=64 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffff87765390 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(first)=0
+G6A_CUDA_MALLOC ptr=0xffef875e0000 allocation_id=5 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,NULL)=0
+G6A_PTR_RESOLVE ptr=0xffef875e0000 allocation_id=5 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=5 offset=0 value=106 bytes=64 stream_id=0 result=PASS
+cudaMemsetAsync(a,0x6a,64,NULL)=0
+cudaFreeAsync(a,NULL)=0
+G6A_CUDA_MALLOC ptr=0xffef87600000 allocation_id=6 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,NULL)=0
+G6A_PTR_RESOLVE ptr=0xffef87600000 allocation_id=6 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=6 offset=0 value=106 bytes=64 stream_id=0 result=PASS
+cudaMemsetAsync(a,0x6a,64,NULL)=0
+cudaFreeAsync(a,NULL)=0
+G6A_CUDA_MALLOC ptr=0xffef87620000 allocation_id=7 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,NULL)=0
+G6A_PTR_RESOLVE ptr=0xffef87620000 allocation_id=7 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=7 offset=0 value=106 bytes=64 stream_id=0 result=PASS
+cudaMemsetAsync(a,0x6a,64,NULL)=0
+cudaFreeAsync(a,NULL)=0
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+cudaDeviceSynchronize()=0
+G6A_CUDA_MALLOC ptr=0xffef87640000 allocation_id=8 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,first)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff87765390 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(first)=0
+G6A_CUDA_FREE ptr=0xffef87640000 allocation_id=8 result=PASS tombstone=YES
+cudaFree(a)=0
+G6A_CUDA_MALLOC ptr=0xffef87660000 allocation_id=9 bytes=64 span=131072 result=PASS
+cudaMalloc((void**)&a,64)=0
+G6A_PTR_RESOLVE ptr=0xffef87660000 allocation_id=9 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=9 offset=0 value=39 bytes=64 stream_id=2 result=PASS
+cudaMemsetAsync(a,0x27,64,second)=0
+cudaFreeAsync(a,second)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff877653d0 stream_id=2 host_visible=YES result=PASS
+cudaStreamSynchronize(second)=0
+cudaLibraryLoadFromFile(&library,argv[1],NULL,NULL,0,NULL,NULL,0)=0
+G7E_ABI_ARG kernel_id=1 name=m1s2_lifecycle_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ATTACH generation=0 module_id=1 kernel_id=1 name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&kernel,library,"m1s2_lifecycle_kernel")=0
+G6A_CUDA_MALLOC ptr=0xffef87680000 allocation_id=10 bytes=4 span=131072 result=PASS
+cudaMallocAsync((void**)&a,4,second)=0
+G6A_PTR_RESOLVE ptr=0xffef87680000 allocation_id=10 offset=0 bytes=4
+G6E_CUDA_MEMCPY_ASYNC kind=H2D transfer_id=5 stream_id=2 stream_slot=1 seq=8 allocation_id=10 offset=0 bytes=4 hidden=YES
+cudaMemcpyAsync(a,&value,4,cudaMemcpyHostToDevice,second)=0
+G6A_PTR_RESOLVE ptr=0xffef87680000 allocation_id=10 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=10 offset=0
+G6E_CUDA_LAUNCH_KERNEL token=0xffff877bf798 kernel_id=1 stream_id=2 grid=(1,1,1) block=(1,1,1) shared=0 argc=1 submit=PASS
+cudaLaunchKernel(kernel,(dim3){1,1,1},(dim3){1,1,1},args,0,second)=0
+G6A_PTR_RESOLVE ptr=0xffef87680000 allocation_id=10 offset=0 bytes=4
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=6 stream_id=2 stream_slot=1 seq=9 allocation_id=10 offset=0 bytes=4 host_dst=0xffffcae3742c hidden=YES
+cudaMemcpyAsync(&out,a,4,cudaMemcpyDeviceToHost,second)=0
+cudaFreeAsync(a,second)=0
+G6C_TRANSFER_DRAIN transfer_id=5 kind=H2D origin_stream_slot=1 seq=8 bytes=4 host_visible=N/A retire=YES
+G6C_TRANSFER_DRAIN transfer_id=6 kind=D2H origin_stream_slot=1 seq=9 bytes=4 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffff877653d0 stream_id=2 host_visible=YES result=PASS
+cudaStreamSynchronize(second)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffff877bf798 host_fun=(nil) kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffff877bdf98 module_id=1 result=PASS tombstone=YES
+cudaLibraryUnload(library)=0
+cudaMallocAsync((void**)&a,0,first)=0
+cudaMallocFromPoolAsync((void**)&a,0,default_pool,first)=1 expected=1
+cudaFreeAsync(NULL,first)=0
+cudaMallocFromPoolAsync((void**)&a,64,pool,first)=400 expected=400
+cudaMemPoolDestroy(default_pool)=1 expected=1
+cudaMemPoolGetAttribute(default_pool,(enum cudaMemPoolAttr)9,&read)=1 expected=1
+cudaDeviceGetMemPool(&current,1)=101 expected=101
+cudaMemPoolCreate(&pool,&props)=1 expected=1
+cudaMemPoolCreate(&pool,&props)=801 expected=801
+G6C_CUDA_STREAM_DESTROY handle=0xffff877653d0 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(second)=0
+cudaMallocAsync((void**)&a,64,second)=400 expected=400
+cudaMemPoolGetAttribute(default_pool,cudaMemPoolAttrReleaseThreshold,&read)=0
+cudaMemPoolSetAttribute(default_pool,cudaMemPoolAttrReleaseThreshold,&threshold)=0
+cudaMemPoolCreate(&pool,&props)=0
+cudaDeviceSetMemPool(0,pool)=0
+G6A_CUDA_MALLOC ptr=0xffef876a0000 allocation_id=11 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,first)=0
+G6A_PTR_RESOLVE ptr=0xffef876a0000 allocation_id=11 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=11 offset=0 value=40 bytes=64 stream_id=1 result=PASS
+cudaMemsetAsync(a,0x28,64,first)=0
+G6A_PTR_RESOLVE ptr=0xffef876a0000 allocation_id=11 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=7 stream_id=1 stream_slot=0 seq=14 allocation_id=11 offset=0 bytes=64 host_dst=0xffffcae37598 hidden=YES
+cudaMemcpyAsync(host,a,64,cudaMemcpyDeviceToHost,first)=0
+G6C_TRANSFER_DRAIN transfer_id=7 kind=D2H origin_stream_slot=0 seq=14 bytes=64 host_visible=YES retire=YES
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS
+cudaDeviceReset()=0
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=8
+G6E_REMOTE_SESSION=CONNECTED generation=2 host=127.0.0.1 port=60277 protocol=CRX9 version=3 default_stream=LEGACY
+cudaMemPoolTrimTo(pool,0)=400 expected=400
+cudaFreeAsync(a,NULL)=17 expected=17
+cudaDeviceGetDefaultMemPool(&current,0)=0
+cudaMemPoolGetAttribute(current,cudaMemPoolAttrReleaseThreshold,&threshold)=0
+cudaDeviceGetMemPool(&default_pool,0)=0
+cudaMemPoolCreate(&pool,&props)=0
+cudaDeviceSetMemPool(0,pool)=0
+G6A_CUDA_MALLOC ptr=0xffef876c0000 allocation_id=1 bytes=64 span=131072 result=PASS
+cudaMallocAsync((void**)&a,64,NULL)=0
+G6A_PTR_RESOLVE ptr=0xffef876c0000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=1 offset=0 value=123 bytes=64 stream_id=0 result=PASS
+cudaMemsetAsync(a,0x7b,64,NULL)=0
+MEMORY_POOLS_REMOTE=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=2 state=DISCONNECTED result=PASS

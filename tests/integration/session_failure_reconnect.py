@@ -151,6 +151,16 @@ def main():
         expect("stream-before-kill", runtime.cudaStreamCreate(ctypes.byref(old_stream)), CUDA_SUCCESS)
         expect("event-before-kill", runtime.cudaEventCreate(ctypes.byref(old_event)), CUDA_SUCCESS)
 
+        # The native pool family extends the same generation invalidation.
+        old_pool = ctypes.c_void_p()
+        old_async_pointer = ctypes.c_void_p()
+        runtime.cudaDeviceGetDefaultMemPool.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int]
+        runtime.cudaMallocAsync.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_size_t, ctypes.c_void_p]
+        runtime.cudaFreeAsync.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        runtime.cudaMemPoolTrimTo.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+        expect("pool-before-kill", runtime.cudaDeviceGetDefaultMemPool(ctypes.byref(old_pool), 0), CUDA_SUCCESS)
+        expect("async-allocation-before-kill", runtime.cudaMallocAsync(ctypes.byref(old_async_pointer), 4, old_stream), CUDA_SUCCESS)
+
         stop_server(server, server_log)
         server = server_log = None
         expect("live-server-kill-failing-call", runtime.cudaDeviceSynchronize(), CUDA_ERROR_UNKNOWN)
@@ -162,6 +172,12 @@ def main():
         expect("failed-generation-pointer-stale", runtime.cudaFree(old_pointer), CUDA_ERROR_INVALID_DEVICE_POINTER)
         expect("failed-generation-stream-stale", runtime.cudaStreamQuery(old_stream), CUDA_ERROR_INVALID_RESOURCE_HANDLE)
         expect("failed-generation-event-stale", runtime.cudaEventQuery(old_event), CUDA_ERROR_INVALID_RESOURCE_HANDLE)
+        expect("failed-generation-pool-stale", runtime.cudaMemPoolTrimTo(old_pool, 0), CUDA_ERROR_INVALID_RESOURCE_HANDLE)
+        expect("failed-generation-async-pointer-stale", runtime.cudaFreeAsync(old_async_pointer, None), CUDA_ERROR_INVALID_DEVICE_POINTER)
+        fresh_pool = ctypes.c_void_p()
+        expect("fresh-pool", runtime.cudaDeviceGetDefaultMemPool(ctypes.byref(fresh_pool), 0), CUDA_SUCCESS)
+        if fresh_pool.value == old_pool.value:
+            raise RuntimeError("pool tombstone reused across generations")
 
         fresh_pointer = ctypes.c_void_p()
         source = ctypes.c_int(12345)

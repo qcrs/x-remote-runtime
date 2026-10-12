@@ -24,6 +24,7 @@ typedef uint64_t CorexEventId;
 typedef uint64_t CorexTransferId;
 typedef uint64_t CorexModuleId;
 typedef uint64_t CorexKernelId;
+typedef uint64_t CorexPoolId;
 
 /* Existing 3D DTO: mode:u32 plus eleven u64 fields; Async appends StreamID.
  * Modes 1/2 keep their legacy empty/data responses. New Async submit modes
@@ -127,7 +128,21 @@ typedef enum {
 
     OP_SET_DEVICE_FLAGS = 74,
 
-    OP__COUNT               = 75,
+    OP_DEVICE_DEFAULT_POOL = 75,
+    OP_DEVICE_GET_POOL = 76,
+    OP_DEVICE_SET_POOL = 77,
+    OP_POOL_CREATE = 78,
+    OP_POOL_DESTROY = 79,
+    OP_POOL_TRIM = 80,
+    OP_POOL_GET_ATTRIBUTE = 81,
+    OP_POOL_SET_ATTRIBUTE = 82,
+    OP_POOL_GET_ACCESS = 83,
+    OP_POOL_SET_ACCESS = 84,
+    OP_ALLOC_ASYNC = 85,
+    OP_ALLOC_FROM_POOL_ASYNC = 86,
+    OP_FREE_ASYNC = 87,
+
+    OP__COUNT               = 88,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u
@@ -154,6 +169,7 @@ typedef enum {
     CRX_CAP_COPY_ASYNC = 5,
     CRX_CAP_MODULE_KERNEL = 6,
     CRX_CAP_LAYOUT_TRANSFER = 7,
+    CRX_CAP_MEMORY_POOLS = 8,
 } CorexCapabilityId;
 
 typedef struct {

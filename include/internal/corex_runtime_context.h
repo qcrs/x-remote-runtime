@@ -22,6 +22,7 @@ extern "C" {
 #define G6D_MAX_KERNEL_HANDLES      512
 #define G6D_MAX_KERNEL_ARGS         32
 #define G7C_MAX_FATBIN_REGISTRATIONS 128
+#define COREX_MAX_POOL_HANDLES 128
 
 typedef struct {
     int live;
@@ -75,6 +76,12 @@ struct corexCudaEventHandle {
     int live;
     int recorded;
     uint64_t *frontier;
+};
+
+struct corexCudaPoolHandle {
+    uint64_t session_generation;
+    uint64_t pool_id;
+    int live;
 };
 
 struct corexRemoteModuleHandle {
@@ -219,6 +226,8 @@ typedef struct CorexRuntimeContext {
 
     struct corexCudaStreamHandle stream_handles[G6C_MAX_STREAM_HANDLES];
     struct corexCudaEventHandle event_handles[G6C_MAX_EVENT_HANDLES];
+    struct corexCudaPoolHandle pool_handles[COREX_MAX_POOL_HANDLES];
+    size_t pool_handle_next;
     HiddenTransfer hidden_transfers[G6C_MAX_HIDDEN_TRANSFERS];
     struct corexRemoteModuleHandle module_handles[G6D_MAX_MODULE_HANDLES];
     corexRemoteKernelHandle kernel_handles[G6D_MAX_KERNEL_HANDLES];

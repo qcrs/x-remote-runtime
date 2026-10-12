@@ -15,3 +15,4 @@ scripts/build.sh
 OUT=evidence/m4/remaining-core-20261012/schema scripts/test-api-schema.sh
 OUT=evidence/m4/remaining-core-20261012/registry scripts/test-handler-registry.sh
 OUT=evidence/m4/remaining-core-20261012/backend-seam scripts/test-backend-seam.sh
+COREX_REMOTE_PORT=43475 OUT=evidence/m4/remaining-core-20261012/multithread scripts/run-multithread-integration.sh  # independent server PID=2125455

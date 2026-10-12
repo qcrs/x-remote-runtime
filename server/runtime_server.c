@@ -39,6 +39,7 @@ static int configured_port(void)
 #define MAX_EVENTS   128
 #define MAX_TRANSFERS 128
 #define MAX_ARGS     32
+#define MAX_POOLS    32
 #define MAX_PAYLOAD  (64u * 1024u * 1024u)
 
 #define STREAM_STATE_READY   0u
@@ -101,6 +102,13 @@ typedef struct {
 typedef struct {
     int used;
     uint64_t id;
+    CUmemoryPool pool;
+    int is_default;
+} PoolEntry;
+
+typedef struct {
+    int used;
+    uint64_t id;
     CUevent event;
     unsigned int flags;
 } EventEntry;
@@ -127,6 +135,11 @@ typedef struct {
     StreamEntry streams[MAX_STREAMS];
     EventEntry events[MAX_EVENTS];
     TransferEntry transfers[MAX_TRANSFERS];
+    PoolEntry pools[MAX_POOLS];
+    uint64_t default_pool_id;
+    uint64_t current_pool_id;
+    uint64_t next_pool_id;
+    uint64_t default_pool_attributes[4];
 
     uint64_t next_alloc_id;
     uint64_t next_module_id;
@@ -147,6 +160,7 @@ typedef union {
 static CUcontext g_ctx = NULL;
 static CUdevice g_device = 0;
 static uint32_t g_backend_version = 0;
+static int g_memory_pools_supported = 0;
 static int send_response(int fd, uint32_t opcode, uint32_t req_id,
                          uint32_t status, const void *payload, uint32_t payload_len);
 
@@ -164,7 +178,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
         /* The V3 server exposes logical device zero only. */
         .device_count = 1,
         .device_profile_id = CRX_DEVICE_PROFILE_COREX_GENERIC,
-        .capability_count = 7,
+        .capability_count = g_memory_pools_supported ? 8 : 7,
         .capabilities = {
             CRX_CAP_DEVICE_INFO,
             CRX_CAP_LINEAR_MEMORY,
@@ -173,6 +187,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
             CRX_CAP_COPY_ASYNC,
             CRX_CAP_MODULE_KERNEL,
             CRX_CAP_LAYOUT_TRANSFER,
+            CRX_CAP_MEMORY_POOLS,
         },
     };
     unsigned char response[CRX_HELLO_MAX_BYTES];
@@ -191,6 +206,7 @@ static void server_session_init(ServerSession *session)
     session->next_stream_id = 1;
     session->next_event_id = 1;
     session->next_transfer_id = 1;
+    session->next_pool_id = 1;
 }
 
 /* ============================================================
@@ -532,6 +548,71 @@ static void invalidate_module_kernels(
     }
 }
 
+/* Pools are session identities over native backend objects. The device's
+ * default pool itself survives context recreation on CoreX, so mutable
+ * attributes are restored and reservations trimmed at the session boundary. */
+static PoolEntry *find_pool(ServerSession *session, uint64_t id)
+{
+    for (int i=0;i<MAX_POOLS;++i)
+        if (session->pools[i].used && session->pools[i].id==id) return &session->pools[i];
+    return NULL;
+}
+
+static PoolEntry *new_pool_slot(ServerSession *session)
+{
+    for (int i=0;i<MAX_POOLS;++i) if (!session->pools[i].used) {
+        PoolEntry *entry=&session->pools[i];
+        memset(entry,0,sizeof(*entry));entry->used=1;entry->id=session->next_pool_id++;
+        return entry;
+    }
+    return NULL;
+}
+
+static uint32_t pool_status(CUresult result)
+{
+    switch(result) {
+    case CUDA_SUCCESS:return ST_OK;
+    case CUDA_ERROR_INVALID_VALUE:return ST_BAD_REQUEST;
+    case CUDA_ERROR_NOT_SUPPORTED:return ST_NOT_SUPPORTED;
+    case CUDA_ERROR_OUT_OF_MEMORY:return ST_NO_RESOURCE;
+    default:return ST_CUDA_ERROR;
+    }
+}
+
+static CUresult pool_read_attribute(CUmemoryPool pool, uint32_t attribute, uint64_t *value)
+{
+    if (attribute<=3) {
+        int small=0;
+        CUresult result=corex_backend_pool_get_attribute(pool,(CUmemPool_attribute)attribute,&small);
+        *value=(uint64_t)small;return result;
+    }
+    return corex_backend_pool_get_attribute(pool,(CUmemPool_attribute)attribute,value);
+}
+
+static CUresult pool_write_attribute(CUmemoryPool pool, uint32_t attribute, uint64_t value)
+{
+    if (attribute<=3) {
+        int small=(int)value;
+        return corex_backend_pool_set_attribute(pool,(CUmemPool_attribute)attribute,&small);
+    }
+    return corex_backend_pool_set_attribute(pool,(CUmemPool_attribute)attribute,&value);
+}
+
+static uint32_t ensure_default_pool(ServerSession *session)
+{
+    if (!g_memory_pools_supported) return ST_NOT_SUPPORTED;
+    if (session->default_pool_id) return ST_OK;
+    PoolEntry *entry=new_pool_slot(session);
+    if (!entry) return ST_NO_RESOURCE;
+    CUresult result=corex_backend_device_default_pool(&entry->pool,g_device);
+    for (unsigned attr=1;result==CUDA_SUCCESS && attr<=4;++attr)
+        result=pool_read_attribute(entry->pool,attr,&session->default_pool_attributes[attr-1]);
+    if (result!=CUDA_SUCCESS) {memset(entry,0,sizeof(*entry));return pool_status(result);}
+    entry->is_default=1;session->default_pool_id=entry->id;
+    session->current_pool_id=entry->id;
+    return ST_OK;
+}
+
 /* ============================================================
  * Session cleanup
  * ============================================================
@@ -665,6 +746,26 @@ static void cleanup_session(ServerSession *session)
         free(session->modules[i].image);
 
         memset(&session->modules[i], 0, sizeof(session->modules[i]));
+    }
+
+    PoolEntry *default_pool=find_pool(session,session->default_pool_id);
+    if (default_pool) {
+        CUresult result=corex_backend_device_set_pool(g_device,default_pool->pool);
+        for (unsigned attr=1;attr<=4;++attr) {
+            CUresult restored=pool_write_attribute(default_pool->pool,attr,session->default_pool_attributes[attr-1]);
+            if (result==CUDA_SUCCESS) result=restored;
+        }
+        (void)corex_backend_pool_trim(default_pool->pool,0);
+        (void)pool_write_attribute(default_pool->pool,6,0);
+        (void)pool_write_attribute(default_pool->pool,8,0);
+        printf("cleanup default_pool_id=%llu restore_rc=%d\n",
+               (unsigned long long)default_pool->id,(int)result);
+    }
+    for (int i=0;i<MAX_POOLS;++i) {
+        PoolEntry *entry=&session->pools[i];
+        if (!entry->used || entry->is_default) continue;
+        CUresult result=corex_backend_pool_destroy(entry->pool);
+        printf("cleanup pool_id=%llu destroy_rc=%d\n",(unsigned long long)entry->id,(int)result);
     }
 
     server_session_init(session);
@@ -2143,6 +2244,7 @@ static int map_runtime_device_attribute(int value, CUdevice_attribute *attribute
     case 37: *attribute = CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH; return 0;
     case 75: *attribute = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR; return 0;
     case 76: *attribute = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR; return 0;
+    case 115: *attribute = CU_DEVICE_ATTRIBUTE_MEMORY_POOLS_SUPPORTED; return 0;
     default: return -1;
     }
 }
@@ -2467,6 +2569,233 @@ static int handle_function_attributes(ServerSession *session, int fd, uint32_t r
     return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_OK, response, 28);
 }
 
+static int handle_device_default_pool(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaDeviceGetDefaultMemPoolRequest request;
+    if (corex_generated_decode_cudaDeviceGetDefaultMemPool_request(payload,len,&request))
+        return send_response(fd,OP_DEVICE_DEFAULT_POOL,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.device!=0) return send_response(fd,OP_DEVICE_DEFAULT_POOL,req_id,ST_INVALID_DEVICE,NULL,0);
+    uint32_t status=ensure_default_pool(session);
+    if (status!=ST_OK) return send_response(fd,OP_DEVICE_DEFAULT_POOL,req_id,status,NULL,0);
+    CorexGeneratedcudaDeviceGetDefaultMemPoolResponse response={.pool=session->default_pool_id};
+    unsigned char wire[8];size_t length=0;
+    corex_generated_encode_cudaDeviceGetDefaultMemPool_response(wire,sizeof(wire),&length,&response);
+    return send_response(fd,OP_DEVICE_DEFAULT_POOL,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_device_get_pool(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaDeviceGetMemPoolRequest request;
+    if (corex_generated_decode_cudaDeviceGetMemPool_request(payload,len,&request))
+        return send_response(fd,OP_DEVICE_GET_POOL,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.device!=0) return send_response(fd,OP_DEVICE_GET_POOL,req_id,ST_INVALID_DEVICE,NULL,0);
+    uint32_t status=ensure_default_pool(session);
+    if (status!=ST_OK) return send_response(fd,OP_DEVICE_GET_POOL,req_id,status,NULL,0);
+    CUmemoryPool current=NULL;
+    CUresult result=corex_backend_device_get_pool(&current,g_device);
+    PoolEntry *entry=find_pool(session,session->current_pool_id);
+    if (result!=CUDA_SUCCESS || !entry || entry->pool!=current)
+        return send_response(fd,OP_DEVICE_GET_POOL,req_id,ST_CUDA_ERROR,NULL,0);
+    CorexGeneratedcudaDeviceGetMemPoolResponse response={.pool=entry->id};
+    unsigned char wire[8];size_t length=0;
+    corex_generated_encode_cudaDeviceGetMemPool_response(wire,sizeof(wire),&length,&response);
+    return send_response(fd,OP_DEVICE_GET_POOL,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_device_set_pool(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaDeviceSetMemPoolRequest request;
+    if (corex_generated_decode_cudaDeviceSetMemPool_request(payload,len,&request))
+        return send_response(fd,OP_DEVICE_SET_POOL,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.device!=0) return send_response(fd,OP_DEVICE_SET_POOL,req_id,ST_INVALID_DEVICE,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_DEVICE_SET_POOL,req_id,ST_NOT_FOUND,NULL,0);
+    uint32_t status=ensure_default_pool(session);
+    if (status!=ST_OK) return send_response(fd,OP_DEVICE_SET_POOL,req_id,status,NULL,0);
+    CUresult result=corex_backend_device_set_pool(g_device,entry->pool);
+    if (result==CUDA_SUCCESS) session->current_pool_id=entry->id;
+    return send_response(fd,OP_DEVICE_SET_POOL,req_id,pool_status(result),NULL,0);
+}
+
+static int handle_pool_create(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolCreateRequest request;
+    if (corex_generated_decode_cudaMemPoolCreate_request(payload,len,&request) ||
+        request.allocation_type!=CU_MEM_ALLOCATION_TYPE_PINNED || request.location_type!=CU_MEM_LOCATION_TYPE_DEVICE)
+        return send_response(fd,OP_POOL_CREATE,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.device!=0) return send_response(fd,OP_POOL_CREATE,req_id,ST_INVALID_DEVICE,NULL,0);
+    if (!g_memory_pools_supported) return send_response(fd,OP_POOL_CREATE,req_id,ST_NOT_SUPPORTED,NULL,0);
+    PoolEntry *entry=new_pool_slot(session);
+    if (!entry) return send_response(fd,OP_POOL_CREATE,req_id,ST_NO_RESOURCE,NULL,0);
+    CUmemPoolProps props={0};props.allocType=CU_MEM_ALLOCATION_TYPE_PINNED;
+    props.location.type=CU_MEM_LOCATION_TYPE_DEVICE;props.location.id=g_device;
+    CUresult result=corex_backend_pool_create(&entry->pool,&props);
+    if (result!=CUDA_SUCCESS) {memset(entry,0,sizeof(*entry));return send_response(fd,OP_POOL_CREATE,req_id,pool_status(result),NULL,0);}
+    CorexGeneratedcudaMemPoolCreateResponse response={.pool=entry->id};
+    unsigned char wire[8];size_t length=0;
+    corex_generated_encode_cudaMemPoolCreate_response(wire,sizeof(wire),&length,&response);
+    return send_response(fd,OP_POOL_CREATE,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_pool_destroy(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolDestroyRequest request;
+    if (corex_generated_decode_cudaMemPoolDestroy_request(payload,len,&request))
+        return send_response(fd,OP_POOL_DESTROY,req_id,ST_BAD_REQUEST,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_DESTROY,req_id,ST_NOT_FOUND,NULL,0);
+    if (entry->is_default) return send_response(fd,OP_POOL_DESTROY,req_id,ST_BAD_REQUEST,NULL,0);
+    if (session->current_pool_id==entry->id) {
+        PoolEntry *fallback=find_pool(session,session->default_pool_id);
+        CUresult result=corex_backend_device_set_pool(g_device,fallback->pool);
+        if (result!=CUDA_SUCCESS) return send_response(fd,OP_POOL_DESTROY,req_id,pool_status(result),NULL,0);
+        session->current_pool_id=fallback->id;
+    }
+    /* Native destruction defers release while allocations remain. PoolID
+     * disappears immediately, AllocationIDs retain their existing ownership. */
+    CUresult result=corex_backend_pool_destroy(entry->pool);
+    if (result==CUDA_SUCCESS) memset(entry,0,sizeof(*entry));
+    return send_response(fd,OP_POOL_DESTROY,req_id,pool_status(result),NULL,0);
+}
+
+static int handle_pool_trim(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolTrimToRequest request;
+    if (corex_generated_decode_cudaMemPoolTrimTo_request(payload,len,&request) || request.bytes>SIZE_MAX)
+        return send_response(fd,OP_POOL_TRIM,req_id,ST_BAD_REQUEST,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_TRIM,req_id,ST_NOT_FOUND,NULL,0);
+    return send_response(fd,OP_POOL_TRIM,req_id,pool_status(corex_backend_pool_trim(entry->pool,(size_t)request.bytes)),NULL,0);
+}
+
+static int handle_pool_get_attribute(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolGetAttributeRequest request;
+    if (corex_generated_decode_cudaMemPoolGetAttribute_request(payload,len,&request) || request.attribute<1 || request.attribute>8)
+        return send_response(fd,OP_POOL_GET_ATTRIBUTE,req_id,ST_BAD_REQUEST,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_GET_ATTRIBUTE,req_id,ST_NOT_FOUND,NULL,0);
+    CorexGeneratedcudaMemPoolGetAttributeResponse response={0};
+    CUresult result=pool_read_attribute(entry->pool,request.attribute,&response.value);
+    if (result!=CUDA_SUCCESS) return send_response(fd,OP_POOL_GET_ATTRIBUTE,req_id,pool_status(result),NULL,0);
+    unsigned char wire[8];size_t length=0;
+    corex_generated_encode_cudaMemPoolGetAttribute_response(wire,sizeof(wire),&length,&response);
+    return send_response(fd,OP_POOL_GET_ATTRIBUTE,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_pool_set_attribute(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolSetAttributeRequest request;
+    if (corex_generated_decode_cudaMemPoolSetAttribute_request(payload,len,&request) || request.attribute<1 || request.attribute>8 ||
+        request.attribute==5 || request.attribute==7 || (request.attribute<=3 && request.value>1) ||
+        ((request.attribute==6 || request.attribute==8) && request.value!=0))
+        return send_response(fd,OP_POOL_SET_ATTRIBUTE,req_id,ST_BAD_REQUEST,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_SET_ATTRIBUTE,req_id,ST_NOT_FOUND,NULL,0);
+    /* CoreX reports success for enabling reuse but reads back disabled. */
+    if (request.attribute<=3 && request.value)
+        return send_response(fd,OP_POOL_SET_ATTRIBUTE,req_id,ST_NOT_SUPPORTED,NULL,0);
+    return send_response(fd,OP_POOL_SET_ATTRIBUTE,req_id,
+        pool_status(pool_write_attribute(entry->pool,request.attribute,request.value)),NULL,0);
+}
+
+static int handle_pool_get_access(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolGetAccessRequest request;
+    if (corex_generated_decode_cudaMemPoolGetAccess_request(payload,len,&request) || request.location_type!=CU_MEM_LOCATION_TYPE_DEVICE)
+        return send_response(fd,OP_POOL_GET_ACCESS,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.device!=0) return send_response(fd,OP_POOL_GET_ACCESS,req_id,ST_INVALID_DEVICE,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_GET_ACCESS,req_id,ST_NOT_FOUND,NULL,0);
+    CUmemLocation location={CU_MEM_LOCATION_TYPE_DEVICE,g_device};CUmemAccess_flags flags=0;
+    CUresult result=corex_backend_pool_get_access(&flags,entry->pool,&location);
+    if (result!=CUDA_SUCCESS) return send_response(fd,OP_POOL_GET_ACCESS,req_id,pool_status(result),NULL,0);
+    CorexGeneratedcudaMemPoolGetAccessResponse response={.flags=(uint32_t)flags};
+    unsigned char wire[4];size_t length=0;
+    corex_generated_encode_cudaMemPoolGetAccess_response(wire,sizeof(wire),&length,&response);
+    return send_response(fd,OP_POOL_GET_ACCESS,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_pool_set_access(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMemPoolSetAccessRequest request;
+    if (corex_generated_decode_cudaMemPoolSetAccess_request(payload,len,&request) || request.count>1 ||
+        (request.count && (request.location_type!=CU_MEM_LOCATION_TYPE_DEVICE ||
+         (request.flags!=0 && request.flags!=1 && request.flags!=3))))
+        return send_response(fd,OP_POOL_SET_ACCESS,req_id,ST_BAD_REQUEST,NULL,0);
+    if (request.count && request.device!=0) return send_response(fd,OP_POOL_SET_ACCESS,req_id,ST_INVALID_DEVICE,NULL,0);
+    PoolEntry *entry=find_pool(session,request.pool);
+    if (!entry) return send_response(fd,OP_POOL_SET_ACCESS,req_id,ST_NOT_FOUND,NULL,0);
+    /* Owning-device permissions always read back ReadWrite on CoreX. */
+    if (request.count && request.flags!=CU_MEM_ACCESS_FLAGS_PROT_READWRITE)
+        return send_response(fd,OP_POOL_SET_ACCESS,req_id,ST_NOT_SUPPORTED,NULL,0);
+    CUmemAccessDesc desc={0};desc.location.type=CU_MEM_LOCATION_TYPE_DEVICE;desc.location.id=g_device;desc.flags=CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+    CUresult result=corex_backend_pool_set_access(entry->pool,request.count?&desc:NULL,request.count);
+    return send_response(fd,OP_POOL_SET_ACCESS,req_id,pool_status(result),NULL,0);
+}
+
+static int allocate_async(ServerSession *session,int fd,uint32_t req_id,uint64_t bytes,uint64_t pool_id,uint64_t stream_id)
+{
+    uint32_t opcode=pool_id?OP_ALLOC_FROM_POOL_ASYNC:OP_ALLOC_ASYNC;
+    if (!bytes || bytes>SIZE_MAX) return send_response(fd,opcode,req_id,ST_BAD_REQUEST,NULL,0);
+    CUstream stream=NULL;
+    if (resolve_stream_id(session,stream_id,&stream)) return send_response(fd,opcode,req_id,ST_NOT_FOUND,NULL,0);
+    PoolEntry *pool=NULL;
+    if (pool_id) {
+        pool=find_pool(session,pool_id);
+        if (!pool) return send_response(fd,opcode,req_id,ST_NOT_FOUND,NULL,0);
+    } else {
+        uint32_t status=ensure_default_pool(session);
+        if (status!=ST_OK) return send_response(fd,opcode,req_id,status,NULL,0);
+    }
+    Allocation *slot=new_allocation_slot(session);
+    if (!slot) return send_response(fd,opcode,req_id,ST_NO_RESOURCE,NULL,0);
+    CUresult result=pool?corex_backend_mem_alloc_from_pool_async(&slot->ptr,(size_t)bytes,pool->pool,stream)
+        :corex_backend_mem_alloc_async(&slot->ptr,(size_t)bytes,stream);
+    if (result!=CUDA_SUCCESS) {memset(slot,0,sizeof(*slot));return send_response(fd,opcode,req_id,pool_status(result),NULL,0);}
+    slot->size=(size_t)bytes;
+    /* Both generated responses have one AllocationID with the same codec. */
+    CorexGeneratedcudaMallocAsyncResponse response={.allocation=slot->id};
+    unsigned char wire[8];size_t length=0;
+    corex_generated_encode_cudaMallocAsync_response(wire,sizeof(wire),&length,&response);
+    printf("ALLOC_ASYNC allocation_id=%llu pool_id=%llu stream_id=%llu bytes=%zu\n",
+           (unsigned long long)slot->id,(unsigned long long)(pool_id?pool_id:session->current_pool_id),
+           (unsigned long long)stream_id,slot->size);
+    return send_response(fd,opcode,req_id,ST_OK,wire,(uint32_t)length);
+}
+
+static int handle_alloc_async(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMallocAsyncRequest request;
+    if (corex_generated_decode_cudaMallocAsync_request(payload,len,&request))
+        return send_response(fd,OP_ALLOC_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    return allocate_async(session,fd,req_id,request.bytes,0,request.stream);
+}
+
+static int handle_alloc_from_pool_async(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaMallocFromPoolAsyncRequest request;
+    if (corex_generated_decode_cudaMallocFromPoolAsync_request(payload,len,&request) || !request.pool)
+        return send_response(fd,OP_ALLOC_FROM_POOL_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    return allocate_async(session,fd,req_id,request.bytes,request.pool,request.stream);
+}
+
+static int handle_free_async(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaFreeAsyncRequest request;
+    if (corex_generated_decode_cudaFreeAsync_request(payload,len,&request))
+        return send_response(fd,OP_FREE_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    Allocation *allocation=find_allocation(session,request.allocation);CUstream stream=NULL;
+    if (!allocation || resolve_stream_id(session,request.stream,&stream))
+        return send_response(fd,OP_FREE_ASYNC,req_id,ST_NOT_FOUND,NULL,0);
+    if (allocation->parent_module_id) return send_response(fd,OP_FREE_ASYNC,req_id,ST_BAD_REQUEST,NULL,0);
+    CUresult result=corex_backend_mem_free_async(allocation->ptr,stream);
+    /* A submitted free invalidates identity immediately. TransferID staging
+     * remains independent and is consumed at its normal frontier retirement. */
+    if (result==CUDA_SUCCESS) memset(allocation,0,sizeof(*allocation));
+    return send_response(fd,OP_FREE_ASYNC,req_id,pool_status(result),NULL,0);
+}
+
 static int handle_set_device_flags(ServerSession *session, int fd, uint32_t req_id,
                                    const unsigned char *payload, uint32_t len)
 {
@@ -2488,6 +2817,8 @@ static int handle_set_device_flags(ServerSession *session, int fd, uint32_t req_
     for (int i=0;i<MAX_EVENTS;++i) if (session->events[i].used)
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
     for (int i=0;i<MAX_MODULES;++i) if (session->modules[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (int i=0;i<MAX_POOLS;++i) if (session->pools[i].used)
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
     if (corex_backend_context_destroy(g_ctx) != CUDA_SUCCESS)
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
@@ -4233,7 +4564,7 @@ static int server_registry_validate(void)
 #undef UNIQUE_OPCODE_CASE
     for (uint32_t opcode = OP_ALLOC; opcode < OP__COUNT; ++opcode) {
         if (!g_handlers[opcode].handler ||
-            g_handlers[opcode].capability_id > CRX_CAP_LAYOUT_TRANSFER)
+            g_handlers[opcode].capability_id > CRX_CAP_MEMORY_POOLS)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
@@ -4362,6 +4693,8 @@ int main(void)
     }
 
     g_device = device;
+    (void)corex_backend_device_attribute(&g_memory_pools_supported,
+        CU_DEVICE_ATTRIBUTE_MEMORY_POOLS_SUPPORTED, device);
     int driver_version = 0;
     if (corex_backend_driver_version(&driver_version) == CUDA_SUCCESS && driver_version > 0)
         g_backend_version = (uint32_t)driver_version;

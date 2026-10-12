@@ -1,0 +1,23 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_pool_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /home/lvtong/corex-remote-runtime/build/memory-pools/runtime-probe
+/home/lvtong/corex-remote-runtime/build/memory-pools/runtime-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_pool_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/memory-pools/pool-probe
+/home/lvtong/corex-remote-runtime/build/memory-pools/pool-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/memory_pools.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/memory-pools/memory_pools_app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_POOL_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/memory_pools.c -o /home/lvtong/corex-remote-runtime/build/memory-pools/pool-abi.o
+COREX_REMOTE_PORT=47085 dist/bin/runtime_server  # independent Popen PID=2157157
+/home/lvtong/corex-remote-runtime/build/memory-pools/memory_pools_app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+python3 /home/lvtong/corex-remote-runtime/tests/integration/callback_errors.py
+python3 /home/lvtong/corex-remote-runtime/tests/integration/memory_pools_protocol.py
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+/home/lvtong/corex-remote-runtime/scripts/run-server-session-isolation.sh
+/home/lvtong/corex-remote-runtime/scripts/run-failure-reconnect-integration.sh
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_ENTRY_NATIVE_PROBE -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/driver_entrypoints.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /home/lvtong/corex-remote-runtime/build/memory-pools/entry-native
+/home/lvtong/corex-remote-runtime/build/memory-pools/entry-native
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/driver_entrypoints.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -o /home/lvtong/corex-remote-runtime/build/memory-pools/entry-remote
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/memory_pools.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/memory-pools/memory_pools_app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_POOL_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/memory_pools.c -o /home/lvtong/corex-remote-runtime/build/memory-pools/pool-abi.o
+COREX_REMOTE_PORT=60277 dist/bin/runtime_server  # independent Popen PID=2159969
+/home/lvtong/corex-remote-runtime/build/memory-pools/memory_pools_app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/memory-pools/entry-remote
+python3 /home/lvtong/corex-remote-runtime/tests/integration/callback_errors.py
+python3 /home/lvtong/corex-remote-runtime/tests/integration/memory_pools_protocol.py

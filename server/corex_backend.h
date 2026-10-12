@@ -37,6 +37,19 @@ CUresult corex_backend_mem_alloc_pitch(CUdeviceptr *pointer, size_t *pitch,
                                         size_t width, size_t height,
                                         unsigned int element_size);
 CUresult corex_backend_mem_free(CUdeviceptr pointer);
+CUresult corex_backend_device_default_pool(CUmemoryPool *pool, CUdevice device);
+CUresult corex_backend_device_get_pool(CUmemoryPool *pool, CUdevice device);
+CUresult corex_backend_device_set_pool(CUdevice device, CUmemoryPool pool);
+CUresult corex_backend_pool_create(CUmemoryPool *pool, const CUmemPoolProps *props);
+CUresult corex_backend_pool_destroy(CUmemoryPool pool);
+CUresult corex_backend_pool_trim(CUmemoryPool pool, size_t bytes);
+CUresult corex_backend_pool_get_attribute(CUmemoryPool pool, CUmemPool_attribute attr, void *value);
+CUresult corex_backend_pool_set_attribute(CUmemoryPool pool, CUmemPool_attribute attr, void *value);
+CUresult corex_backend_pool_get_access(CUmemAccess_flags *flags, CUmemoryPool pool, CUmemLocation *location);
+CUresult corex_backend_pool_set_access(CUmemoryPool pool, const CUmemAccessDesc *desc, size_t count);
+CUresult corex_backend_mem_alloc_async(CUdeviceptr *ptr, size_t bytes, CUstream stream);
+CUresult corex_backend_mem_alloc_from_pool_async(CUdeviceptr *ptr, size_t bytes, CUmemoryPool pool, CUstream stream);
+CUresult corex_backend_mem_free_async(CUdeviceptr ptr, CUstream stream);
 CUresult corex_backend_host_alloc(void **pointer, size_t bytes);
 CUresult corex_backend_host_free(void *pointer);
 CUresult corex_backend_copy_h2d(CUdeviceptr dst, const void *src, size_t bytes);

@@ -1,9 +1,81 @@
 #include <cuda_runtime_api.h>
+#include <cuda.h>
 
 #include "corex_device_info.h"
 
 #include <stdio.h>
 #include <string.h>
+
+/* These queried Driver entry points share the Runtime's single implicit
+ * context, fake pointers and transport. No native Driver pointers escape. */
+static CUresult driver_result(cudaError_t result)
+{
+    switch (result) {
+    case cudaSuccess: return CUDA_SUCCESS;
+    case cudaErrorInvalidValue:
+    case cudaErrorInvalidDevicePointer:
+    case cudaErrorInvalidMemcpyDirection: return CUDA_ERROR_INVALID_VALUE;
+    case cudaErrorMemoryAllocation: return CUDA_ERROR_OUT_OF_MEMORY;
+    case cudaErrorInitializationError: return CUDA_ERROR_NOT_INITIALIZED;
+    case cudaErrorInvalidDevice: return CUDA_ERROR_INVALID_DEVICE;
+    case cudaErrorInvalidResourceHandle: return CUDA_ERROR_INVALID_HANDLE;
+    case cudaErrorNotSupported: return CUDA_ERROR_NOT_SUPPORTED;
+    default: return CUDA_ERROR_UNKNOWN;
+    }
+}
+static CUresult CUDAAPI entry_mem_alloc(CUdeviceptr *out, size_t bytes)
+{
+    if (!out || !bytes) return CUDA_ERROR_INVALID_VALUE;
+    void *ptr = NULL;
+    cudaError_t result = cudaMalloc(&ptr, bytes);
+    *out = (CUdeviceptr)(uintptr_t)ptr;
+    return driver_result(result);
+}
+static CUresult CUDAAPI entry_mem_free(CUdeviceptr ptr)
+{
+    if (!ptr) return CUDA_SUCCESS;
+    return driver_result(cudaFree((void *)(uintptr_t)ptr));
+}
+static CUresult CUDAAPI entry_htod(CUdeviceptr dst, const void *src, size_t bytes)
+{
+    return driver_result(cudaMemcpy((void *)(uintptr_t)dst, src, bytes, cudaMemcpyHostToDevice));
+}
+static CUresult CUDAAPI entry_dtoh(void *dst, CUdeviceptr src, size_t bytes)
+{
+    return driver_result(cudaMemcpy(dst, (void *)(uintptr_t)src, bytes, cudaMemcpyDeviceToHost));
+}
+static CUresult CUDAAPI entry_dtod(CUdeviceptr dst, CUdeviceptr src, size_t bytes)
+{
+    return driver_result(cudaMemcpy((void *)(uintptr_t)dst, (void *)(uintptr_t)src, bytes, cudaMemcpyDeviceToDevice));
+}
+static CUresult CUDAAPI entry_context_sync(void)
+{
+    return driver_result(cudaDeviceSynchronize());
+}
+cudaError_t cudaGetDriverEntryPoint(const char *symbol, void **out,
+                                  unsigned long long flags)
+{
+    if (!out || !symbol)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    *out = NULL;
+    if (flags == cudaEnablePerThreadDefaultStream)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
+    if (flags > cudaEnablePerThreadDefaultStream)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    void *entry = NULL;
+    if (!strcmp(symbol, "cuMemAlloc")) entry = (void *)entry_mem_alloc;
+    else if (!strcmp(symbol, "cuMemFree")) entry = (void *)entry_mem_free;
+    else if (!strcmp(symbol, "cuMemcpyHtoD")) entry = (void *)entry_htod;
+    else if (!strcmp(symbol, "cuMemcpyDtoH")) entry = (void *)entry_dtoh;
+    else if (!strcmp(symbol, "cuMemcpyDtoD")) entry = (void *)entry_dtod;
+    else if (!strcmp(symbol, "cuCtxSynchronize")) entry = (void *)entry_context_sync;
+    if (!entry)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
+    int device;
+    cudaError_t result = cudaGetDevice(&device);
+    if (result == cudaSuccess) *out = entry;
+    return result;
+}
 
 cudaError_t cudaLaunchKernelExC(const cudaLaunchConfig_t *config,
                                const void *func, void **args)

@@ -1,0 +1,10 @@
+CALLBACK_ERRORS=PASS host_skipped callback_once_error legacy_pool_capability_gate
+G6A_VA_ARENA base=0xffef9c000000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=LEGACY_V3 capabilities=UNKNOWN
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=48815 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffa3455390 stream_id=1 result=PASS
+G6E_CUDA_STREAM_QUERY handle=0xffffa3455390 stream_id=1 state=READY
+G6E_CUDA_STREAM_QUERY handle=0xffffa3455390 stream_id=1 state=READY
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS
+M1_S2_RUNTIME_SHUTDOWN state=DISCONNECTED action=NOOP result=PASS

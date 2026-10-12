@@ -244,6 +244,8 @@ static void mark_session_failed_locked(const char *reason)
             reg->state = G7C_REG_DEAD;
     }
 
+    for (size_t i=0;i<corex_runtime_context_get()->pool_handle_next;++i)
+        corex_runtime_context_get()->pool_handles[i].live=0;
     memset(g_hidden_transfers, 0, sizeof(g_hidden_transfers));
     free(g_default_frontier);
     g_default_frontier = NULL;
@@ -2262,7 +2264,8 @@ static cudaError_t cudaSetDevice_locked(int device)
     return cudaSuccess;
 }
 
-static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
+static cudaError_t allocate_linear_locked(void **devPtr, size_t size,
+                                          const G6EStreamView *view, uint64_t pool_id)
 {
     if (!devPtr || size == 0)
         G6E_RETURN(cudaErrorInvalidValue);
@@ -2290,7 +2293,22 @@ static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
         G6E_RETURN(cudaErrorMemoryAllocation);
 
     uint64_t allocation_id = 0;
-    if (remote_alloc((uint64_t)size, &allocation_id) != 0)
+    if (view) {
+        if (pool_id) {
+            CorexGeneratedcudaMallocFromPoolAsyncRequest request={.bytes=size,.pool=pool_id,.stream=view->stream_id};
+            CorexGeneratedcudaMallocFromPoolAsyncResponse response;
+            if (corex_generated_call_cudaMallocFromPoolAsync(generated_rpc_call,&request,&response))
+                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+            allocation_id=response.allocation;
+        } else {
+            CorexGeneratedcudaMallocAsyncRequest request={.bytes=size,.stream=view->stream_id};
+            CorexGeneratedcudaMallocAsyncResponse response;
+            if (corex_generated_call_cudaMallocAsync(generated_rpc_call,&request,&response))
+                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+            allocation_id=response.allocation;
+        }
+        uint64_t seq=++(*view->next_transfer_seq);view->frontier[view->slot_index]=seq;
+    } else if (remote_alloc((uint64_t)size, &allocation_id) != 0)
         G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
 
     uintptr_t base = (uintptr_t)(g_va_arena + g_va_next);
@@ -2319,6 +2337,11 @@ static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
            span);
 
     return cudaSuccess;
+}
+
+static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
+{
+    return allocate_linear_locked(devPtr,size,NULL,0);
 }
 
 static cudaError_t cudaFree_locked(void *devPtr)
@@ -4711,6 +4734,8 @@ static void corexRemoteRuntimeShutdown_locked(void)
     g_default_next_transfer_seq = 0;
 
     memset(g_allocs, 0, sizeof(g_allocs));
+    for (size_t i=0;i<corex_runtime_context_get()->pool_handle_next;++i)
+        corex_runtime_context_get()->pool_handles[i].live=0;
     memset(g_hidden_transfers, 0, sizeof(g_hidden_transfers));
     g_transfer_submit_order = 0;
 
@@ -6012,3 +6037,306 @@ cudaError_t cudaDeviceReset(void)
 }
 
 cudaError_t cudaThreadExit(void) { return cudaDeviceReset(); }
+
+/* Pool tokens follow the existing session-generation/tombstone policy. Native
+ * pool pointers, like native allocation and stream pointers, never leave the
+ * server. The fake-VA allocator above is shared by sync and async allocation. */
+static cudaError_t pool_runtime_locked(void)
+{
+    cudaError_t result=ensure_runtime();
+    if (result!=cudaSuccess) return result;
+    if (g_hello_state==COREX_HELLO_NEGOTIATED)
+        for (uint32_t i=0;i<g_hello.capability_count;++i)
+            if (g_hello.capabilities[i]==CRX_CAP_MEMORY_POOLS) return cudaSuccess;
+    G6E_RETURN(cudaErrorNotSupported);
+}
+
+static struct corexCudaPoolHandle *resolve_pool_handle(cudaMemPool_t handle)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    for (size_t i=0;i<context->pool_handle_next;++i) {
+        struct corexCudaPoolHandle *entry=&context->pool_handles[i];
+        if (entry==handle && entry->live && entry->session_generation==g_active_session_generation)
+            return entry;
+    }
+    return NULL;
+}
+
+static cudaError_t remember_pool(uint64_t id,cudaMemPool_t *handle)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    for (size_t i=0;i<context->pool_handle_next;++i) {
+        struct corexCudaPoolHandle *entry=&context->pool_handles[i];
+        if (entry->live && entry->session_generation==g_active_session_generation && entry->pool_id==id) {
+            *handle=entry;return cudaSuccess;
+        }
+    }
+    if (context->pool_handle_next==COREX_MAX_POOL_HANDLES) G6E_RETURN(cudaErrorMemoryAllocation);
+    struct corexCudaPoolHandle *entry=&context->pool_handles[context->pool_handle_next++];
+    *entry=(struct corexCudaPoolHandle){g_active_session_generation,id,1};
+    *handle=entry;return cudaSuccess;
+}
+
+static cudaError_t device_pool_locked(cudaMemPool_t *pool,int device,int is_default)
+{
+    if (!pool) G6E_RETURN(cudaErrorInvalidValue);
+    if (device!=0) G6E_RETURN(cudaErrorInvalidDevice);
+    *pool=NULL;
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    uint64_t id=0;
+    if (is_default) {
+        CorexGeneratedcudaDeviceGetDefaultMemPoolRequest request={.device=device};
+        CorexGeneratedcudaDeviceGetDefaultMemPoolResponse response;
+        if (corex_generated_call_cudaDeviceGetDefaultMemPool(generated_rpc_call,&request,&response))
+            G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+        id=response.pool;
+    } else {
+        CorexGeneratedcudaDeviceGetMemPoolRequest request={.device=device};
+        CorexGeneratedcudaDeviceGetMemPoolResponse response;
+        if (corex_generated_call_cudaDeviceGetMemPool(generated_rpc_call,&request,&response))
+            G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+        id=response.pool;
+    }
+    return remember_pool(id,pool);
+}
+
+cudaError_t cudaDeviceGetDefaultMemPool(cudaMemPool_t *pool,int device)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=device_pool_locked(pool,device,1);
+    corex_runtime_context_unlock(context);return result;
+}
+
+cudaError_t cudaDeviceGetMemPool(cudaMemPool_t *pool,int device)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=device_pool_locked(pool,device,0);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t set_device_pool_locked(int device,cudaMemPool_t pool)
+{
+    if (device!=0) G6E_RETURN(cudaErrorInvalidDevice);
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaDeviceSetMemPoolRequest request={.device=device,.pool=entry->pool_id};
+    CorexGeneratedcudaDeviceSetMemPoolResponse response;
+    if(corex_generated_call_cudaDeviceSetMemPool(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+cudaError_t cudaDeviceSetMemPool(int device,cudaMemPool_t pool)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=set_device_pool_locked(device,pool);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_create_locked(cudaMemPool_t *pool,const struct cudaMemPoolProps *props)
+{
+    if (!pool || !props) G6E_RETURN(cudaErrorInvalidValue);
+    *pool=NULL;
+    if (props->allocType!=cudaMemAllocationTypePinned || props->location.type!=cudaMemLocationTypeDevice ||
+        props->win32SecurityAttributes) G6E_RETURN(cudaErrorInvalidValue);
+    if(props->location.id!=0) G6E_RETURN(cudaErrorInvalidDevice);
+    for(size_t i=0;i<sizeof(props->reserved);++i)if(props->reserved[i])G6E_RETURN(cudaErrorInvalidValue);
+    if(props->handleTypes!=cudaMemHandleTypeNone)G6E_RETURN(cudaErrorNotSupported);
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    if(context->pool_handle_next==COREX_MAX_POOL_HANDLES)G6E_RETURN(cudaErrorMemoryAllocation);
+    CorexGeneratedcudaMemPoolCreateRequest request={.allocation_type=props->allocType,.location_type=props->location.type,.device=0};
+    CorexGeneratedcudaMemPoolCreateResponse response;
+    if(corex_generated_call_cudaMemPoolCreate(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+    return remember_pool(response.pool,pool);
+}
+
+cudaError_t cudaMemPoolCreate(cudaMemPool_t *pool,const struct cudaMemPoolProps *props)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_create_locked(pool,props);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_destroy_locked(cudaMemPool_t pool)
+{
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaMemPoolDestroyRequest request={.pool=entry->pool_id};
+    CorexGeneratedcudaMemPoolDestroyResponse response;
+    if(corex_generated_call_cudaMemPoolDestroy(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    entry->live=0;return cudaSuccess;
+}
+
+cudaError_t cudaMemPoolDestroy(cudaMemPool_t pool)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_destroy_locked(pool);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_trim_locked(cudaMemPool_t pool,size_t bytes)
+{
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaMemPoolTrimToRequest request={.pool=entry->pool_id,.bytes=bytes};
+    CorexGeneratedcudaMemPoolTrimToResponse response;
+    if(corex_generated_call_cudaMemPoolTrimTo(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+cudaError_t cudaMemPoolTrimTo(cudaMemPool_t pool,size_t bytes)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_trim_locked(pool,bytes);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_attribute_locked(cudaMemPool_t pool,enum cudaMemPoolAttr attr,void *value,int set)
+{
+    if(!value || attr<1 || attr>8)G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    uint64_t scalar=0;
+    if(set) {
+        if(attr<=3){int small;memcpy(&small,value,sizeof(small));scalar=(uint64_t)(int64_t)small;}
+        else memcpy(&scalar,value,sizeof(scalar));
+        CorexGeneratedcudaMemPoolSetAttributeRequest request={.pool=entry->pool_id,.attribute=attr,.value=scalar};
+        CorexGeneratedcudaMemPoolSetAttributeResponse response;
+        if(corex_generated_call_cudaMemPoolSetAttribute(generated_rpc_call,&request,&response))
+            G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    } else {
+        CorexGeneratedcudaMemPoolGetAttributeRequest request={.pool=entry->pool_id,.attribute=attr};
+        CorexGeneratedcudaMemPoolGetAttributeResponse response;
+        if(corex_generated_call_cudaMemPoolGetAttribute(generated_rpc_call,&request,&response))
+            G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+        if(attr<=3){int small=(int)response.value;memcpy(value,&small,sizeof(small));}
+        else memcpy(value,&response.value,sizeof(response.value));
+    }
+    return cudaSuccess;
+}
+
+cudaError_t cudaMemPoolGetAttribute(cudaMemPool_t pool,enum cudaMemPoolAttr attr,void *value)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_attribute_locked(pool,attr,value,0);
+    corex_runtime_context_unlock(context);return result;
+}
+
+cudaError_t cudaMemPoolSetAttribute(cudaMemPool_t pool,enum cudaMemPoolAttr attr,void *value)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_attribute_locked(pool,attr,value,1);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_get_access_locked(enum cudaMemAccessFlags *flags,cudaMemPool_t pool,struct cudaMemLocation *location)
+{
+    if(!flags || !location || location->type!=cudaMemLocationTypeDevice)G6E_RETURN(cudaErrorInvalidValue);
+    if(location->id!=0)G6E_RETURN(cudaErrorInvalidDevice);
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaMemPoolGetAccessRequest request={.pool=entry->pool_id,.location_type=location->type,.device=location->id};
+    CorexGeneratedcudaMemPoolGetAccessResponse response;
+    if(corex_generated_call_cudaMemPoolGetAccess(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    *flags=(enum cudaMemAccessFlags)response.flags;return cudaSuccess;
+}
+
+cudaError_t cudaMemPoolGetAccess(enum cudaMemAccessFlags *flags,cudaMemPool_t pool,struct cudaMemLocation *location)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_get_access_locked(flags,pool,location);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t pool_set_access_locked(cudaMemPool_t pool,const struct cudaMemAccessDesc *desc,size_t count)
+{
+    if(count>1 || (count && !desc))G6E_RETURN(cudaErrorInvalidValue);
+    if(count && desc->location.type!=cudaMemLocationTypeDevice)G6E_RETURN(cudaErrorInvalidValue);
+    if(count && desc->location.id!=0)G6E_RETURN(cudaErrorInvalidDevice);
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);
+    if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaMemPoolSetAccessRequest request={.pool=entry->pool_id,.count=(uint32_t)count};
+    if(count){request.location_type=desc->location.type;request.device=desc->location.id;request.flags=desc->flags;}
+    CorexGeneratedcudaMemPoolSetAccessResponse response;
+    if(corex_generated_call_cudaMemPoolSetAccess(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    return cudaSuccess;
+}
+
+cudaError_t cudaMemPoolSetAccess(cudaMemPool_t pool,const struct cudaMemAccessDesc *desc,size_t count)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=pool_set_access_locked(pool,desc,count);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t malloc_async_locked(void **ptr,size_t bytes,cudaMemPool_t pool,cudaStream_t stream,int explicit_pool)
+{
+    if(!ptr)G6E_RETURN(cudaErrorInvalidValue);
+    *ptr=NULL;
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    uint64_t pool_id=0;
+    if(explicit_pool){struct corexCudaPoolHandle *entry=resolve_pool_handle(pool);if(!entry)G6E_RETURN(cudaErrorInvalidResourceHandle);pool_id=entry->pool_id;}
+    G6EStreamView view;
+    if(get_stream_view(stream,&view))G6E_RETURN(cudaErrorInvalidResourceHandle);
+    /* Native Runtime normalizes zero allocations before the Driver call:
+     * cuMemAllocAsync rejects zero, cudaMallocAsync returns a null success. */
+    if(!bytes) {
+        /* CoreX's explicit-pool Runtime entry differs: its zero request
+         * returns InvalidValue, as does cuMemAllocFromPoolAsync. */
+        if(explicit_pool)G6E_RETURN(cudaErrorInvalidValue);
+        return cudaSuccess;
+    }
+    apply_legacy_default_ordering(&view);
+    return allocate_linear_locked(ptr,bytes,&view,pool_id);
+}
+
+cudaError_t cudaMallocAsync(void **ptr,size_t bytes,cudaStream_t stream)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=malloc_async_locked(ptr,bytes,NULL,stream,0);
+    corex_runtime_context_unlock(context);return result;
+}
+
+cudaError_t cudaMallocFromPoolAsync(void **ptr,size_t bytes,cudaMemPool_t pool,cudaStream_t stream)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=malloc_async_locked(ptr,bytes,pool,stream,1);
+    corex_runtime_context_unlock(context);return result;
+}
+
+static cudaError_t free_async_locked(void *ptr,cudaStream_t stream)
+{
+    if(!ptr)return cudaSuccess;
+    cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
+    VirtualAllocation *slot=find_exact_live_base(ptr);
+    if(!slot || slot->parent_module_id)G6E_RETURN(cudaErrorInvalidDevicePointer);
+    G6EStreamView view;
+    if(get_stream_view(stream,&view))G6E_RETURN(cudaErrorInvalidResourceHandle);
+    apply_legacy_default_ordering(&view);
+    CorexGeneratedcudaFreeAsyncRequest request={.allocation=slot->allocation_id,.stream=view.stream_id};
+    CorexGeneratedcudaFreeAsyncResponse response;
+    if(corex_generated_call_cudaFreeAsync(generated_rpc_call,&request,&response))
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    uint64_t seq=++(*view.next_transfer_seq);view.frontier[view.slot_index]=seq;
+    slot->live=0;slot->allocation_id=0;
+    return cudaSuccess;
+}
+
+cudaError_t cudaFreeAsync(void *ptr,cudaStream_t stream)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();corex_runtime_context_lock(context);
+    cudaError_t result=free_async_locked(ptr,stream);
+    corex_runtime_context_unlock(context);return result;
+}

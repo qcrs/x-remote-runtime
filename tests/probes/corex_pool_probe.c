@@ -32,6 +32,27 @@ int main(void) {
   if(ptr){SHOW(cuMemFreeAsync(ptr,stream));ptr=0;}
   for(int a=1;a<=8;++a){unsigned long long value=0;SHOW(cuMemPoolGetAttribute(custom,(CUmemPool_attribute)a,&value));printf("ATTR_%d=%llu\n",a,value);}
   SHOW(cuMemPoolTrimTo(custom,0));
+  unsigned long long zero=0,high=99;
+  SHOW(cuMemPoolSetAttribute(custom,CU_MEMPOOL_ATTR_USED_MEM_HIGH,&zero));
+  SHOW(cuMemPoolGetAttribute(custom,CU_MEMPOOL_ATTR_USED_MEM_HIGH,&high));printf("RESET_USED_HIGH=%llu\n",high);
+  SHOW(cuMemPoolSetAccess(custom,NULL,0));
+  CUdeviceptr ordinary_free=0;
+  SHOW(cuMemAllocFromPoolAsync(&ordinary_free,4096,custom,stream));SHOW(cuStreamSynchronize(stream));
+  if(ordinary_free)SHOW(cuMemFree(ordinary_free));
+  CUdeviceptr large=0;unsigned long long keep=67108864,reserved_before=0,reserved_after=0;
+  size_t free_before=0,free_after=0,total=0;
+  SHOW(cuMemPoolSetAttribute(custom,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&keep));
+  SHOW(cuMemAllocFromPoolAsync(&large,8388608,custom,stream));
+  if(large)SHOW(cuMemFreeAsync(large,stream));
+  SHOW(cuStreamSynchronize(stream));
+  SHOW(cuMemPoolGetAttribute(custom,CU_MEMPOOL_ATTR_RESERVED_MEM_CURRENT,&reserved_before));
+  SHOW(cuMemGetInfo(&free_before,&total));SHOW(cuMemPoolTrimTo(custom,0));
+  SHOW(cuMemPoolGetAttribute(custom,CU_MEMPOOL_ATTR_RESERVED_MEM_CURRENT,&reserved_after));SHOW(cuMemGetInfo(&free_after,&total));
+  printf("TRIM reserved_before=%llu reserved_after=%llu free_before=%zu free_after=%zu\n",reserved_before,reserved_after,free_before,free_after);
+  keep=0;SHOW(cuMemPoolSetAttribute(custom,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&keep));
+  SHOW(cuCtxSynchronize());SHOW(cuMemPoolTrimTo(custom,0));
+  SHOW(cuMemPoolGetAttribute(custom,CU_MEMPOOL_ATTR_RESERVED_MEM_CURRENT,&reserved_after));SHOW(cuMemGetInfo(&free_after,&total));
+  printf("ZERO_THRESHOLD_TRIM reserved_after=%llu free_after=%zu\n",reserved_after,free_after);
   CUmemAccess_flags flags=0;CUmemLocation loc={CU_MEM_LOCATION_TYPE_DEVICE,dev};
   SHOW(cuMemPoolGetAccess(&flags,custom,&loc));
   CUmemAccessDesc access={0};access.location=loc;access.flags=CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
@@ -42,6 +63,8 @@ int main(void) {
  ptr=0;SHOW(cuMemAllocAsync(&ptr,0,stream));printf("ZERO_ALLOC_NULL=%d\n",ptr==0);
  SHOW(cuMemFreeAsync(0,stream));
  if(pool){unsigned long long threshold=12345;SHOW(cuMemPoolSetAttribute(pool,CU_MEMPOOL_ATTR_RELEASE_THRESHOLD,&threshold));}
+ ptr=0;SHOW(cuMemAllocAsync(&ptr,4096,stream));SHOW(cuStreamSynchronize(stream));
+ if(ptr)SHOW(cuMemFree(ptr));
  custom=NULL;SHOW(cuMemPoolCreate(&custom,&props));
  if(custom){
   ptr=0;SHOW(cuMemAllocFromPoolAsync(&ptr,4096,custom,stream));

@@ -29,6 +29,14 @@ exported symbols or native CoreX structs:
 | 4 | stream and event operations |
 | 5 | asynchronous host/device transfers |
 | 6 | module load and kernel launch |
+| 7 | pointer-backed pitched/3D layout and transfers |
+| 8 | native memory pools and stream-ordered allocation |
+
+The server advertises ID 8 only when the configured device reports native
+`CU_DEVICE_ATTRIBUTE_MEMORY_POOLS_SUPPORTED`. Pool entrypoints require that
+advertisement; legacy V3 peers retain the original Runtime behavior but cannot
+accept the new pool service. PoolID is a session-owned scalar identity, never a
+native handle. Async allocations use the existing AllocationID namespace.
 
 IDs are never reused. Clients may ignore unknown nonzero IDs; zero and
 duplicates are invalid. A new client classifies an empty `ST_BAD_REQUEST` for
