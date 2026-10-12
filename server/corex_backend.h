@@ -95,4 +95,12 @@ CUresult corex_backend_launch(CUfunction function,
                               unsigned int shared_bytes, CUstream stream,
                               void **kernel_params, void **extra);
 
+CUresult corex_backend_context_set_limit(CUlimit limit, size_t value);
+CUresult corex_backend_context_set_cache_config(CUfunc_cache config);
+CUresult corex_backend_context_set_shared_mem_config(CUsharedconfig config);
+CUresult corex_backend_stream_copy_attributes(CUstream dst, CUstream src);
+
+CUresult corex_backend_stream_get_attribute(CUstream stream, CUstreamAttrID attr, CUstreamAttrValue *value);
+CUresult corex_backend_stream_set_attribute(CUstream stream, CUstreamAttrID attr, const CUstreamAttrValue *value);
+
 #endif

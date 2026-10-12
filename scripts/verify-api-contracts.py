@@ -69,6 +69,9 @@ def main():
     with (root / "compat/cuda-api-ledger.csv").open(newline="") as stream:
         ledger_rows = list(csv.DictReader(stream))
     ledger_by_name = {row["api_name"]: row for row in ledger_rows}
+    for row in ledger_rows:
+        if None in row or any(value is None for value in row.values()):
+            fail("malformed CSV row for " + row["api_name"])
     if len(ledger_by_name) != len(ledger_rows):
         fail("ledger API names are not unique")
     unknown_statuses = sorted(

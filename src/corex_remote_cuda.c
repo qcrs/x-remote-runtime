@@ -4350,6 +4350,10 @@ const char *cudaGetErrorString(cudaError_t error)
         return "cudaErrorInvalidResourceHandle";
     case cudaErrorNotReady:
         return "cudaErrorNotReady";
+    case cudaErrorHostMemoryAlreadyRegistered:
+        return "cudaErrorHostMemoryAlreadyRegistered";
+    case cudaErrorHostMemoryNotRegistered:
+        return "cudaErrorHostMemoryNotRegistered";
     case cudaErrorNotSupported:
         return "cudaErrorNotSupported";
     case cudaErrorUnknown:
@@ -4965,4 +4969,382 @@ void corexRemoteRuntimeShutdown(void)
     corex_runtime_context_lock(context);
     corexRemoteRuntimeShutdown_locked();
     corex_runtime_context_unlock(context);
+}
+
+static cudaError_t cudaDeviceSetLimit_locked(cudaLimit limit, size_t value)
+{
+    if ((int)limit < 0 || (int)limit > 6) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    CorexGeneratedcudaDeviceSetLimitRequest request = { .limit = (int)limit, .value = value };
+    CorexGeneratedcudaDeviceSetLimitResponse response = {0};
+    if (corex_generated_call_cudaDeviceSetLimit(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+cudaError_t cudaDeviceSetLimit(cudaLimit limit, size_t value)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceSetLimit_locked(limit, value);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static cudaError_t cudaDeviceSetCacheConfig_locked(cudaFuncCache config)
+{
+    if ((int)config < 0 || (int)config > 3) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    CorexGeneratedcudaDeviceSetCacheConfigRequest request = { .config = (int)config };
+    CorexGeneratedcudaDeviceSetCacheConfigResponse response = {0};
+    if (corex_generated_call_cudaDeviceSetCacheConfig(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+cudaError_t cudaDeviceSetCacheConfig(cudaFuncCache config)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceSetCacheConfig_locked(config);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static cudaError_t cudaDeviceSetSharedMemConfig_locked(cudaSharedMemConfig config)
+{
+    if ((int)config < 0 || (int)config > 2) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    CorexGeneratedcudaDeviceSetSharedMemConfigRequest request = { .config = (int)config };
+    CorexGeneratedcudaDeviceSetSharedMemConfigResponse response = {0};
+    if (corex_generated_call_cudaDeviceSetSharedMemConfig(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+cudaError_t cudaDeviceSetSharedMemConfig(cudaSharedMemConfig config)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaDeviceSetSharedMemConfig_locked(config);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static cudaError_t cudaStreamCopyAttributes_locked(cudaStream_t dst, cudaStream_t src)
+{
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaStreamHandle *d = dst ? resolve_stream_handle(dst) : NULL;
+    struct corexCudaStreamHandle *s = src ? resolve_stream_handle(src) : NULL;
+    if ((dst && !d) || (src && !s)) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaStreamCopyAttributesRequest request = {
+        .dst = d ? d->stream_id : 0, .src = s ? s->stream_id : 0
+    };
+    CorexGeneratedcudaStreamCopyAttributesResponse response = {0};
+    if (corex_generated_call_cudaStreamCopyAttributes(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+cudaError_t cudaStreamCopyAttributes(cudaStream_t dst, cudaStream_t src)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamCopyAttributes_locked(dst, src);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static HostAllocation *find_host_allocation(const void *ptr, int exact)
+{
+    uintptr_t address = (uintptr_t)ptr;
+    HostAllocation *allocs = corex_runtime_context_get()->host_allocs;
+    for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+        HostAllocation *a = &allocs[i];
+        if (a->base && address >= (uintptr_t)a->base &&
+            address - (uintptr_t)a->base < a->size &&
+            (!exact || ptr == a->base)) return a;
+    }
+    return NULL;
+}
+
+static HostAllocation *host_slot(void)
+{
+    HostAllocation *allocs = corex_runtime_context_get()->host_allocs;
+    for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i)
+        if (!allocs[i].base) return &allocs[i];
+    return NULL;
+}
+
+static cudaError_t cudaHostAlloc_locked(void **ptr, size_t size, unsigned int flags)
+{
+    if (!ptr || (flags & ~7u)) G6E_RETURN(cudaErrorInvalidValue);
+    *ptr = NULL;
+    /* GPU mapping and write-combined cache policy cannot be provided by
+     * client page locking. Never silently replace them with cached pages. */
+    if (flags & 6u) G6E_RETURN(cudaErrorNotSupported);
+    if (!size) return cudaSuccess;
+    HostAllocation *a = host_slot();
+    if (!a) G6E_RETURN(cudaErrorMemoryAllocation);
+    void *base = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (base == MAP_FAILED) G6E_RETURN(cudaErrorMemoryAllocation);
+    if (mlock(base, size) != 0) {
+        munmap(base, size);
+        G6E_RETURN(cudaErrorMemoryAllocation);
+    }
+    *a = (HostAllocation){base, size, size, flags, 1};
+    *ptr = base;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaHostRegister_locked(void *ptr, size_t size, unsigned int flags)
+{
+    size_t page = (size_t)sysconf(_SC_PAGESIZE);
+    if (!ptr || !size || (flags & ~15u) || !page ||
+        (uintptr_t)ptr % page || size > SIZE_MAX - (page - 1) ||
+        (uintptr_t)ptr > UINTPTR_MAX - size || pointer_in_remote_arena(ptr))
+        G6E_RETURN(cudaErrorInvalidValue);
+    if (flags & ~1u) G6E_RETURN(cudaErrorNotSupported);
+    size_t locked = (size + page - 1) / page * page;
+    uintptr_t start = (uintptr_t)ptr;
+    if (start > UINTPTR_MAX - locked) G6E_RETURN(cudaErrorInvalidValue);
+    HostAllocation *allocs = corex_runtime_context_get()->host_allocs;
+    for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+        HostAllocation *a = &allocs[i];
+        if (a->base) {
+            uintptr_t base = (uintptr_t)a->base;
+            size_t span = (a->locked_size + page - 1) / page * page;
+            if (start < base + span && base < start + locked)
+                G6E_RETURN(cudaErrorHostMemoryAlreadyRegistered);
+        }
+    }
+    HostAllocation *a = host_slot();
+    if (!a) G6E_RETURN(cudaErrorMemoryAllocation);
+    if (mlock(ptr, locked) != 0) G6E_RETURN(cudaErrorMemoryAllocation);
+    *a = (HostAllocation){ptr, size, locked, flags, 0};
+    return cudaSuccess;
+}
+
+static cudaError_t release_host_locked(void *ptr, int owned)
+{
+    if (owned && !ptr) return cudaSuccess;
+    HostAllocation *a = find_host_allocation(ptr, 1);
+    if (!a || a->owned != owned)
+        G6E_RETURN(owned ? cudaErrorInvalidValue : cudaErrorHostMemoryNotRegistered);
+    /* Pending D2H destinations must be scattered before the application
+     * releases their storage. Reuse the existing retirement machinery. */
+    if (live_hidden_transfer_count()) {
+        cudaError_t result = cudaDeviceSynchronize_locked();
+        if (result != cudaSuccess) return result;
+    }
+    if (munlock(a->base, a->locked_size) != 0) G6E_RETURN(cudaErrorUnknown);
+    if (owned && munmap(a->base, a->size) != 0) G6E_RETURN(cudaErrorUnknown);
+    memset(a, 0, sizeof(*a));
+    return cudaSuccess;
+}
+
+static cudaError_t cudaHostGetFlags_locked(unsigned int *flags, void *ptr)
+{
+    if (!flags) G6E_RETURN(cudaErrorInvalidValue);
+    HostAllocation *a = find_host_allocation(ptr, 0);
+    if (!a) G6E_RETURN(cudaErrorInvalidValue);
+    *flags = a->flags;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaHostGetDevicePointer_locked(void **device, void *host, unsigned int flags)
+{
+    if (!device || !host || flags) G6E_RETURN(cudaErrorInvalidValue);
+    *device = NULL;
+    if (!find_host_allocation(host, 0)) G6E_RETURN(cudaErrorInvalidValue);
+    G6E_RETURN(cudaErrorNotSupported);
+}
+
+static cudaError_t cudaPointerGetAttributes_locked(cudaPointerAttributes *attributes, const void *ptr)
+{
+    if (!attributes || !ptr) G6E_RETURN(cudaErrorInvalidValue);
+    cudaPointerAttributes result = {0};
+    result.device = 0;
+    if (pointer_in_remote_arena(ptr)) {
+        ResolvedRemotePtr resolved;
+        if (resolve_remote_ptr(ptr, 1, &resolved) != RESOLVE_OK)
+            G6E_RETURN(cudaErrorInvalidValue);
+        result.memoryType = result.type = cudaMemoryTypeDevice;
+        result.devicePointer = (void *)ptr;
+    } else if (find_host_allocation(ptr, 0)) {
+        result.memoryType = result.type = cudaMemoryTypeHost;
+        result.hostPointer = (void *)ptr;
+    } else {
+        result.memoryType = result.type = cudaMemoryTypeUnregistered;
+        result.device = -1;
+        result.hostPointer = (void *)ptr;
+    }
+    *attributes = result;
+    return cudaSuccess;
+}
+
+const char *cudaGetErrorName(cudaError_t error)
+{
+    switch (error) {
+    case cudaErrorHostMemoryAlreadyRegistered: return "cudaErrorHostMemoryAlreadyRegistered";
+    case cudaErrorHostMemoryNotRegistered: return "cudaErrorHostMemoryNotRegistered";
+    default:
+        if (!strcmp(cudaGetErrorString(error), "cudaErrorUnrecognized"))
+            return "unrecognized error code";
+        return cudaGetErrorString(error);
+    }
+}
+
+cudaError_t cudaHostAlloc(void **ptr, size_t size, unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaHostAlloc_locked(ptr, size, flags);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaMallocHost(void **ptr, size_t size)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaHostAlloc_locked(ptr, size, 0);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaFreeHost(void *ptr)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = release_host_locked(ptr, 1);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaHostRegister(void *ptr, size_t size, unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaHostRegister_locked(ptr, size, flags);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaHostUnregister(void *ptr)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = release_host_locked(ptr, 0);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaHostGetFlags(unsigned int *flags, void *ptr)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaHostGetFlags_locked(flags, ptr);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaHostGetDevicePointer(void **device, void *host, unsigned int flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaHostGetDevicePointer_locked(device, host, flags);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaPointerGetAttributes(cudaPointerAttributes *attributes, const void *ptr)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaPointerGetAttributes_locked(attributes, ptr);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+static cudaError_t cudaStreamGetAttribute_locked(cudaStream_t stream, cudaStreamAttrID attr,
+                                                cudaStreamAttrValue *value)
+{
+    if (!value || ((int)attr != 1 && (int)attr != 3)) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaStreamHandle *handle = stream ? resolve_stream_handle(stream) : NULL;
+    if (stream && !handle) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaStreamGetAttributeRequest request = {
+        .stream = handle ? handle->stream_id : 0, .attribute = (int)attr
+    };
+    CorexGeneratedcudaStreamGetAttributeResponse response;
+    if (corex_generated_call_cudaStreamGetAttribute(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    cudaStreamAttrValue result = {0};
+    if ((int)attr == 1) {
+        if (response.allocation) {
+            VirtualAllocation *found = NULL;
+            for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+                VirtualAllocation *a = &g_allocs[i];
+                if (a->live && a->session_generation == g_active_session_generation &&
+                    a->allocation_id == response.allocation) { found = a; break; }
+            }
+            if (!found || response.offset > found->size || response.bytes > found->size - response.offset)
+                G6E_RETURN(cudaErrorUnknown);
+            result.accessPolicyWindow.base_ptr = (void *)(found->virtual_base + response.offset);
+        } else if (response.offset || response.bytes) G6E_RETURN(cudaErrorUnknown);
+        result.accessPolicyWindow.num_bytes = (size_t)response.bytes;
+        memcpy(&result.accessPolicyWindow.hitRatio, &response.hit_ratio_bits, sizeof(float));
+        result.accessPolicyWindow.hitProp = (cudaAccessProperty)response.hit_property;
+        result.accessPolicyWindow.missProp = (cudaAccessProperty)response.miss_property;
+    } else result.syncPolicy = response.sync_policy;
+    *value = result;
+    return cudaSuccess;
+}
+
+static cudaError_t cudaStreamSetAttribute_locked(cudaStream_t stream, cudaStreamAttrID attr,
+                                                const cudaStreamAttrValue *value)
+{
+    if (!value || ((int)attr != 1 && (int)attr != 3)) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime(); if (init != cudaSuccess) G6E_RETURN(init);
+    struct corexCudaStreamHandle *handle = stream ? resolve_stream_handle(stream) : NULL;
+    if (stream && !handle) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaStreamSetAttributeRequest request = {
+        .stream = handle ? handle->stream_id : 0, .attribute = (int)attr
+    };
+    if ((int)attr == 1) {
+        const cudaAccessPolicyWindow *w = &value->accessPolicyWindow;
+        ResolvedRemotePtr resolved = {0};
+        if (w->base_ptr) {
+            ResolveResult r = resolve_remote_ptr(w->base_ptr, w->num_bytes, &resolved);
+            if (r != RESOLVE_OK) G6E_RETURN(map_resolve_error(r));
+        } else if (w->num_bytes) G6E_RETURN(cudaErrorInvalidValue);
+        request.allocation = resolved.allocation_id; request.offset = resolved.byte_offset;
+        request.bytes = w->num_bytes;
+        memcpy(&request.hit_ratio_bits, &w->hitRatio, sizeof(float));
+        request.hit_property = (int)w->hitProp; request.miss_property = (int)w->missProp;
+    } else request.sync_policy = value->syncPolicy;
+    CorexGeneratedcudaStreamSetAttributeResponse response = {0};
+    if (corex_generated_call_cudaStreamSetAttribute(generated_rpc_call, &request, &response) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorNotSupported));
+    return cudaSuccess;
+}
+
+cudaError_t cudaStreamGetAttribute(cudaStream_t stream, cudaStreamAttrID attr, cudaStreamAttrValue *value)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamGetAttribute_locked(stream, attr, value);
+    corex_runtime_context_unlock(context); return result;
+}
+
+cudaError_t cudaStreamSetAttribute(cudaStream_t stream, cudaStreamAttrID attr, const cudaStreamAttrValue *value)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get(); corex_runtime_context_lock(context);
+    cudaError_t result = cudaStreamSetAttribute_locked(stream, attr, value);
+    corex_runtime_context_unlock(context); return result;
 }

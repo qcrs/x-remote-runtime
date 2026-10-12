@@ -64,3 +64,11 @@ CUresult corex_backend_launch(CUfunction function, unsigned int grid_x, unsigned
                           block_x, block_y, block_z, shared_bytes,
                           stream, kernel_params, extra);
 }
+
+CUresult corex_backend_context_set_limit(CUlimit limit, size_t value) { return cuCtxSetLimit(limit, value); }
+CUresult corex_backend_context_set_cache_config(CUfunc_cache config) { return cuCtxSetCacheConfig(config); }
+CUresult corex_backend_context_set_shared_mem_config(CUsharedconfig config) { return cuCtxSetSharedMemConfig(config); }
+CUresult corex_backend_stream_copy_attributes(CUstream dst, CUstream src) { return cuStreamCopyAttributes(dst, src); }
+
+CUresult corex_backend_stream_get_attribute(CUstream stream, CUstreamAttrID attr, CUstreamAttrValue *value) { return cuStreamGetAttribute(stream, attr, value); }
+CUresult corex_backend_stream_set_attribute(CUstream stream, CUstreamAttrID attr, const CUstreamAttrValue *value) { return cuStreamSetAttribute(stream, attr, value); }

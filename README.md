@@ -8,7 +8,10 @@ remote CoreX objects and uses the CoreX Driver API to access the device.
 The current validated baseline supports allocation and copies, streams and
 events, asynchronous transfers, automatic compiler registration, kernel ABI
 acquisition, ordinary `kernel<<<...>>>` launches, device identity queries, a
-versioned shared library, and an installable SDK.
+versioned shared library, and an installable SDK. It also supports pitched/3D
+pointer-backed memory, context configuration, and partial client page-locked
+host staging with remote copies. Array allocation, texture objects, and managed
+allocation are unavailable on the measured CoreX backend.
 
 ## Build
 
@@ -81,6 +84,8 @@ This project is a CoreX-targeted CUDA compatibility layer. It does not claim
 to be a full CUDA replacement, PyTorch support, production readiness, WSL
 deployment, or cross-host x86_64-to-aarch64 validation.
 
-The next work area is Runtime hardening: multi-host-thread behavior, DSO
-lifecycle, failure and session semantics, and further CUDA API compatibility.
-No new API or Gate 9 work is part of the repository migration.
+Detailed API status and limitations are recorded in the
+[compatibility ledger](compat/cuda-api-ledger.csv); validated development status
+and evidence links are in [PROJECT_STATE](docs/PROJECT_STATE.md). Graph/Stream
+Capture, Memory Pools, IPC, Peer/Multi-device, and External Interop were excluded
+from the latest compatibility expansion.

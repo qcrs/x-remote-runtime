@@ -71,6 +71,22 @@ COREX_REMOTE_CUDART_1.1 {
         cudaDeviceGetSharedMemConfig;
         cudaFuncSetAttribute;
         cudaFuncSetCacheConfig;
+        cudaDeviceSetLimit;
+        cudaDeviceSetCacheConfig;
+        cudaDeviceSetSharedMemConfig;
+        cudaStreamCopyAttributes;
+        cudaHostAlloc;
+        cudaMallocHost;
+        cudaFreeHost;
+        cudaHostRegister;
+        cudaHostUnregister;
+        cudaHostGetFlags;
+        cudaHostGetDevicePointer;
+        cudaPointerGetAttributes;
+        cudaCreateChannelDesc;
+        cudaGetErrorName;
+        cudaStreamGetAttribute;
+        cudaStreamSetAttribute;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

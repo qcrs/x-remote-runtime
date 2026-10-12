@@ -43,6 +43,16 @@ typedef enum {
     COREX_LAYOUT_PITCHED_3D = 2,
 } CorexMemoryLayoutKind;
 
+/* Client page locking is independent of the remote session. It does not
+ * create a GPU mapping or a server-side host allocation. */
+typedef struct {
+    void *base;
+    size_t size;
+    size_t locked_size;
+    unsigned int flags;
+    int owned;
+} HostAllocation;
+
 struct corexCudaStreamHandle {
     uint64_t cookie;
     uint64_t session_generation;
@@ -192,6 +202,7 @@ typedef struct CorexRuntimeContext {
     unsigned char *va_arena;
     size_t va_next;
     VirtualAllocation allocs[G6A_MAX_ALLOCS];
+    HostAllocation host_allocs[G6A_MAX_ALLOCS];
 
     struct corexCudaStreamHandle stream_handles[G6C_MAX_STREAM_HANDLES];
     struct corexCudaEventHandle event_handles[G6C_MAX_EVENT_HANDLES];

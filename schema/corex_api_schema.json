@@ -254,6 +254,193 @@
       ],
       "backend_binding": "corex_backend_device_get_by_pci_bus_id",
       "server_handler": "handle_device_get_by_pci_bus_id"
+    },
+    {
+      "name": "cudaDeviceSetLimit",
+      "opcode_name": "OP_SET_LIMIT",
+      "opcode": 59,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "limit",
+          "type": "i32"
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        }
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_context_set_limit",
+      "server_handler": "handle_set_limit"
+    },
+    {
+      "name": "cudaDeviceSetCacheConfig",
+      "opcode_name": "OP_SET_CACHE_CONFIG",
+      "opcode": 60,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "config",
+          "type": "i32"
+        }
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_context_set_cache_config",
+      "server_handler": "handle_set_cache_config"
+    },
+    {
+      "name": "cudaDeviceSetSharedMemConfig",
+      "opcode_name": "OP_SET_SHARED_MEM_CONFIG",
+      "opcode": 61,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "config",
+          "type": "i32"
+        }
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_context_set_shared_mem_config",
+      "server_handler": "handle_set_shared_mem_config"
+    },
+    {
+      "name": "cudaStreamCopyAttributes",
+      "opcode_name": "OP_STREAM_COPY_ATTRIBUTES",
+      "opcode": 62,
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "dst",
+          "type": "stream_id",
+          "object_kind": "stream"
+        },
+        {
+          "name": "src",
+          "type": "stream_id",
+          "object_kind": "stream"
+        }
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_stream_copy_attributes",
+      "server_handler": "handle_stream_copy_attributes"
+    },
+    {
+      "name": "cudaStreamGetAttribute",
+      "opcode_name": "OP_STREAM_GET_ATTRIBUTE",
+      "opcode": 63,
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        },
+        {
+          "name": "attribute",
+          "type": "i32"
+        }
+      ],
+      "response": [
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "offset",
+          "type": "u64"
+        },
+        {
+          "name": "bytes",
+          "type": "u64"
+        },
+        {
+          "name": "hit_ratio_bits",
+          "type": "u32"
+        },
+        {
+          "name": "hit_property",
+          "type": "i32"
+        },
+        {
+          "name": "miss_property",
+          "type": "i32"
+        },
+        {
+          "name": "sync_policy",
+          "type": "i32"
+        }
+      ],
+      "backend_binding": "corex_backend_stream_get_attribute",
+      "server_handler": "handle_stream_get_attribute"
+    },
+    {
+      "name": "cudaStreamSetAttribute",
+      "opcode_name": "OP_STREAM_SET_ATTRIBUTE",
+      "opcode": 64,
+      "capability_id": "CRX_CAP_STREAM_EVENT",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        },
+        {
+          "name": "attribute",
+          "type": "i32"
+        },
+        {
+          "name": "allocation",
+          "type": "allocation_id",
+          "object_kind": "allocation"
+        },
+        {
+          "name": "offset",
+          "type": "u64"
+        },
+        {
+          "name": "bytes",
+          "type": "u64"
+        },
+        {
+          "name": "hit_ratio_bits",
+          "type": "u32"
+        },
+        {
+          "name": "hit_property",
+          "type": "i32"
+        },
+        {
+          "name": "miss_property",
+          "type": "i32"
+        },
+        {
+          "name": "sync_policy",
+          "type": "i32"
+        }
+      ],
+      "response": [],
+      "backend_binding": "corex_backend_stream_set_attribute",
+      "server_handler": "handle_stream_set_attribute"
     }
   ]
 }

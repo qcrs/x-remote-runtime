@@ -1,7 +1,8 @@
 # Project State
 
-Current compatibility position: **3D pointer-backed memory complete; bounded
-Memory Layout slice closed** (CoreX 4.4 / MR-V100).
+Current compatibility position: **47-API capability expansion measured and closed**,
+including partial client Host Memory staging and generated context control RPCs
+(CoreX 4.4 / MR-V100).
 
 | Item | Current value |
 | --- | --- |
@@ -14,15 +15,16 @@ Memory Layout slice closed** (CoreX 4.4 / MR-V100).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last validated slice | Pointer-backed 3D allocation/position/Async completion, 2026-10-12; public-ABI localhost CRX9 integration |
-| Previous PASS baseline | `fdcb82260110846d31d333128cd843ce3972f0b7` (Memory Layout ground truth closeout) |
-| Current Slice | Memory Layout implementation, evidence, and ledger aligned |
-| Scope boundary | Pointer-backed memory only; Array endpoints, Host Memory public APIs, Texture, Graph, and Memory Pool remain outside this slice |
-| Next action | Memory Layout pointer slice complete; no further subsystem expansion in this task |
+| Last validated slice | 47-API compatibility expansion, 2026-10-12; public-ABI localhost CRX9 integration |
+| Previous PASS baseline | `536b608` (pointer-backed 3D completion) |
+| Current Slice | Host Memory, Array/Texture/Surface ground truth, context setters, stream attributes, pointer/value queries |
+| Scope boundary | Graph/Capture, Pools, IPC, Peer/Multi-device and External Interop excluded |
+| Next action | Batch closed; further compatibility work requires another selected family |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;
-its validation and remaining limitations are recorded below. M6-S1 network configuration
+its validation and remaining limitations are recorded below. The subsequent
+47-API expansion is recorded in the final section and the authoritative ledger. M6-S1 network configuration
 and diagnostics remain an independent productization track, not evidence that
 M4/M5 API expansion is complete.
 
@@ -166,8 +168,9 @@ sources. New evidence follows `docs/EVIDENCE_POLICY.md` and is retained under
 The runtime now has a unified linear/pitched allocation record, pitched
 allocation (CRX9 opcode 49), one-RPC 2D copy and 2D memset operations (opcodes
 50-53), and pointer-backed 3D transfer handlers (opcodes 55-56). CoreX
-backend calls remain isolated in `server/corex_backend.c`; array-backed 3D
-transfers are explicitly unsupported because Array ownership is out of scope.
+backend calls remain isolated in `server/corex_backend.c`. At that slice,
+array-backed 3D transfers were excluded; the subsequent expansion measured
+array allocation as unsupported by CoreX.
 
 Direct Driver probes on CoreX 4.4 / MR-V100 passed H2D, D2H, and D2D for both
 `cuMemcpy2D` and `cuMemcpy3D`: every call returned `CUDA_SUCCESS` (0) and data
@@ -208,3 +211,61 @@ CRX9 → server → CoreX. Evidence: `evidence/m4/memory-layout-20261012/`.
 The 3D completion passed build, API contracts, protocol/ABI, targeted public API
 and wire compatibility integration, and evidence-link checks. Historical
 regression suites were not rerun. Evidence: `evidence/m4/3d-memory-20261012-092736/`.
+
+## Capability expansion closeout (2026-10-12)
+
+Starting from clean tracked HEAD `536b608` (only user-supplied `AGENTS.md`
+untracked), this batch processed **47 additional public APIs**: **4 IMPLEMENTED,
+11 PARTIAL_IMPLEMENTED, 5 BACKEND_UNSUPPORTED, 27 GROUND_TRUTH_BLOCKED**.
+All 47 previously required ground truth; none remains GROUND_TRUTH_REQUIRED.
+The selected API names and measured prerequisite relationships are retained in
+`evidence/m4/compat-expansion-20261012/SELECTED_APIS.csv`; the compatibility
+contract remains `compat/cuda-api-ledger.csv`.
+
+Host Memory supports default/portable client page-locked staging through
+`cudaMallocHost`, `cudaHostAlloc`, registration, flag queries, and release.
+The RuntimeContext owns the local host registry. Free/unregister retires pending
+hidden transfers before releasing storage. OS lock failure returns an allocation
+error. This is partial support: client pages are not registered for GPU DMA;
+registration requires a page-aligned base; mapped, write-combined, IO and
+read-only modes are rejected. Native CoreX host mapping works, but CRX9's
+independent address spaces provide no shared GPU mapping. `cudaHostGetDevicePointer`
+therefore remains blocked and returns NotSupported for tracked pages.
+
+CoreX Driver valid array, surface-capable array, 3D array and mipmap allocation
+return 801; native Runtime returns 31 (NotYetImplemented). Linear texture-object
+creation returns 801 in both. Dependent array queries, frees, transfers and
+texture/surface queries/destruction are blocked by unavailable valid handles;
+no invalid-handle call is presented as a successful capability measurement.
+Managed allocation likewise returns Driver 801 / Runtime 31; its four dependent
+advice/prefetch/range APIs are blocked. These results classify the batch without
+inventing software arrays or managed fake pointers.
+
+Three context setters use schema/codegen codecs, typed client calls and registry
+entries over new opcodes 59–61. All cache/shared-bank enums and supported limits
+were measured; context setter/readback and unsupported-limit behavior pass through
+CRX9. Opcode 62 copies attributes between real session-owned stream IDs. Opcodes
+63–64 get/set the bounded attribute DTO, translating pointers through the existing
+allocation registry. Empty access-policy window get/set/copy readback succeeds;
+nonempty 32-byte normal and 4096-byte persisting windows return InvalidValue.
+Synchronization-policy get/set returns 801. All three attribute APIs remain
+partial; non-default propagation cannot be observed on this backend.
+
+`cudaPointerGetAttributes` reconstructs the installed public ABI from live
+remote fake-VA and local staging records, with explicit mapped/managed limitations.
+The channel-description constructor returns the caller's fields locally;
+the native CoreX helper produced unexpected fields in the installed header ABI,
+so array probes used an independently constructed valid descriptor. Error names
+cover Runtime-generated errors, including host registration errors; the wider
+CUDA error enum remains partial. No native struct or host pointer crosses the wire.
+
+Validation passed: build, public exports/ABI, protocol golden fixtures, API
+contracts, deterministic generation and schema rejection checks, backend seam,
+registry duplicate rejection, two grouped CoreX Driver/native Runtime probes,
+and independent localhost public-library client → CRX9 → server → CoreX tests.
+The targeted test covers host copies and async release, pointer/ABI layout,
+context readback, stale stream handles, and malformed/bounded network DTOs.
+Historical multithread/reconnect/lifecycle suites were not rerun: their shared
+mechanisms were reused without changes. Six malformed pre-existing ledger CSV
+rows were repaired and the API-contract check now rejects malformed rows.
+Evidence: `evidence/m4/compat-expansion-20261012/`.

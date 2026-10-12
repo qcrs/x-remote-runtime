@@ -2377,6 +2377,144 @@ static int handle_function_attributes(ServerSession *session, int fd, uint32_t r
     return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_OK, response, 28);
 }
 
+static int handle_set_limit(ServerSession *session, int fd, uint32_t req_id,
+                               const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaDeviceSetLimitRequest request;
+    if (corex_generated_decode_cudaDeviceSetLimit_request(payload, len, &request) != 0)
+        return send_response(fd, OP_SET_LIMIT, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUlimit limit;
+    if (map_runtime_limit(request.limit, &limit) != 0)
+        return send_response(fd, OP_SET_LIMIT, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult result = corex_backend_context_set_limit(limit, (size_t)request.value);
+    return send_response(fd, OP_SET_LIMIT, req_id,
+                         result == CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_set_cache_config(ServerSession *session, int fd, uint32_t req_id,
+                               const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaDeviceSetCacheConfigRequest request;
+    if (corex_generated_decode_cudaDeviceSetCacheConfig_request(payload, len, &request) != 0)
+        return send_response(fd, OP_SET_CACHE_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUfunc_cache config;
+    if (map_runtime_cache_config(request.config, &config) != 0)
+        return send_response(fd, OP_SET_CACHE_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUresult result = corex_backend_context_set_cache_config(config);
+    return send_response(fd, OP_SET_CACHE_CONFIG, req_id,
+                         result == CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_set_shared_mem_config(ServerSession *session, int fd, uint32_t req_id,
+                               const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaDeviceSetSharedMemConfigRequest request;
+    if (corex_generated_decode_cudaDeviceSetSharedMemConfig_request(payload, len, &request) != 0)
+        return send_response(fd, OP_SET_SHARED_MEM_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUsharedconfig config;
+    switch (request.config) {
+    case 0: config = CU_SHARED_MEM_CONFIG_DEFAULT_BANK_SIZE; break;
+    case 1: config = CU_SHARED_MEM_CONFIG_FOUR_BYTE_BANK_SIZE; break;
+    case 2: config = CU_SHARED_MEM_CONFIG_EIGHT_BYTE_BANK_SIZE; break;
+    default: return send_response(fd, OP_SET_SHARED_MEM_CONFIG, req_id, ST_BAD_REQUEST, NULL, 0);
+    }
+    CUresult result = corex_backend_context_set_shared_mem_config(config);
+    return send_response(fd, OP_SET_SHARED_MEM_CONFIG, req_id,
+                         result == CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_stream_copy_attributes(ServerSession *session, int fd, uint32_t req_id,
+                               const unsigned char *payload, uint32_t len)
+{
+    (void)session;
+    CorexGeneratedcudaStreamCopyAttributesRequest request;
+    if (corex_generated_decode_cudaStreamCopyAttributes_request(payload, len, &request) != 0)
+        return send_response(fd, OP_STREAM_COPY_ATTRIBUTES, req_id, ST_BAD_REQUEST, NULL, 0);
+    CUstream dst, src;
+    if (resolve_stream_id(session, request.dst, &dst) != 0 ||
+        resolve_stream_id(session, request.src, &src) != 0)
+        return send_response(fd, OP_STREAM_COPY_ATTRIBUTES, req_id, ST_NOT_FOUND, NULL, 0);
+    CUresult result = corex_backend_stream_copy_attributes(dst, src);
+    return send_response(fd, OP_STREAM_COPY_ATTRIBUTES, req_id,
+                         result == CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
+static int handle_stream_get_attribute(ServerSession *session, int fd, uint32_t req_id,
+                                       const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaStreamGetAttributeRequest request;
+    CorexGeneratedcudaStreamGetAttributeResponse response = {0};
+    CUstream stream; CUstreamAttrValue value = {0};
+    if (corex_generated_decode_cudaStreamGetAttribute_request(payload, len, &request) != 0 ||
+        (request.attribute != 1 && request.attribute != 3))
+        return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (resolve_stream_id(session, request.stream, &stream) != 0)
+        return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_NOT_FOUND, NULL, 0);
+    if (corex_backend_stream_get_attribute(stream, (CUstreamAttrID)request.attribute, &value) != CUDA_SUCCESS)
+        return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_CUDA_ERROR, NULL, 0);
+    if (request.attribute == 1) {
+        CUaccessPolicyWindow *w = &value.accessPolicyWindow;
+        if (w->base_ptr) {
+            int found = 0;
+            for (size_t i = 0; i < MAX_ALLOCS; ++i) {
+                Allocation *a = &session->allocations[i];
+                uint64_t pointer = (uint64_t)(uintptr_t)w->base_ptr;
+                if (a->used && pointer >= a->ptr && pointer - a->ptr <= a->size &&
+                    w->num_bytes <= a->size - (pointer - a->ptr)) {
+                    response.allocation = a->id; response.offset = pointer - a->ptr;
+                    found = 1; break;
+                }
+            }
+            if (!found) return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_CUDA_ERROR, NULL, 0);
+        }
+        response.bytes = w->num_bytes;
+        memcpy(&response.hit_ratio_bits, &w->hitRatio, sizeof(float));
+        response.hit_property = (int)w->hitProp; response.miss_property = (int)w->missProp;
+    } else response.sync_policy = (int)value.syncPolicy;
+    unsigned char wire[40]; size_t length = 0;
+    if (corex_generated_encode_cudaStreamGetAttribute_response(wire, sizeof(wire), &length, &response) != 0)
+        return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_STREAM_GET_ATTRIBUTE, req_id, ST_OK, wire, (uint32_t)length);
+}
+
+static int handle_stream_set_attribute(ServerSession *session, int fd, uint32_t req_id,
+                                       const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaStreamSetAttributeRequest request;
+    CUstream stream; CUstreamAttrValue value = {0};
+    if (corex_generated_decode_cudaStreamSetAttribute_request(payload, len, &request) != 0 ||
+        (request.attribute != 1 && request.attribute != 3))
+        return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+    if (resolve_stream_id(session, request.stream, &stream) != 0)
+        return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, ST_NOT_FOUND, NULL, 0);
+    if (request.attribute == 1) {
+        CUaccessPolicyWindow *w = &value.accessPolicyWindow;
+        memcpy(&w->hitRatio, &request.hit_ratio_bits, sizeof(float));
+        if (!(w->hitRatio >= 0.0f && w->hitRatio <= 1.0f) ||
+            request.hit_property < 0 || request.hit_property > 2 ||
+            request.miss_property < 0 || request.miss_property > 1)
+            return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+        if (request.allocation) {
+            Allocation *a = find_allocation(session, request.allocation);
+            if (!a || request.offset > a->size || request.bytes > a->size - request.offset)
+                return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+            w->base_ptr = (void *)(uintptr_t)(a->ptr + request.offset);
+        } else if (request.offset || request.bytes) {
+            return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, ST_BAD_REQUEST, NULL, 0);
+        }
+        w->num_bytes = (size_t)request.bytes;
+        w->hitProp = (CUaccessProperty)request.hit_property;
+        w->missProp = (CUaccessProperty)request.miss_property;
+    } else value.syncPolicy = (CUsynchronizationPolicy)request.sync_policy;
+    CUresult result = corex_backend_stream_set_attribute(stream, (CUstreamAttrID)request.attribute, &value);
+    uint32_t status = result == CUDA_SUCCESS ? ST_OK :
+                      result == CUDA_ERROR_INVALID_VALUE ? ST_BAD_REQUEST : ST_CUDA_ERROR;
+    return send_response(fd, OP_STREAM_SET_ATTRIBUTE, req_id, status, NULL, 0);
+}
+
 static int handle_occupancy(ServerSession *session, int fd, uint32_t req_id,
                             const unsigned char *payload, uint32_t len)
 {

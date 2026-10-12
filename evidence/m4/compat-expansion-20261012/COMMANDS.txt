@@ -1,0 +1,19 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_compat_families_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -ldl -o /home/lvtong/corex-remote-runtime/build/compat-expansion/driver-probe
+/home/lvtong/corex-remote-runtime/build/compat-expansion/driver-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_compat_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -ldl -o /home/lvtong/corex-remote-runtime/build/compat-expansion/runtime-probe
+/home/lvtong/corex-remote-runtime/build/compat-expansion/runtime-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -DCOREX_COMPAT_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/compat_expansion.c -o /home/lvtong/corex-remote-runtime/build/compat-expansion/internal-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/compat_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -o /home/lvtong/corex-remote-runtime/build/compat-expansion/compat_expansion_app
+COREX_REMOTE_PORT=48511 dist/bin/runtime_server  # independent Popen PID=2068446
+/home/lvtong/corex-remote-runtime/build/compat-expansion/compat_expansion_app
+python3 /home/lvtong/corex-remote-runtime/tests/integration/compat_expansion_protocol.py
+./scripts/build.sh
+OUT=/tmp/compat-expansion-schema-final ./scripts/test-api-schema.sh
+OUT=/tmp/compat-expansion-registry-final ./scripts/test-handler-registry.sh
+OUT=/tmp/compat-expansion-backend-final ./scripts/test-backend-seam.sh
+python3 scripts/verify-api-contracts.py
+python3 scripts/verify-evidence-links.py
+readelf -d build/compat-expansion/compat_expansion_app
+git diff --check
+# Reproduce build/probes/public ABI/socket integration:
+# ./scripts/build.sh && python3 scripts/run-compat-expansion.py --out <new-evidence-directory>

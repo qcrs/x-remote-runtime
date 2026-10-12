@@ -104,8 +104,14 @@ typedef enum {
     OP_MEMCPY_3D_ASYNC     = 56,
     OP_MEMCPY_2D_H2D_ASYNC = 57,
     OP_MEMCPY_2D_D2H_ASYNC = 58,
+    OP_SET_LIMIT = 59,
+    OP_SET_CACHE_CONFIG = 60,
+    OP_SET_SHARED_MEM_CONFIG = 61,
+    OP_STREAM_COPY_ATTRIBUTES = 62,
+    OP_STREAM_GET_ATTRIBUTE = 63,
+    OP_STREAM_SET_ATTRIBUTE = 64,
     /* Sentinel: one past the highest assigned wire opcode. */
-    OP__COUNT               = 59,
+    OP__COUNT               = 65,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

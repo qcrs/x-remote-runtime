@@ -28,6 +28,8 @@ typedef enum cudaError {
     cudaErrorInvalidMemcpyDirection = 21,
     cudaErrorInvalidResourceHandle  = 400,
     cudaErrorNotReady               = 600,
+    cudaErrorHostMemoryAlreadyRegistered = 712,
+    cudaErrorHostMemoryNotRegistered = 713,
     cudaErrorNotSupported           = 801,
     cudaErrorUnknown                = 999
 } cudaError_t;
@@ -135,7 +137,57 @@ typedef struct cudaMemcpy3DParms {
     cudaMemcpyKind kind;
 } cudaMemcpy3DParms;
 
+typedef enum cudaMemoryType {
+    cudaMemoryTypeUnregistered = 0, cudaMemoryTypeHost = 1,
+    cudaMemoryTypeDevice = 2, cudaMemoryTypeManaged = 3
+} cudaMemoryType;
+typedef struct cudaPointerAttributes {
+    cudaMemoryType memoryType;
+    cudaMemoryType type;
+    int device;
+    void *devicePointer;
+    void *hostPointer;
+    int isManaged;
+} cudaPointerAttributes;
+
+typedef enum cudaStreamAttrID {
+    cudaStreamAttributeAccessPolicyWindow = 1,
+    cudaStreamAttributeSynchronizationPolicy = 3
+} cudaStreamAttrID;
+typedef enum cudaAccessProperty {
+    cudaAccessPropertyNormal = 0, cudaAccessPropertyStreaming = 1,
+    cudaAccessPropertyPersisting = 2
+} cudaAccessProperty;
+typedef struct cudaAccessPolicyWindow {
+    void *base_ptr;
+    size_t num_bytes;
+    float hitRatio;
+    cudaAccessProperty hitProp, missProp;
+} cudaAccessPolicyWindow;
+typedef union cudaStreamAttrValue {
+    char pad[64];
+    cudaAccessPolicyWindow accessPolicyWindow;
+    int syncPolicy;
+} cudaStreamAttrValue;
+cudaError_t cudaStreamGetAttribute(cudaStream_t stream, cudaStreamAttrID attr, cudaStreamAttrValue *value);
+cudaError_t cudaStreamSetAttribute(cudaStream_t stream, cudaStreamAttrID attr, const cudaStreamAttrValue *value);
+
+cudaError_t cudaMallocHost(void **ptr, size_t size);
+cudaError_t cudaHostAlloc(void **ptr, size_t size, unsigned int flags);
+cudaError_t cudaFreeHost(void *ptr);
+cudaError_t cudaHostRegister(void *ptr, size_t size, unsigned int flags);
+cudaError_t cudaHostUnregister(void *ptr);
+cudaError_t cudaHostGetFlags(unsigned int *flags, void *ptr);
+cudaError_t cudaHostGetDevicePointer(void **device, void *host, unsigned int flags);
+cudaError_t cudaPointerGetAttributes(cudaPointerAttributes *attributes, const void *ptr);
+const char *cudaGetErrorName(cudaError_t error);
+
 cudaError_t cudaMalloc3D(cudaPitchedPtr *pitchedDevPtr, cudaExtent extent);
+
+cudaError_t cudaDeviceSetLimit(cudaLimit limit, size_t value);
+cudaError_t cudaDeviceSetCacheConfig(cudaFuncCache config);
+cudaError_t cudaDeviceSetSharedMemConfig(cudaSharedMemConfig config);
+cudaError_t cudaStreamCopyAttributes(cudaStream_t dst, cudaStream_t src);
 
 cudaError_t cudaGetDeviceCount(int *count);
 cudaError_t cudaGetDevice(int *device);

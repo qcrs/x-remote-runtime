@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 
+struct cudaChannelFormatDesc cudaCreateChannelDesc(
+    int x, int y, int z, int w, enum cudaChannelFormatKind f)
+{
+    struct cudaChannelFormatDesc desc = {x, y, z, w, f};
+    return desc;
+}
+
 cudaError_t cudaGetDeviceProperties(
     struct cudaDeviceProp *prop,
     int device)

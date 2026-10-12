@@ -119,6 +119,54 @@ static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceGetByPCIBusId
     {"device", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
 };
 #define COREX_GENERATED_CUDADEVICEGETBYPCIBUSID_REQUEST_PCI_BUS_ID_MAX_BYTES 32u
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetLimit_request_fields[] = {
+    {"limit", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"value", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetLimit_response_fields[] = {
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetCacheConfig_request_fields[] = {
+    {"config", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetCacheConfig_response_fields[] = {
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetSharedMemConfig_request_fields[] = {
+    {"config", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetSharedMemConfig_response_fields[] = {
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamCopyAttributes_request_fields[] = {
+    {"dst", COREX_WIRE_STREAM_ID, 8u, 8u, 0u, "stream"},
+    {"src", COREX_WIRE_STREAM_ID, 8u, 8u, 0u, "stream"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamCopyAttributes_response_fields[] = {
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamGetAttribute_request_fields[] = {
+    {"stream", COREX_WIRE_STREAM_ID, 8u, 8u, 0u, "stream"},
+    {"attribute", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamGetAttribute_response_fields[] = {
+    {"allocation", COREX_WIRE_ALLOCATION_ID, 8u, 8u, 0u, "allocation"},
+    {"offset", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+    {"bytes", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+    {"hit_ratio_bits", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+    {"hit_property", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"miss_property", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"sync_policy", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamSetAttribute_request_fields[] = {
+    {"stream", COREX_WIRE_STREAM_ID, 8u, 8u, 0u, "stream"},
+    {"attribute", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"allocation", COREX_WIRE_ALLOCATION_ID, 8u, 8u, 0u, "allocation"},
+    {"offset", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+    {"bytes", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+    {"hit_ratio_bits", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+    {"hit_property", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"miss_property", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"sync_policy", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaStreamSetAttribute_response_fields[] = {
+};
 static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaDeviceSynchronize", "OP_SYNC", 4u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 0u, 0u, 0u, 0u, "corex_backend_context_sync", "handle_sync", corex_generated_cudaDeviceSynchronize_request_fields, 0u, corex_generated_cudaDeviceSynchronize_response_fields, 0u},
     {"cudaStreamQuery", "OP_STREAM_QUERY", 14u, CRX_CAP_STREAM_EVENT, "object_query", 8u, 8u, 4u, 4u, "corex_backend_stream_query", "handle_stream_query", corex_generated_cudaStreamQuery_request_fields, 1u, corex_generated_cudaStreamQuery_response_fields, 1u},
@@ -136,8 +184,14 @@ static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaOccupancyMaxActiveBlocksPerMultiprocessor", "OP_OCCUPANCY", 38u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 20u, 20u, 4u, 4u, "cuOccupancyMaxActiveBlocksPerMultiprocessor", "handle_occupancy", corex_generated_cudaOccupancyMaxActiveBlocksPerMultiprocessor_request_fields, 3u, corex_generated_cudaOccupancyMaxActiveBlocksPerMultiprocessor_response_fields, 1u},
     {"cudaDeviceGetPCIBusId", "OP_DEVICE_GET_PCI_BUS_ID", 47u, CRX_CAP_DEVICE_INFO, "scalar_query", 4u, 4u, 4u, 36u, "corex_backend_device_pci_bus_id", "handle_device_get_pci_bus_id", corex_generated_cudaDeviceGetPCIBusId_request_fields, 1u, corex_generated_cudaDeviceGetPCIBusId_response_fields, 1u},
     {"cudaDeviceGetByPCIBusId", "OP_DEVICE_GET_BY_PCI_BUS_ID", 48u, CRX_CAP_DEVICE_INFO, "scalar_query", 4u, 36u, 4u, 4u, "corex_backend_device_get_by_pci_bus_id", "handle_device_get_by_pci_bus_id", corex_generated_cudaDeviceGetByPCIBusId_request_fields, 1u, corex_generated_cudaDeviceGetByPCIBusId_response_fields, 1u},
+    {"cudaDeviceSetLimit", "OP_SET_LIMIT", 59u, CRX_CAP_DEVICE_INFO, "semantic_rpc", 12u, 12u, 0u, 0u, "corex_backend_context_set_limit", "handle_set_limit", corex_generated_cudaDeviceSetLimit_request_fields, 2u, corex_generated_cudaDeviceSetLimit_response_fields, 0u},
+    {"cudaDeviceSetCacheConfig", "OP_SET_CACHE_CONFIG", 60u, CRX_CAP_DEVICE_INFO, "semantic_rpc", 4u, 4u, 0u, 0u, "corex_backend_context_set_cache_config", "handle_set_cache_config", corex_generated_cudaDeviceSetCacheConfig_request_fields, 1u, corex_generated_cudaDeviceSetCacheConfig_response_fields, 0u},
+    {"cudaDeviceSetSharedMemConfig", "OP_SET_SHARED_MEM_CONFIG", 61u, CRX_CAP_DEVICE_INFO, "semantic_rpc", 4u, 4u, 0u, 0u, "corex_backend_context_set_shared_mem_config", "handle_set_shared_mem_config", corex_generated_cudaDeviceSetSharedMemConfig_request_fields, 1u, corex_generated_cudaDeviceSetSharedMemConfig_response_fields, 0u},
+    {"cudaStreamCopyAttributes", "OP_STREAM_COPY_ATTRIBUTES", 62u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 16u, 16u, 0u, 0u, "corex_backend_stream_copy_attributes", "handle_stream_copy_attributes", corex_generated_cudaStreamCopyAttributes_request_fields, 2u, corex_generated_cudaStreamCopyAttributes_response_fields, 0u},
+    {"cudaStreamGetAttribute", "OP_STREAM_GET_ATTRIBUTE", 63u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 12u, 12u, 40u, 40u, "corex_backend_stream_get_attribute", "handle_stream_get_attribute", corex_generated_cudaStreamGetAttribute_request_fields, 2u, corex_generated_cudaStreamGetAttribute_response_fields, 7u},
+    {"cudaStreamSetAttribute", "OP_STREAM_SET_ATTRIBUTE", 64u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 52u, 52u, 0u, 0u, "corex_backend_stream_set_attribute", "handle_stream_set_attribute", corex_generated_cudaStreamSetAttribute_request_fields, 9u, corex_generated_cudaStreamSetAttribute_response_fields, 0u},
 };
-#define COREX_GENERATED_API_COUNT 16u
+#define COREX_GENERATED_API_COUNT 22u
 static inline int corex_generated_validate_payload(uint32_t opcode, size_t length)
 {
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i)
@@ -169,7 +223,13 @@ static inline int corex_generated_validate_response(uint32_t opcode, size_t leng
     X(46u, handle_function_set_cache_config, CRX_CAP_MODULE_KERNEL) \
     X(38u, handle_occupancy, CRX_CAP_MODULE_KERNEL) \
     X(47u, handle_device_get_pci_bus_id, CRX_CAP_DEVICE_INFO) \
-    X(48u, handle_device_get_by_pci_bus_id, CRX_CAP_DEVICE_INFO)
+    X(48u, handle_device_get_by_pci_bus_id, CRX_CAP_DEVICE_INFO) \
+    X(59u, handle_set_limit, CRX_CAP_DEVICE_INFO) \
+    X(60u, handle_set_cache_config, CRX_CAP_DEVICE_INFO) \
+    X(61u, handle_set_shared_mem_config, CRX_CAP_DEVICE_INFO) \
+    X(62u, handle_stream_copy_attributes, CRX_CAP_STREAM_EVENT) \
+    X(63u, handle_stream_get_attribute, CRX_CAP_STREAM_EVENT) \
+    X(64u, handle_stream_set_attribute, CRX_CAP_STREAM_EVENT)
 typedef struct {
     uint8_t _empty;
 } CorexGeneratedcudaDeviceSynchronizeRequest;
@@ -1078,6 +1138,382 @@ static inline int corex_generated_call_cudaDeviceGetByPCIBusId(CorexGeneratedRpc
         return -1;
     }
     int result = corex_generated_decode_cudaDeviceGetByPCIBusId_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t limit;
+    uint64_t value;
+} CorexGeneratedcudaDeviceSetLimitRequest;
+static inline int corex_generated_encode_cudaDeviceSetLimit_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetLimitRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 12u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->limit);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->value);
+    *encoded_length = position;
+    return position <= 12u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetLimit_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetLimitRequest *value)
+{
+    if (!input || !value || length != 12u) return -1;
+    size_t position = 0;
+    uint32_t limit_wire; if (corex_protocol_take_u32(input, length, &position, &limit_wire) != 0) return -1; value->limit = (int32_t)limit_wire;
+    uint64_t value_wire; if (corex_protocol_take_u64(input, length, &position, &value_wire) != 0) return -1; value->value = (uint64_t)value_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaDeviceSetLimitResponse;
+static inline int corex_generated_encode_cudaDeviceSetLimit_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetLimitResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetLimit_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetLimitResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceSetLimit(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceSetLimitRequest *request, CorexGeneratedcudaDeviceSetLimitResponse *response)
+{
+    unsigned char request_wire[12u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceSetLimit_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(59u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceSetLimit_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t config;
+} CorexGeneratedcudaDeviceSetCacheConfigRequest;
+static inline int corex_generated_encode_cudaDeviceSetCacheConfig_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetCacheConfigRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->config);
+    *encoded_length = position;
+    return position <= 4u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetCacheConfig_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetCacheConfigRequest *value)
+{
+    if (!input || !value || length != 4u) return -1;
+    size_t position = 0;
+    uint32_t config_wire; if (corex_protocol_take_u32(input, length, &position, &config_wire) != 0) return -1; value->config = (int32_t)config_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaDeviceSetCacheConfigResponse;
+static inline int corex_generated_encode_cudaDeviceSetCacheConfig_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetCacheConfigResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetCacheConfig_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetCacheConfigResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceSetCacheConfig(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceSetCacheConfigRequest *request, CorexGeneratedcudaDeviceSetCacheConfigResponse *response)
+{
+    unsigned char request_wire[4u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceSetCacheConfig_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(60u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceSetCacheConfig_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t config;
+} CorexGeneratedcudaDeviceSetSharedMemConfigRequest;
+static inline int corex_generated_encode_cudaDeviceSetSharedMemConfig_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetSharedMemConfigRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->config);
+    *encoded_length = position;
+    return position <= 4u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetSharedMemConfig_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetSharedMemConfigRequest *value)
+{
+    if (!input || !value || length != 4u) return -1;
+    size_t position = 0;
+    uint32_t config_wire; if (corex_protocol_take_u32(input, length, &position, &config_wire) != 0) return -1; value->config = (int32_t)config_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaDeviceSetSharedMemConfigResponse;
+static inline int corex_generated_encode_cudaDeviceSetSharedMemConfig_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetSharedMemConfigResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetSharedMemConfig_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetSharedMemConfigResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceSetSharedMemConfig(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceSetSharedMemConfigRequest *request, CorexGeneratedcudaDeviceSetSharedMemConfigResponse *response)
+{
+    unsigned char request_wire[4u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceSetSharedMemConfig_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(61u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceSetSharedMemConfig_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint64_t dst;
+    uint64_t src;
+} CorexGeneratedcudaStreamCopyAttributesRequest;
+static inline int corex_generated_encode_cudaStreamCopyAttributes_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamCopyAttributesRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 16u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->dst);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->src);
+    *encoded_length = position;
+    return position <= 16u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamCopyAttributes_request(const unsigned char *input, size_t length, CorexGeneratedcudaStreamCopyAttributesRequest *value)
+{
+    if (!input || !value || length != 16u) return -1;
+    size_t position = 0;
+    uint64_t dst_wire; if (corex_protocol_take_u64(input, length, &position, &dst_wire) != 0) return -1; value->dst = (uint64_t)dst_wire;
+    uint64_t src_wire; if (corex_protocol_take_u64(input, length, &position, &src_wire) != 0) return -1; value->src = (uint64_t)src_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaStreamCopyAttributesResponse;
+static inline int corex_generated_encode_cudaStreamCopyAttributes_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamCopyAttributesResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamCopyAttributes_response(const unsigned char *input, size_t length, CorexGeneratedcudaStreamCopyAttributesResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaStreamCopyAttributes(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaStreamCopyAttributesRequest *request, CorexGeneratedcudaStreamCopyAttributesResponse *response)
+{
+    unsigned char request_wire[16u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaStreamCopyAttributes_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(62u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaStreamCopyAttributes_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint64_t stream;
+    int32_t attribute;
+} CorexGeneratedcudaStreamGetAttributeRequest;
+static inline int corex_generated_encode_cudaStreamGetAttribute_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamGetAttributeRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 12u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->stream);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->attribute);
+    *encoded_length = position;
+    return position <= 12u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamGetAttribute_request(const unsigned char *input, size_t length, CorexGeneratedcudaStreamGetAttributeRequest *value)
+{
+    if (!input || !value || length != 12u) return -1;
+    size_t position = 0;
+    uint64_t stream_wire; if (corex_protocol_take_u64(input, length, &position, &stream_wire) != 0) return -1; value->stream = (uint64_t)stream_wire;
+    uint32_t attribute_wire; if (corex_protocol_take_u32(input, length, &position, &attribute_wire) != 0) return -1; value->attribute = (int32_t)attribute_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint64_t allocation;
+    uint64_t offset;
+    uint64_t bytes;
+    uint32_t hit_ratio_bits;
+    int32_t hit_property;
+    int32_t miss_property;
+    int32_t sync_policy;
+} CorexGeneratedcudaStreamGetAttributeResponse;
+static inline int corex_generated_encode_cudaStreamGetAttribute_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamGetAttributeResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 40u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->allocation);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->offset);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->bytes);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->hit_ratio_bits);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->hit_property);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->miss_property);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->sync_policy);
+    *encoded_length = position;
+    return position <= 40u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamGetAttribute_response(const unsigned char *input, size_t length, CorexGeneratedcudaStreamGetAttributeResponse *value)
+{
+    if (!input || !value || length != 40u) return -1;
+    size_t position = 0;
+    uint64_t allocation_wire; if (corex_protocol_take_u64(input, length, &position, &allocation_wire) != 0) return -1; value->allocation = (uint64_t)allocation_wire;
+    uint64_t offset_wire; if (corex_protocol_take_u64(input, length, &position, &offset_wire) != 0) return -1; value->offset = (uint64_t)offset_wire;
+    uint64_t bytes_wire; if (corex_protocol_take_u64(input, length, &position, &bytes_wire) != 0) return -1; value->bytes = (uint64_t)bytes_wire;
+    uint32_t hit_ratio_bits_wire; if (corex_protocol_take_u32(input, length, &position, &hit_ratio_bits_wire) != 0) return -1; value->hit_ratio_bits = (uint32_t)hit_ratio_bits_wire;
+    uint32_t hit_property_wire; if (corex_protocol_take_u32(input, length, &position, &hit_property_wire) != 0) return -1; value->hit_property = (int32_t)hit_property_wire;
+    uint32_t miss_property_wire; if (corex_protocol_take_u32(input, length, &position, &miss_property_wire) != 0) return -1; value->miss_property = (int32_t)miss_property_wire;
+    uint32_t sync_policy_wire; if (corex_protocol_take_u32(input, length, &position, &sync_policy_wire) != 0) return -1; value->sync_policy = (int32_t)sync_policy_wire;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaStreamGetAttribute(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaStreamGetAttributeRequest *request, CorexGeneratedcudaStreamGetAttributeResponse *response)
+{
+    unsigned char request_wire[12u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaStreamGetAttribute_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(63u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaStreamGetAttribute_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint64_t stream;
+    int32_t attribute;
+    uint64_t allocation;
+    uint64_t offset;
+    uint64_t bytes;
+    uint32_t hit_ratio_bits;
+    int32_t hit_property;
+    int32_t miss_property;
+    int32_t sync_policy;
+} CorexGeneratedcudaStreamSetAttributeRequest;
+static inline int corex_generated_encode_cudaStreamSetAttribute_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamSetAttributeRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 52u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->stream);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->attribute);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->allocation);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->offset);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->bytes);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->hit_ratio_bits);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->hit_property);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->miss_property);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->sync_policy);
+    *encoded_length = position;
+    return position <= 52u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamSetAttribute_request(const unsigned char *input, size_t length, CorexGeneratedcudaStreamSetAttributeRequest *value)
+{
+    if (!input || !value || length != 52u) return -1;
+    size_t position = 0;
+    uint64_t stream_wire; if (corex_protocol_take_u64(input, length, &position, &stream_wire) != 0) return -1; value->stream = (uint64_t)stream_wire;
+    uint32_t attribute_wire; if (corex_protocol_take_u32(input, length, &position, &attribute_wire) != 0) return -1; value->attribute = (int32_t)attribute_wire;
+    uint64_t allocation_wire; if (corex_protocol_take_u64(input, length, &position, &allocation_wire) != 0) return -1; value->allocation = (uint64_t)allocation_wire;
+    uint64_t offset_wire; if (corex_protocol_take_u64(input, length, &position, &offset_wire) != 0) return -1; value->offset = (uint64_t)offset_wire;
+    uint64_t bytes_wire; if (corex_protocol_take_u64(input, length, &position, &bytes_wire) != 0) return -1; value->bytes = (uint64_t)bytes_wire;
+    uint32_t hit_ratio_bits_wire; if (corex_protocol_take_u32(input, length, &position, &hit_ratio_bits_wire) != 0) return -1; value->hit_ratio_bits = (uint32_t)hit_ratio_bits_wire;
+    uint32_t hit_property_wire; if (corex_protocol_take_u32(input, length, &position, &hit_property_wire) != 0) return -1; value->hit_property = (int32_t)hit_property_wire;
+    uint32_t miss_property_wire; if (corex_protocol_take_u32(input, length, &position, &miss_property_wire) != 0) return -1; value->miss_property = (int32_t)miss_property_wire;
+    uint32_t sync_policy_wire; if (corex_protocol_take_u32(input, length, &position, &sync_policy_wire) != 0) return -1; value->sync_policy = (int32_t)sync_policy_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaStreamSetAttributeResponse;
+static inline int corex_generated_encode_cudaStreamSetAttribute_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaStreamSetAttributeResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaStreamSetAttribute_response(const unsigned char *input, size_t length, CorexGeneratedcudaStreamSetAttributeResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaStreamSetAttribute(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaStreamSetAttributeRequest *request, CorexGeneratedcudaStreamSetAttributeResponse *response)
+{
+    unsigned char request_wire[52u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaStreamSetAttribute_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(64u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaStreamSetAttribute_response(response_wire, response_length, response);
     free(response_wire);
     return result;
 }
