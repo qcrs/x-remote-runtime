@@ -80,6 +80,8 @@ struct corexRemoteModuleHandle {
     uint64_t session_generation;
     uint64_t module_id;
     int live;
+    unsigned char *library_image;
+    size_t library_image_size;
 };
 
 typedef enum {

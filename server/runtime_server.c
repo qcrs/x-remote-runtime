@@ -67,6 +67,7 @@ typedef struct {
     uint64_t id;
 
     CUmodule module;
+    int library;
 
     unsigned char *image;
     size_t image_size;
@@ -1296,12 +1297,12 @@ static int handle_sync(
  * ============================================================
  */
 
-static int handle_upload_module(
+static int handle_upload_image(
     ServerSession *session,
     int fd,
     uint32_t req_id,
     const unsigned char *payload,
-    uint32_t len)
+    uint32_t len, uint32_t opcode)
 {
     /*
      * payload:
@@ -1311,15 +1312,15 @@ static int handle_upload_module(
      *   image bytes
      */
     if (len < 12)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     uint32_t name_len = corex_protocol_read_u32(payload);
 
     if (name_len == 0 || name_len >= 128)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     if ((uint64_t)4 + name_len + 8 > len)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     char name[128];
     memset(name, 0, sizeof(name));
@@ -1328,7 +1329,7 @@ static int handle_upload_module(
     /* Keep upload names simple: basename only, CoreX image suffix. */
     if (strchr(name, '/') || strstr(name, "..") ||
         name_len < 6 || strcmp(name + name_len - 6, ".cubin") != 0)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     size_t size_pos = 4u + name_len;
     uint64_t image_size64 = corex_protocol_read_u64(payload + size_pos);
@@ -1337,7 +1338,7 @@ static int handle_upload_module(
     if (image_size64 == 0 ||
         image_size64 > SIZE_MAX ||
         image_pos + image_size64 != len)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     size_t image_size = (size_t)image_size64;
 
@@ -1346,12 +1347,12 @@ static int handle_upload_module(
         payload[image_pos + 1] != 'E' ||
         payload[image_pos + 2] != 'L' ||
         payload[image_pos + 3] != 'F')
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_BAD_REQUEST, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
 
     unsigned char *image = (unsigned char *)malloc(image_size);
 
     if (!image)
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_INTERNAL, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_INTERNAL, NULL, 0);
 
     memcpy(image, payload + image_pos, image_size);
 
@@ -1375,7 +1376,7 @@ static int handle_upload_module(
 
         return send_response(
             fd,
-            OP_UPLOAD_MODULE,
+            opcode,
             req_id,
             ST_METADATA_ERROR,
             NULL,
@@ -1389,11 +1390,13 @@ static int handle_upload_module(
         parsed_metadata.kernel_count);
 
     CUmodule module = NULL;
-    CUresult r = corex_backend_module_load(&module, image);
+    /* CoreX native multi-kernel library unload does not return. Reuse the
+     * established single-context module lifetime for this partial slice. */
+    CUresult r = corex_backend_module_load(&module,image);
 
     if (r != CUDA_SUCCESS) {
         free(image);
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_CUDA_ERROR, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_CUDA_ERROR, NULL, 0);
     }
 
     ModuleEntry *slot = new_module_slot(session);
@@ -1401,10 +1404,11 @@ static int handle_upload_module(
     if (!slot) {
         corex_backend_module_unload(module);
         free(image);
-        return send_response(fd, OP_UPLOAD_MODULE, req_id, ST_NO_RESOURCE, NULL, 0);
+        return send_response(fd, opcode, req_id, ST_NO_RESOURCE, NULL, 0);
     }
 
     slot->module = module;
+    slot->library = opcode==OP_UPLOAD_LIBRARY;
     slot->image = image;
     slot->image_size = image_size;
     snprintf(slot->name, sizeof(slot->name), "%s", name);
@@ -1426,11 +1430,54 @@ static int handle_upload_module(
 
     return send_response(
         fd,
-        OP_UPLOAD_MODULE,
+        opcode,
         req_id,
         ST_OK,
         &wire_id,
         sizeof(wire_id));
+}
+
+static int handle_upload_module(ServerSession *session,int fd,uint32_t req_id,
+                                const unsigned char *payload,uint32_t len)
+{ return handle_upload_image(session,fd,req_id,payload,len,OP_UPLOAD_MODULE); }
+static int handle_upload_library(ServerSession *session,int fd,uint32_t req_id,
+                                 const unsigned char *payload,uint32_t len)
+{ return handle_upload_image(session,fd,req_id,payload,len,OP_UPLOAD_LIBRARY); }
+
+static int handle_library_count(ServerSession *session,int fd,uint32_t req_id,
+                                 const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaLibraryGetKernelCountRequest request;
+    if(corex_generated_decode_cudaLibraryGetKernelCount_request(payload,len,&request)!=0)
+        return send_response(fd,OP_LIBRARY_COUNT,req_id,ST_BAD_REQUEST,NULL,0);
+    ModuleEntry *module=find_module(session,request.module);
+    if(!module || !module->library)
+        return send_response(fd,OP_LIBRARY_COUNT,req_id,ST_NOT_FOUND,NULL,0);
+    unsigned int count=module->metadata.kernel_count;
+    CorexGeneratedcudaLibraryGetKernelCountResponse response={.count=count};
+    unsigned char out[4];size_t encoded=0;
+    corex_generated_encode_cudaLibraryGetKernelCount_response(out,sizeof(out),&encoded,&response);
+    return send_response(fd,OP_LIBRARY_COUNT,req_id,ST_OK,out,(uint32_t)encoded);
+}
+
+static int handle_library_kernel_name(ServerSession *session,int fd,uint32_t req_id,
+                                       const unsigned char *payload,uint32_t len)
+{
+    CorexGeneratedcudaLibraryEnumerateKernelsRequest request;
+    if(corex_generated_decode_cudaLibraryEnumerateKernels_request(payload,len,&request)!=0)
+        return send_response(fd,OP_LIBRARY_KERNEL_NAME,req_id,ST_BAD_REQUEST,NULL,0);
+    ModuleEntry *module=find_module(session,request.module);
+    if(!module || !module->library)
+        return send_response(fd,OP_LIBRARY_KERNEL_NAME,req_id,ST_NOT_FOUND,NULL,0);
+    CorexGeneratedcudaLibraryEnumerateKernelsResponse response={0};
+    if(request.index>=module->metadata.kernel_count)
+        return send_response(fd,OP_LIBRARY_KERNEL_NAME,req_id,ST_BAD_REQUEST,NULL,0);
+    snprintf(response.name,sizeof(response.name),"%s",module->metadata.kernels[request.index].name);
+    response.name_length=(uint32_t)strlen(response.name);
+    unsigned char out[131];size_t encoded=0;
+    if(corex_generated_encode_cudaLibraryEnumerateKernels_response(out,sizeof(out),&encoded,&response)!=0)
+        return send_response(fd,OP_LIBRARY_KERNEL_NAME,req_id,ST_INTERNAL,NULL,0);
+    return send_response(fd,OP_LIBRARY_KERNEL_NAME,req_id,ST_OK,out,(uint32_t)encoded);
 }
 
 static int handle_get_kernel(
@@ -1461,7 +1508,7 @@ static int handle_get_kernel(
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NOT_FOUND, NULL, 0);
 
     if (!m->metadata_valid)
-        return send_response(fd, OP_GET_KERNEL, req_id, ST_METADATA_ERROR, NULL, 0);
+        return send_response(fd, OP_GET_KERNEL, req_id, m->library ? ST_SYMBOL_NOT_FOUND : ST_METADATA_ERROR, NULL, 0);
 
     const CorexKernelMeta *kernel_meta =
         corex_find_kernel_meta(&m->metadata, name);
@@ -1473,11 +1520,11 @@ static int handle_get_kernel(
             (unsigned long long)module_id,
             name);
 
-        return send_response(fd, OP_GET_KERNEL, req_id, ST_METADATA_ERROR, NULL, 0);
+        return send_response(fd, OP_GET_KERNEL, req_id, m->library ? ST_SYMBOL_NOT_FOUND : ST_METADATA_ERROR, NULL, 0);
     }
 
     CUfunction function = NULL;
-    CUresult r = corex_backend_module_function(&function, m->module, name);
+    CUresult r = corex_backend_module_function(&function,m->module,name);
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_GET_KERNEL, req_id, ST_NOT_FOUND, NULL, 0);
@@ -4055,6 +4102,7 @@ static int handle_hello_entry(ServerSession *session, int fd, uint32_t req_id,
     X(OP_FREE, handle_free, CRX_CAP_LINEAR_MEMORY) \
     X(OP_CLOSE, handle_close, 0) \
     X(OP_UPLOAD_MODULE, handle_upload_module, CRX_CAP_MODULE_KERNEL) \
+    X(OP_UPLOAD_LIBRARY, handle_upload_library, CRX_CAP_MODULE_KERNEL) \
     X(OP_GET_KERNEL, handle_get_kernel, CRX_CAP_MODULE_KERNEL) \
     X(OP_UNLOAD_MODULE, handle_unload_module, CRX_CAP_MODULE_KERNEL) \
     X(OP_LAUNCH_GENERIC, handle_launch_generic, CRX_CAP_MODULE_KERNEL) \

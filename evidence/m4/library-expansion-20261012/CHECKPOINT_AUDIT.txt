@@ -1,0 +1,15 @@
+CHECKPOINT_ONLY; FULL_GOAL_NOT_COMPLETE
+15 new supported APIs verified against baseline 83cfba2; cumulative 20 against 757e9ab.
+18 selected rows all terminal classifications: 5 IMPLEMENTED, 10 PARTIAL_IMPLEMENTED,
+1 BACKEND_UNSUPPORTED, 2 GROUND_TRUTH_BLOCKED; no selected GROUND_TRUTH_REQUIRED.
+Canonical source and public export/ABI/build checks match implemented entries.
+Public library and compiler-symbol clients run in independent processes over localhost
+CRX9 to native CUmodule, allocation, copy and context operations on CoreX.
+Library metadata count/enumeration matches native two-kernel measurements; partial
+scope records native multi-kernel CUlibrary unload failure and CUmodule workaround.
+Library ownership, unload, EOF cleanup and changed shared lifecycle are validated.
+No direct vendor pointer or struct crosses the transport.
+README, ledger, current project state, selected API list and evidence agree on limits.
+No generated sources, binaries or build trees copied into evidence.
+Next symbol-family prerequisite measurement is not claimed as public Runtime support.
+The 25–40 API target and final completion audit remain unfinished.

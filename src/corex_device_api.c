@@ -120,3 +120,11 @@ cudaError_t cudaMemGetInfo(
 
     return cudaSuccess;
 }
+
+cudaError_t cudaChooseDevice(int *device,const struct cudaDeviceProp *properties)
+{
+    if(!device || !properties) return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    /* The one configured logical device is the closest candidate for every
+     * preference, including preferences larger than the native device. */
+    return cudaGetDevice(device);
+}

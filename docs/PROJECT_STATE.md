@@ -302,7 +302,68 @@ A second grouped execution probe measured cooperative launch as unsupported
 (Driver 801, capability attribute 0), and persisting-cache reset as blocked
 (Driver and native Runtime InvalidValue; no public Driver declaration).
 Native library file loading, kernel lookup and kernel-to-function conversion
-succeed and identify the next practical family, using the existing module and
-kernel registry infrastructure. Library Runtime expansion remains pending;
-the implementation target and final completion audit are **not yet achieved**.
+succeeded and identified the next family for the subsequent checkpoint below.
+The implementation target and final completion audit were not achieved at
+this first checkpoint.
 Evidence for this checkpoint: `evidence/m4/continued-expansion-20261012/`.
+
+### Library, identity and legacy-control checkpoint (2026-10-12)
+
+This checkpoint adds **15 supported APIs**: five IMPLEMENTED deprecated control
+aliases and ten PARTIAL_IMPLEMENTED APIs covering six library operations,
+`cudaGetKernel`, `cudaGetFuncBySymbol`, `cudaChooseDevice`, and
+`cudaSetValidDevices`. Together with `83cfba2`, this is **20 additional supported
+APIs** relative to goal baseline `757e9ab`. The implementation target remains
+active. Deprecated control names now carry support status; their deprecation
+remains documented in the ledger notes.
+
+CoreX native library load from file/data, count, enumeration, named kernel
+lookup and kernel-to-function conversion succeed for a two-kernel image.
+Native `cuLibraryUnload` does not return for that image: repeated live process
+observations show entry into unload without return; deliberate SIGTERM ends the
+probe. The installed library destructor contains a non-advancing branch
+consistent with this observation. Native one-kernel unload previously succeeded.
+The partial Runtime library slice therefore uses the **existing CUmodule
+ownership and lifetime**, preserving two-kernel operation instead of limiting
+inputs to one kernel. Count/enumeration come from the existing CoreX metadata
+census and match the native two-kernel query. No opaque native handles cross
+CRX9. Compiled CoreX ELF with metadata, one server context/device, no nonempty
+JIT/library options and no PTX/fatbin inputs are the explicit limits.
+
+Opcode 70 reuses the upload parser, allocation of module slots and unload
+barrier. Generated opcodes 71–72 supply a count and bounded kernel name. Library
+kernel tokens use the existing kernel registry and compiler ABI normalizer;
+the retained client image is released on unload, shutdown and transport failure.
+Identity queries return Runtime-facing tokens for compiler, controlled and
+library kernels; they do not expose native Driver handles or context-independent
+kernels. Missing library names return measured Runtime SymbolNotFound (500),
+using appended protocol status 9; previous status/opcode values remain intact.
+
+The one configured device is selected for all property preferences, including
+oversize preferences, matching native CoreX behavior. Valid-device lists are
+empty/default or [0]; other ordinals and oversized lists return the measured
+errors. The five deprecated thread control APIs delegate to the existing
+modern generated RPCs for limits, cache configuration and synchronization.
+CoreX's obsolete query/setter Runtime entrypoints return 31; Driver-backed
+modern controls provide the documented alias behavior. Kernel attribute setting
+through native CUlibrary returns 801 for both mutable attributes and is recorded
+BACKEND_UNSUPPORTED. The two obsolete double converters are GROUND_TRUTH_BLOCKED:
+native Runtime returns 31, and a native FP64 kernel produces an unexpected value
+for 1+2^-40. No unproven double conversion/no-op semantics were introduced.
+
+Validation passes build, public exports, protocol fixtures, deterministic
+schema generation/rejection, handler uniqueness and backend seam. Independent
+public-library clients → localhost → CRX9 → server → CoreX validate two-kernel
+library load from file/data, count/enumeration truncation and reuse, mixed
+pointer/scalar argument launches, unload ordering, stale tokens, missing names,
+compiler host-symbol identity, deprecated control readback and async retirement.
+The existing lifecycle suite was rerun because module cleanup gained client
+image ownership; it passes. EOF cleanup and normal exit with a live library
+leave empty server session tables. Historical multithread/reconnect suites
+were not rerun; no scheduling/reconnect policy changed.
+
+A prerequisite probe for the next symbol family successfully resolves and
+reads an initialized module global through native CoreX. Public Runtime symbol
+registration and non-owning fake-VA lifetime work remain pending; the final
+25–40 API target and completion audit are **not yet achieved**.
+Evidence: `evidence/m4/library-expansion-20261012/`.

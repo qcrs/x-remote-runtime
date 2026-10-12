@@ -43,6 +43,7 @@ typedef enum {
     ST_ABI_MISMATCH   = 6,
     ST_METADATA_ERROR = 7,
     ST_INVALID_DEVICE  = 8,
+    ST_SYMBOL_NOT_FOUND = 9,
 } CorexProtocolStatus;
 
 typedef enum {
@@ -117,7 +118,11 @@ typedef enum {
     OP_OCCUPANCY_FLAGS = 68,
     OP_OCCUPANCY_POTENTIAL = 69,
 
-    OP__COUNT               = 70,
+    OP_UPLOAD_LIBRARY = 70,
+    OP_LIBRARY_COUNT = 71,
+    OP_LIBRARY_KERNEL_NAME = 72,
+
+    OP__COUNT               = 73,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

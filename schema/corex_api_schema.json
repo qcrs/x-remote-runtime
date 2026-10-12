@@ -635,6 +635,59 @@
       ],
       "server_handler": "handle_occupancy_potential",
       "backend_binding": "corex_backend_occupancy_potential"
+    },
+    {
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "backend_binding": "CorexModuleMeta.kernel_count",
+      "name": "cudaLibraryGetKernelCount",
+      "opcode_name": "OP_LIBRARY_COUNT",
+      "opcode": 71,
+      "request": [
+        {
+          "name": "module",
+          "type": "module_id",
+          "object_kind": "module"
+        }
+      ],
+      "response": [
+        {
+          "name": "count",
+          "type": "u32"
+        }
+      ],
+      "server_handler": "handle_library_count"
+    },
+    {
+      "capability_id": "CRX_CAP_MODULE_KERNEL",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "backend_binding": "CorexModuleMeta.kernels",
+      "name": "cudaLibraryEnumerateKernels",
+      "opcode_name": "OP_LIBRARY_KERNEL_NAME",
+      "opcode": 72,
+      "request": [
+        {
+          "name": "module",
+          "type": "module_id",
+          "object_kind": "module"
+        },
+        {
+          "name": "index",
+          "type": "u32"
+        }
+      ],
+      "response": [
+        {
+          "name": "name",
+          "type": "bounded_string",
+          "max_bytes": 127
+        }
+      ],
+      "server_handler": "handle_library_kernel_name"
     }
   ]
 }

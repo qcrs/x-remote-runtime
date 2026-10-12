@@ -1,0 +1,5 @@
+tests/probes/corex_double_probe.cu:10:94: warning: format specifies type 'float' but the argument has type 'double' [-Wformat]
+   10 |  printf("DOUBLE_ARITHMETIC=%s value=%.17g expected=%.17g\n",value==1.0+0x1p-40?"PASS":"FAIL",value,1.0+0x1p-40);
+      |                                     ~~~~~                                                    ^~~~~
+      |                                     %.17f
+1 warning generated when compiling for ivcore11.

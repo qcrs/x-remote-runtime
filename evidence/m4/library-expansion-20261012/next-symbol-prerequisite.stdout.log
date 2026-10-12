@@ -1,0 +1,3 @@
+cuModuleGetGlobal=0 bytes=4 pointer_nonnull=1
+SYMBOL_READBACK result=0 value=41
+cuModuleUnload=0

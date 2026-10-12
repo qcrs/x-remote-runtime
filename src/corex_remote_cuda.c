@@ -220,6 +220,9 @@ static void mark_session_failed_locked(const char *reason)
     }
     for (size_t i = 0; i < G6D_MAX_MODULE_HANDLES; ++i) {
         if (g_module_handles[i].session_generation == failed_generation) {
+            free(g_module_handles[i].library_image);
+            g_module_handles[i].library_image=NULL;
+            g_module_handles[i].library_image_size=0;
             g_module_handles[i].live = 0;
             g_module_handles[i].module_id = 0;
         }
@@ -383,6 +386,8 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback)
         return cudaErrorInvalidResourceHandle;
     case ST_INVALID_DEVICE:
         return cudaErrorInvalidDevice;
+    case ST_SYMBOL_NOT_FOUND:
+        return cudaErrorSymbolNotFound;
     case ST_NO_RESOURCE:
         return cudaErrorMemoryAllocation;
     case ST_CUDA_ERROR:
@@ -805,6 +810,7 @@ static int remote_memset_async(
 
 
 static int remote_upload_module_bytes(
+    uint32_t opcode,
     const char *wire_name,
     const void *image,
     size_t image_size,
@@ -840,7 +846,7 @@ static int remote_upload_module_bytes(
 
     if (pos == payload_len &&
         rpc(g_fd,
-            OP_UPLOAD_MODULE,
+            opcode,
             payload,
             payload_len,
             &resp,
@@ -1616,6 +1622,7 @@ static cudaError_t module_load_bytes_after_runtime(
 
     uint64_t module_id = 0;
     if (remote_upload_module_bytes(
+            OP_UPLOAD_MODULE,
             wire_name,
             image,
             image_size,
@@ -1645,6 +1652,7 @@ static cudaError_t module_unload_after_runtime(corexRemoteModule_t module)
         return map_last_rpc_error(cudaErrorUnknown);
 
     invalidate_local_module_kernels(module_id);
+    free(h->library_image);h->library_image=NULL;h->library_image_size=0;
     h->live = 0;
     h->module_id = 0;
 
@@ -4433,6 +4441,8 @@ const char *cudaGetErrorString(cudaError_t error)
         return "cudaErrorInvalidMemcpyDirection";
     case cudaErrorInvalidResourceHandle:
         return "cudaErrorInvalidResourceHandle";
+    case cudaErrorSymbolNotFound:
+        return "cudaErrorSymbolNotFound";
     case cudaErrorNotReady:
         return "cudaErrorNotReady";
     case cudaErrorHostMemoryAlreadyRegistered:
@@ -4493,6 +4503,9 @@ static void corexRemoteRuntimeShutdown_locked(void)
     }
 
     for (size_t i = 0; i < g_module_handle_next; ++i) {
+        free(g_module_handles[i].library_image);
+        g_module_handles[i].library_image=NULL;
+        g_module_handles[i].library_image_size=0;
         g_module_handles[i].live = 0;
         g_module_handles[i].module_id = 0;
     }
@@ -5276,6 +5289,7 @@ static cudaError_t cudaPointerGetAttributes_locked(cudaPointerAttributes *attrib
 const char *cudaGetErrorName(cudaError_t error)
 {
     switch (error) {
+    case cudaErrorSymbolNotFound: return "cudaErrorSymbolNotFound";
     case cudaErrorHostMemoryAlreadyRegistered: return "cudaErrorHostMemoryAlreadyRegistered";
     case cudaErrorHostMemoryNotRegistered: return "cudaErrorHostMemoryNotRegistered";
     default:
@@ -5475,6 +5489,229 @@ cudaError_t cudaOccupancyMaxPotentialBlockSize(int *grid,int *block,const void *
     CorexRuntimeContext *context=corex_runtime_context_get();
     corex_runtime_context_lock(context);
     cudaError_t result=cudaOccupancyPotential_locked(grid,block,func,dynamic_shared,block_limit);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+/* Libraries share the module registry; the retained image supplies the existing
+ * metadata normalizer when a public kernel token is requested. */
+static cudaError_t library_load_image_locked(cudaLibrary_t *library,const void *image,size_t size)
+{
+    if(!library || !image || !size) G6E_RETURN(cudaErrorInvalidValue);
+    if(size>64u*1024u*1024u-128u) G6E_RETURN(cudaErrorNotSupported);
+    if(g_module_handle_next>=G6D_MAX_MODULE_HANDLES) G6E_RETURN(cudaErrorMemoryAllocation);
+    size_t exact=0;
+    if(corex_library_image_size(image,size,&exact)!=0) G6E_RETURN(cudaErrorInvalidValue);
+    unsigned char *owned=malloc(exact);
+    if(!owned) G6E_RETURN(cudaErrorMemoryAllocation);
+    memcpy(owned,image,exact);
+    uint64_t module_id=0;
+    if(remote_upload_module_bytes(OP_UPLOAD_LIBRARY,"library.cubin",owned,exact,&module_id)!=0) {
+        free(owned);G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    }
+    struct corexRemoteModuleHandle *handle=&g_module_handles[g_module_handle_next++];
+    memset(handle,0,sizeof(*handle));
+    handle->cookie=G6D_MODULE_COOKIE;handle->session_generation=g_active_session_generation;
+    handle->module_id=module_id;handle->live=1;
+    handle->library_image=owned;handle->library_image_size=exact;
+    *library=(cudaLibrary_t)handle;
+    return cudaSuccess;
+}
+
+static cudaError_t library_load_locked(cudaLibrary_t *library,const void *code,
+                                       const char *file,unsigned int jit_count,unsigned int option_count)
+{
+    if(!library || (!code && !file)) G6E_RETURN(cudaErrorInvalidValue);
+    *library=NULL;
+    if(jit_count || option_count) G6E_RETURN(cudaErrorNotSupported);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    if(file) {
+        size_t size=0;unsigned char *image=read_file_bytes(file,&size);
+        if(!image) G6E_RETURN(cudaErrorInvalidValue);
+        cudaError_t result=library_load_image_locked(library,image,size);
+        free(image);return result;
+    }
+    if(pointer_in_remote_arena(code)) G6E_RETURN(cudaErrorInvalidValue);
+    size_t size=0;
+    if(corex_library_image_size(code,64u*1024u*1024u,&size)!=0) G6E_RETURN(cudaErrorNotSupported);
+    return library_load_image_locked(library,code,size);
+}
+
+static cudaError_t library_get_kernel_locked(cudaKernel_t *out,cudaLibrary_t library,const char *name)
+{
+    if(!out || !name) G6E_RETURN(cudaErrorInvalidValue);
+    *out=NULL;
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    struct corexRemoteModuleHandle *module=resolve_module_handle((corexRemoteModule_t)library);
+    if(!module || !module->library_image) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    for(size_t i=0;i<g_kernel_handle_next;++i) {
+        corexRemoteKernelHandle *kernel=&g_kernel_handles[i];
+        if(kernel->live && kernel->module_id==module->module_id &&
+           kernel->session_generation==g_active_session_generation && strcmp(kernel->name,name)==0) {
+            *out=(cudaKernel_t)kernel;return cudaSuccess;
+        }
+    }
+    corexRemoteKernelHandle *kernel=NULL;
+    cudaError_t result=bind_kernel_identity_after_runtime(module,name,G7D_KERNEL_ORIGIN_CONTROLLED,NULL,0,&kernel);
+    if(result!=cudaSuccess) G6E_RETURN(result);
+    G7CFatbinRegistration registration={.image_ptr=module->library_image,
+                                       .image_size=module->library_image_size};
+    result=g7e_attach_compiler_abi_from_metadata(&registration,kernel,name);
+    if(result!=cudaSuccess) {kernel->live=0;G6E_RETURN(result);}
+    *out=(cudaKernel_t)kernel;
+    return cudaSuccess;
+}
+
+static cudaError_t library_count_locked(unsigned int *count,cudaLibrary_t library)
+{
+    if(!count) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    struct corexRemoteModuleHandle *module=resolve_module_handle((corexRemoteModule_t)library);
+    if(!module || !module->library_image) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    CorexGeneratedcudaLibraryGetKernelCountRequest request={.module=module->module_id};
+    CorexGeneratedcudaLibraryGetKernelCountResponse response;
+    if(corex_generated_call_cudaLibraryGetKernelCount(generated_rpc_call,&request,&response)!=0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+    *count=response.count;return cudaSuccess;
+}
+
+static cudaError_t library_enumerate_locked(cudaKernel_t *kernels,unsigned int capacity,cudaLibrary_t library)
+{
+    if(capacity && !kernels) G6E_RETURN(cudaErrorInvalidValue);
+    unsigned int count=0;cudaError_t result=library_count_locked(&count,library);
+    if(result!=cudaSuccess) return result;
+    if(count>COREX_META_MAX_KERNELS) G6E_RETURN(cudaErrorNotSupported);
+    struct corexRemoteModuleHandle *module=resolve_module_handle((corexRemoteModule_t)library);
+    unsigned int take=capacity<count ? capacity : count;
+    for(unsigned int i=0;i<take;++i) {
+        CorexGeneratedcudaLibraryEnumerateKernelsRequest request={.module=module->module_id,.index=i};
+        CorexGeneratedcudaLibraryEnumerateKernelsResponse response;
+        if(corex_generated_call_cudaLibraryEnumerateKernels(generated_rpc_call,&request,&response)!=0)
+            G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
+        result=library_get_kernel_locked(&kernels[i],library,response.name);
+        if(result!=cudaSuccess) return result;
+    }
+    return cudaSuccess;
+}
+
+static cudaError_t library_unload_locked(cudaLibrary_t library)
+{
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    struct corexRemoteModuleHandle *module=resolve_module_handle((corexRemoteModule_t)library);
+    if(!module || !module->library_image) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    cudaError_t result=module_unload_after_runtime((corexRemoteModule_t)library);
+    if(result!=cudaSuccess)G6E_RETURN(result);
+    return cudaSuccess;
+}
+
+
+cudaError_t cudaLibraryLoadData(cudaLibrary_t *library,const void *code,int *jit_options,void **jit_values,unsigned int jit_count,int *library_options,void **library_values,unsigned int library_count)
+{
+    (void)jit_options;(void)jit_values;(void)library_options;(void)library_values;
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_load_locked(library,code,NULL,jit_count,library_count);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaLibraryLoadFromFile(cudaLibrary_t *library,const char *file,int *jit_options,void **jit_values,unsigned int jit_count,int *library_options,void **library_values,unsigned int library_count)
+{
+    (void)jit_options;(void)jit_values;(void)library_options;(void)library_values;
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_load_locked(library,NULL,file,jit_count,library_count);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaLibraryUnload(cudaLibrary_t library)
+{
+
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_unload_locked(library);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaLibraryGetKernel(cudaKernel_t *kernel,cudaLibrary_t library,const char *name)
+{
+
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_get_kernel_locked(kernel,library,name);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaLibraryGetKernelCount(unsigned int *count,cudaLibrary_t library)
+{
+
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_count_locked(count,library);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaLibraryEnumerateKernels(cudaKernel_t *kernels,unsigned int count,cudaLibrary_t library)
+{
+
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result=library_enumerate_locked(kernels,count,library);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+/* Runtime-facing identity tokens remain local; no native address crosses CRX9. */
+static cudaError_t kernel_identity_locked(const void **out,const void *symbol)
+{
+    if(!out || !symbol) G6E_RETURN(cudaErrorInvalidValue);
+    *out=NULL;
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
+    corexRemoteKernelHandle *kernel=resolve_kernel_reference(symbol);
+    if(!kernel) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    *out=(const void *)kernel;
+    return cudaSuccess;
+}
+
+cudaError_t cudaGetFuncBySymbol(cudaFunction_t *function,const void *symbol)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    const void *token=NULL;
+    cudaError_t result=kernel_identity_locked(function ? &token : NULL,symbol);
+    if(function)*function=(cudaFunction_t)token;
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaGetKernel(cudaKernel_t *kernel,const void *symbol)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    const void *token=NULL;
+    cudaError_t result=kernel_identity_locked(kernel ? &token : NULL,symbol);
+    if(kernel)*kernel=(cudaKernel_t)token;
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+/* Deprecated names retain their documented modern Runtime semantics. */
+cudaError_t cudaThreadSynchronize(void) { return cudaDeviceSynchronize(); }
+cudaError_t cudaThreadGetLimit(size_t *value,cudaLimit limit) { return cudaDeviceGetLimit(value,limit); }
+cudaError_t cudaThreadSetLimit(cudaLimit limit,size_t value) { return cudaDeviceSetLimit(limit,value); }
+cudaError_t cudaThreadGetCacheConfig(cudaFuncCache *config) { return cudaDeviceGetCacheConfig(config); }
+cudaError_t cudaThreadSetCacheConfig(cudaFuncCache config) { return cudaDeviceSetCacheConfig(config); }
+cudaError_t cudaSetValidDevices(int *devices,int length)
+{
+    CorexRuntimeContext *context=corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result;
+    if(length<0 || length>1 || (length && !devices)) result=record_error(cudaErrorInvalidValue);
+    else if(length && devices[0]!=0) result=record_error(cudaErrorInvalidDevice);
+    else result=cudaSetDevice_locked(0);
     corex_runtime_context_unlock(context);
     return result;
 }

@@ -1,0 +1,5 @@
+cudaMalloc=0
+cudaMemcpy(H2D)=0
+cudaDeviceSynchronize=0
+cudaMemcpy(D2H)=0
+DOUBLE_ARITHMETIC=FAIL value=1.0000002384149411 expected=1.0000000000009095

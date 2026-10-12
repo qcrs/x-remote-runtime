@@ -1,0 +1,2 @@
+cudaGetFuncBySymbol=0 function_nonnull=1
+cudaGetKernel=0 kernel_nonnull=1

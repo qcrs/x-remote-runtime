@@ -10,7 +10,8 @@ events, asynchronous transfers, automatic compiler registration, kernel ABI
 acquisition, ordinary `kernel<<<...>>>` launches, device identity queries, a
 versioned shared library, and an installable SDK. It also supports pitched/3D
 pointer-backed memory and fills, function/occupancy queries, context
-configuration, and partial client page-locked
+configuration, partial compiled-library loading in one server context, and
+partial client page-locked
 host staging with remote copies. Array allocation, texture objects, and managed
 allocation are unavailable on the measured CoreX backend.
 

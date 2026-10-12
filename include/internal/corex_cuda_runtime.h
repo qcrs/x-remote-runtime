@@ -27,6 +27,7 @@ typedef enum cudaError {
     cudaErrorInvalidDevicePointer   = 17,
     cudaErrorInvalidMemcpyDirection = 21,
     cudaErrorInvalidResourceHandle  = 400,
+    cudaErrorSymbolNotFound         = 500,
     cudaErrorNotReady               = 600,
     cudaErrorHostMemoryAlreadyRegistered = 712,
     cudaErrorHostMemoryNotRegistered = 713,
@@ -300,6 +301,26 @@ cudaError_t cudaMemset3DAsync(cudaPitchedPtr ptr, int value, cudaExtent extent, 
 cudaError_t cudaFuncSetSharedMemConfig(const void *func, cudaSharedMemConfig config);
 cudaError_t cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(int *blocks, const void *func, int block_size, size_t dynamic_shared, unsigned int flags);
 cudaError_t cudaOccupancyMaxPotentialBlockSize(int *grid, int *block, const void *func, size_t dynamic_shared, int block_limit);
+
+typedef struct corexRemoteModuleHandle *cudaLibrary_t;
+typedef struct corexRemoteKernelHandle *cudaKernel_t;
+typedef struct corexRemoteKernelHandle *cudaFunction_t;
+cudaError_t cudaGetFuncBySymbol(cudaFunction_t *function,const void *symbol);
+cudaError_t cudaGetKernel(cudaKernel_t *kernel,const void *symbol);
+/* Option arrays are rejected when nonempty in this compiled-image slice. */
+cudaError_t cudaLibraryLoadFromFile(cudaLibrary_t *library, const char *file, int *jit_options, void **jit_values, unsigned int jit_count, int *library_options, void **library_values, unsigned int library_count);
+cudaError_t cudaLibraryLoadData(cudaLibrary_t *library, const void *code, int *jit_options, void **jit_values, unsigned int jit_count, int *library_options, void **library_values, unsigned int library_count);
+cudaError_t cudaLibraryUnload(cudaLibrary_t library);
+cudaError_t cudaLibraryGetKernel(cudaKernel_t *kernel, cudaLibrary_t library, const char *name);
+cudaError_t cudaLibraryGetKernelCount(unsigned int *count, cudaLibrary_t library);
+cudaError_t cudaLibraryEnumerateKernels(cudaKernel_t *kernels, unsigned int count, cudaLibrary_t library);
+
+cudaError_t cudaSetValidDevices(int *devices,int length);
+cudaError_t cudaThreadSynchronize(void);
+cudaError_t cudaThreadGetLimit(size_t *value,cudaLimit limit);
+cudaError_t cudaThreadSetLimit(cudaLimit limit,size_t value);
+cudaError_t cudaThreadGetCacheConfig(cudaFuncCache *config);
+cudaError_t cudaThreadSetCacheConfig(cudaFuncCache config);
 
 #ifdef __cplusplus
 }

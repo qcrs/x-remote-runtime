@@ -1,0 +1,5 @@
+ENTER_RUNTIME_LIBRARY_LOAD
+cudaLibraryLoadFromFile=0
+cudaLibraryGetKernelCount=0 count=2
+cudaLibraryGetKernel(missing)=500
+NATIVE_RUNTIME_UNLOAD_SKIPPED=known non-returning multi-kernel destructor

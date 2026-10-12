@@ -92,6 +92,21 @@ COREX_REMOTE_CUDART_1.1 {
         cudaFuncSetSharedMemConfig;
         cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags;
         cudaOccupancyMaxPotentialBlockSize;
+        cudaLibraryLoadData;
+        cudaLibraryLoadFromFile;
+        cudaLibraryUnload;
+        cudaLibraryGetKernel;
+        cudaLibraryGetKernelCount;
+        cudaLibraryEnumerateKernels;
+        cudaGetFuncBySymbol;
+        cudaGetKernel;
+        cudaChooseDevice;
+        cudaSetValidDevices;
+        cudaThreadSynchronize;
+        cudaThreadGetLimit;
+        cudaThreadSetLimit;
+        cudaThreadGetCacheConfig;
+        cudaThreadSetCacheConfig;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

@@ -226,6 +226,13 @@ static int extract_one(const unsigned char *fatbin, size_t fatbin_size,
     return 1;
 }
 
+int corex_library_image_size(const void *image, size_t available, size_t *size_out)
+{
+    if (!image || !size_out) return -1;
+    if (available > MAX_FATBIN_BYTES) available = MAX_FATBIN_BYTES;
+    return valid_iluvatar_elf(image, available, size_out) ? 0 : -1;
+}
+
 int corex_image_from_compiler_wrapper(const void *wrapper,
                                       CorexLoadableImage *out,
                                           char *err, size_t err_cap)

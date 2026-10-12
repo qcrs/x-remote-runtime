@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 27u) return 1;
+    if (COREX_GENERATED_API_COUNT != 29u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -229,6 +229,24 @@ int main(void) {
     if (corex_generated_validate_response(69u, 7u) == 0) return 1;
     if (corex_generated_validate_response(69u, 9u) == 0) return 1;
     (void)corex_generated_cudaOccupancyMaxPotentialBlockSize_request_fields;
+    if (corex_generated_validate_payload(71u, 8u) != 0) return 1;
+    if (corex_generated_validate_payload(71u, 8u) != 0) return 1;
+    if (corex_generated_validate_response(71u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(71u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(71u, 7u) == 0) return 1;
+    if (corex_generated_validate_payload(71u, 9u) == 0) return 1;
+    if (corex_generated_validate_response(71u, 3u) == 0) return 1;
+    if (corex_generated_validate_response(71u, 5u) == 0) return 1;
+    (void)corex_generated_cudaLibraryGetKernelCount_request_fields;
+    if (corex_generated_validate_payload(72u, 12u) != 0) return 1;
+    if (corex_generated_validate_payload(72u, 12u) != 0) return 1;
+    if (corex_generated_validate_response(72u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(72u, 131u) != 0) return 1;
+    if (corex_generated_validate_payload(72u, 11u) == 0) return 1;
+    if (corex_generated_validate_payload(72u, 13u) == 0) return 1;
+    if (corex_generated_validate_response(72u, 3u) == 0) return 1;
+    if (corex_generated_validate_response(72u, 132u) == 0) return 1;
+    (void)corex_generated_cudaLibraryEnumerateKernels_request_fields;
     if (COREX_GENERATED_CUDADEVICEGETPCIBUSID_RESPONSE_PCI_BUS_ID_MAX_BYTES != 32u) return 1;
     CorexGeneratedcudaDeviceGetPCIBusIdResponse input_cudaDeviceGetPCIBusId_response_pci_bus_id = {0}, output_cudaDeviceGetPCIBusId_response_pci_bus_id = {0};
     unsigned char wire_cudaDeviceGetPCIBusId_response_pci_bus_id[36u]; size_t wire_length_cudaDeviceGetPCIBusId_response_pci_bus_id = 0;
@@ -279,6 +297,31 @@ int main(void) {
     input_cudaDeviceGetByPCIBusId_request_pci_bus_id.pci_bus_id[32u] = '\0';
     if (corex_generated_encode_cudaDeviceGetByPCIBusId_request(wire_cudaDeviceGetByPCIBusId_request_pci_bus_id, sizeof(wire_cudaDeviceGetByPCIBusId_request_pci_bus_id), &wire_length_cudaDeviceGetByPCIBusId_request_pci_bus_id, &input_cudaDeviceGetByPCIBusId_request_pci_bus_id) != 0 ||
         wire_length_cudaDeviceGetByPCIBusId_request_pci_bus_id != 36u) return 1;
+    if (COREX_GENERATED_CUDALIBRARYENUMERATEKERNELS_RESPONSE_NAME_MAX_BYTES != 127u) return 1;
+    CorexGeneratedcudaLibraryEnumerateKernelsResponse input_cudaLibraryEnumerateKernels_response_name = {0}, output_cudaLibraryEnumerateKernels_response_name = {0};
+    unsigned char wire_cudaLibraryEnumerateKernels_response_name[131u]; size_t wire_length_cudaLibraryEnumerateKernels_response_name = 0;
+    input_cudaLibraryEnumerateKernels_response_name.name_length = 3u;
+    memcpy(input_cudaLibraryEnumerateKernels_response_name.name, "abc", 3u);
+    if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) != 0 ||
+        corex_generated_decode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, wire_length_cudaLibraryEnumerateKernels_response_name, &output_cudaLibraryEnumerateKernels_response_name) != 0 ||
+        output_cudaLibraryEnumerateKernels_response_name.name_length != 3u || memcmp(input_cudaLibraryEnumerateKernels_response_name.name, output_cudaLibraryEnumerateKernels_response_name.name, 3u) != 0) return 1;
+    input_cudaLibraryEnumerateKernels_response_name.name_length = 128u;
+    if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) == 0) return 1;
+    input_cudaLibraryEnumerateKernels_response_name.name_length = 3u;
+    memcpy(input_cudaLibraryEnumerateKernels_response_name.name, "abc", 3u);
+    input_cudaLibraryEnumerateKernels_response_name.name[3u] = 'x';
+    if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) == 0) return 1;
+    input_cudaLibraryEnumerateKernels_response_name.name[3u] = '\0';
+    input_cudaLibraryEnumerateKernels_response_name.name[2u] = '\0';
+    if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) == 0) return 1;
+    input_cudaLibraryEnumerateKernels_response_name.name[2u] = "abc"[2];
+    wire_cudaLibraryEnumerateKernels_response_name[6u] = 0;
+    if (corex_generated_decode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, wire_length_cudaLibraryEnumerateKernels_response_name, &output_cudaLibraryEnumerateKernels_response_name) == 0) return 1;
+    input_cudaLibraryEnumerateKernels_response_name.name_length = 127u;
+    memset(input_cudaLibraryEnumerateKernels_response_name.name, 'x', 127u);
+    input_cudaLibraryEnumerateKernels_response_name.name[127u] = '\0';
+    if (corex_generated_encode_cudaLibraryEnumerateKernels_response(wire_cudaLibraryEnumerateKernels_response_name, sizeof(wire_cudaLibraryEnumerateKernels_response_name), &wire_length_cudaLibraryEnumerateKernels_response_name, &input_cudaLibraryEnumerateKernels_response_name) != 0 ||
+        wire_length_cudaLibraryEnumerateKernels_response_name != 131u) return 1;
     if (corex_generated_validate_payload(999u, 0) == 0 ||
         corex_generated_validate_response(999u, 0) == 0 ||
         corex_generated_validate_payload(OP_STREAM_QUERY, 7) == 0) return 1;

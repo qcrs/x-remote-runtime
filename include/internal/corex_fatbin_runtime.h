@@ -24,6 +24,10 @@ int corex_image_from_compiler_wrapper(
     char *err,
     size_t err_cap);
 
+/* The caller supplies a complete readable CoreX ELF image, as for the vendor
+ * load-data API. ELF spans provide the extent absent from that public API. */
+int corex_library_image_size(const void *image, size_t available, size_t *size_out);
+
 #ifdef __cplusplus
 }
 #endif

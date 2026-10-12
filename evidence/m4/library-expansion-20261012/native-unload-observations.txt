@@ -1,0 +1,5 @@
+poll=0 PID=2093360 live=True last_line=ENTER_NATIVE_LIBRARY_UNLOAD
+poll=1 PID=2093360 live=True last_line=ENTER_NATIVE_LIBRARY_UNLOAD
+poll=2 PID=2093360 live=True last_line=ENTER_NATIVE_LIBRARY_UNLOAD
+ACTION=deliberate SIGTERM after repeated live observations of non-returning native unload
+EXIT=-15

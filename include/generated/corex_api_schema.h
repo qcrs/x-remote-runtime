@@ -216,6 +216,20 @@ static const CorexGeneratedFieldMetadata corex_generated_cudaOccupancyMaxPotenti
     {"grid", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
     {"block", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
 };
+static const CorexGeneratedFieldMetadata corex_generated_cudaLibraryGetKernelCount_request_fields[] = {
+    {"module", COREX_WIRE_MODULE_ID, 8u, 8u, 0u, "module"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaLibraryGetKernelCount_response_fields[] = {
+    {"count", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaLibraryEnumerateKernels_request_fields[] = {
+    {"module", COREX_WIRE_MODULE_ID, 8u, 8u, 0u, "module"},
+    {"index", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaLibraryEnumerateKernels_response_fields[] = {
+    {"name", COREX_WIRE_BOUNDED_STRING, 4u, 131u, 127u, "none"},
+};
+#define COREX_GENERATED_CUDALIBRARYENUMERATEKERNELS_RESPONSE_NAME_MAX_BYTES 127u
 static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaDeviceSynchronize", "OP_SYNC", 4u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 0u, 0u, 0u, 0u, "corex_backend_context_sync", "handle_sync", corex_generated_cudaDeviceSynchronize_request_fields, 0u, corex_generated_cudaDeviceSynchronize_response_fields, 0u},
     {"cudaStreamQuery", "OP_STREAM_QUERY", 14u, CRX_CAP_STREAM_EVENT, "object_query", 8u, 8u, 4u, 4u, "corex_backend_stream_query", "handle_stream_query", corex_generated_cudaStreamQuery_request_fields, 1u, corex_generated_cudaStreamQuery_response_fields, 1u},
@@ -244,8 +258,10 @@ static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaFuncSetSharedMemConfig", "OP_FUNCTION_SET_SHARED_CONFIG", 67u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 12u, 12u, 0u, 0u, "corex_backend_function_set_shared_config", "handle_function_set_shared_config", corex_generated_cudaFuncSetSharedMemConfig_request_fields, 2u, corex_generated_cudaFuncSetSharedMemConfig_response_fields, 0u},
     {"cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags", "OP_OCCUPANCY_FLAGS", 68u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 24u, 24u, 4u, 4u, "corex_backend_occupancy_flags", "handle_occupancy_flags", corex_generated_cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_request_fields, 4u, corex_generated_cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags_response_fields, 1u},
     {"cudaOccupancyMaxPotentialBlockSize", "OP_OCCUPANCY_POTENTIAL", 69u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 20u, 20u, 8u, 8u, "corex_backend_occupancy_potential", "handle_occupancy_potential", corex_generated_cudaOccupancyMaxPotentialBlockSize_request_fields, 3u, corex_generated_cudaOccupancyMaxPotentialBlockSize_response_fields, 2u},
+    {"cudaLibraryGetKernelCount", "OP_LIBRARY_COUNT", 71u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 8u, 8u, 4u, 4u, "CorexModuleMeta.kernel_count", "handle_library_count", corex_generated_cudaLibraryGetKernelCount_request_fields, 1u, corex_generated_cudaLibraryGetKernelCount_response_fields, 1u},
+    {"cudaLibraryEnumerateKernels", "OP_LIBRARY_KERNEL_NAME", 72u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 12u, 12u, 4u, 131u, "CorexModuleMeta.kernels", "handle_library_kernel_name", corex_generated_cudaLibraryEnumerateKernels_request_fields, 2u, corex_generated_cudaLibraryEnumerateKernels_response_fields, 1u},
 };
-#define COREX_GENERATED_API_COUNT 27u
+#define COREX_GENERATED_API_COUNT 29u
 static inline int corex_generated_validate_payload(uint32_t opcode, size_t length)
 {
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i)
@@ -288,7 +304,9 @@ static inline int corex_generated_validate_response(uint32_t opcode, size_t leng
     X(66u, handle_memset_3d_async, CRX_CAP_LAYOUT_TRANSFER) \
     X(67u, handle_function_set_shared_config, CRX_CAP_MODULE_KERNEL) \
     X(68u, handle_occupancy_flags, CRX_CAP_MODULE_KERNEL) \
-    X(69u, handle_occupancy_potential, CRX_CAP_MODULE_KERNEL)
+    X(69u, handle_occupancy_potential, CRX_CAP_MODULE_KERNEL) \
+    X(71u, handle_library_count, CRX_CAP_MODULE_KERNEL) \
+    X(72u, handle_library_kernel_name, CRX_CAP_MODULE_KERNEL)
 typedef struct {
     uint8_t _empty;
 } CorexGeneratedcudaDeviceSynchronizeRequest;
@@ -1911,6 +1929,129 @@ static inline int corex_generated_call_cudaOccupancyMaxPotentialBlockSize(CorexG
         return -1;
     }
     int result = corex_generated_decode_cudaOccupancyMaxPotentialBlockSize_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint64_t module;
+} CorexGeneratedcudaLibraryGetKernelCountRequest;
+static inline int corex_generated_encode_cudaLibraryGetKernelCount_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaLibraryGetKernelCountRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 8u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->module);
+    *encoded_length = position;
+    return position <= 8u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaLibraryGetKernelCount_request(const unsigned char *input, size_t length, CorexGeneratedcudaLibraryGetKernelCountRequest *value)
+{
+    if (!input || !value || length != 8u) return -1;
+    size_t position = 0;
+    uint64_t module_wire; if (corex_protocol_take_u64(input, length, &position, &module_wire) != 0) return -1; value->module = (uint64_t)module_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint32_t count;
+} CorexGeneratedcudaLibraryGetKernelCountResponse;
+static inline int corex_generated_encode_cudaLibraryGetKernelCount_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaLibraryGetKernelCountResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->count);
+    *encoded_length = position;
+    return position <= 4u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaLibraryGetKernelCount_response(const unsigned char *input, size_t length, CorexGeneratedcudaLibraryGetKernelCountResponse *value)
+{
+    if (!input || !value || length != 4u) return -1;
+    size_t position = 0;
+    uint32_t count_wire; if (corex_protocol_take_u32(input, length, &position, &count_wire) != 0) return -1; value->count = (uint32_t)count_wire;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaLibraryGetKernelCount(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaLibraryGetKernelCountRequest *request, CorexGeneratedcudaLibraryGetKernelCountResponse *response)
+{
+    unsigned char request_wire[8u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaLibraryGetKernelCount_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(71u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaLibraryGetKernelCount_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint64_t module;
+    uint32_t index;
+} CorexGeneratedcudaLibraryEnumerateKernelsRequest;
+static inline int corex_generated_encode_cudaLibraryEnumerateKernels_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaLibraryEnumerateKernelsRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 12u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->module);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->index);
+    *encoded_length = position;
+    return position <= 12u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaLibraryEnumerateKernels_request(const unsigned char *input, size_t length, CorexGeneratedcudaLibraryEnumerateKernelsRequest *value)
+{
+    if (!input || !value || length != 12u) return -1;
+    size_t position = 0;
+    uint64_t module_wire; if (corex_protocol_take_u64(input, length, &position, &module_wire) != 0) return -1; value->module = (uint64_t)module_wire;
+    uint32_t index_wire; if (corex_protocol_take_u32(input, length, &position, &index_wire) != 0) return -1; value->index = (uint32_t)index_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint32_t name_length;
+    char name[COREX_GENERATED_CUDALIBRARYENUMERATEKERNELS_RESPONSE_NAME_MAX_BYTES + 1u];
+} CorexGeneratedcudaLibraryEnumerateKernelsResponse;
+static inline int corex_generated_encode_cudaLibraryEnumerateKernels_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaLibraryEnumerateKernelsResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    if (value->name_length > COREX_GENERATED_CUDALIBRARYENUMERATEKERNELS_RESPONSE_NAME_MAX_BYTES) return -1;
+    if (value->name[value->name_length] != '\0' || memchr(value->name, '\0', value->name_length) != NULL) return -1;
+    if (position > capacity || capacity - position < 4u + value->name_length) return -1;
+    corex_protocol_write_u32(output, &position, value->name_length);
+    if (value->name_length) memcpy(output + position, value->name, value->name_length);
+    position += value->name_length;
+    *encoded_length = position;
+    return position <= 131u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaLibraryEnumerateKernels_response(const unsigned char *input, size_t length, CorexGeneratedcudaLibraryEnumerateKernelsResponse *value)
+{
+    if (!input || !value || length < 4u || length > 131u) return -1;
+    size_t position = 0;
+    uint32_t name_length; if (corex_protocol_take_u32(input, length, &position, &name_length) != 0 || name_length > COREX_GENERATED_CUDALIBRARYENUMERATEKERNELS_RESPONSE_NAME_MAX_BYTES || name_length > length - position) return -1;
+    if (memchr(input + position, '\0', name_length) != NULL) return -1;
+    if (name_length) memcpy(value->name, input + position, name_length);
+    value->name[name_length] = '\0';
+    value->name_length = name_length; position += name_length;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaLibraryEnumerateKernels(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaLibraryEnumerateKernelsRequest *request, CorexGeneratedcudaLibraryEnumerateKernelsResponse *response)
+{
+    unsigned char request_wire[12u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaLibraryEnumerateKernels_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(72u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaLibraryEnumerateKernels_response(response_wire, response_length, response);
     free(response_wire);
     return result;
 }

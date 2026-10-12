@@ -1,0 +1,1 @@
+Two live native probes using the two-kernel image consumed approximately one CPU each for over 90 seconds with no GPU work. ixsmi showed both initialized GPU processes and 0% GPU utilization. Output was buffered, so the call site is not yet proven. Both probes are being stopped deliberately to add call-entry logging, not treated as terminal because a polling deadline expired.
