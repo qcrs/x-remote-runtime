@@ -1,0 +1,17 @@
+cudaSetDeviceFlags(cudaDeviceScheduleSpin)=0
+cudaGetDeviceFlags(&flags)=0
+FLAGS_BEFORE=1
+cudaSetDeviceFlags(cudaDeviceScheduleYield)=0
+cudaGetDeviceFlags(&flags)=0
+FLAGS_AFTER=2
+cudaLaunchHostFunc(stream,host,(void*)&h)=0
+cudaStreamAddCallback(stream,callback,(void*)&c,0)=0
+cudaStreamSynchronize(stream)=0
+HOST_FUNC=1 CALLBACK=1
+cudaConfigureCall((dim3){1,1,1},(dim3){1,1,1},0,stream)=0
+cudaGetDriverEntryPoint("cuMemAlloc",&entry,0)=0
+ENTRY_PRESENT=1
+cudaDeviceReset()=0
+cudaGetDeviceFlags(&flags)=0
+FLAGS_AFTER_RESET=0
+cudaThreadExit()=31

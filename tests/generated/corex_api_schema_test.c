@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 30u) return 1;
+    if (COREX_GENERATED_API_COUNT != 31u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -256,6 +256,14 @@ int main(void) {
     if (corex_generated_validate_response(73u, 15u) == 0) return 1;
     if (corex_generated_validate_response(73u, 17u) == 0) return 1;
     (void)corex_generated_cudaGetSymbolAddress_request_fields;
+    if (corex_generated_validate_payload(74u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(74u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(74u, 0u) != 0) return 1;
+    if (corex_generated_validate_response(74u, 0u) != 0) return 1;
+    if (corex_generated_validate_payload(74u, 3u) == 0) return 1;
+    if (corex_generated_validate_payload(74u, 5u) == 0) return 1;
+    if (corex_generated_validate_response(74u, 1u) == 0) return 1;
+    (void)corex_generated_cudaSetDeviceFlags_request_fields;
     if (COREX_GENERATED_CUDADEVICEGETPCIBUSID_RESPONSE_PCI_BUS_ID_MAX_BYTES != 32u) return 1;
     CorexGeneratedcudaDeviceGetPCIBusIdResponse input_cudaDeviceGetPCIBusId_response_pci_bus_id = {0}, output_cudaDeviceGetPCIBusId_response_pci_bus_id = {0};
     unsigned char wire_cudaDeviceGetPCIBusId_response_pci_bus_id[36u]; size_t wire_length_cudaDeviceGetPCIBusId_response_pci_bus_id = 0;

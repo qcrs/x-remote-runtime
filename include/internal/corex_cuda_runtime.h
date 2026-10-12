@@ -238,6 +238,13 @@ cudaError_t cudaMemsetAsync(
     void *devPtr, int value, size_t count, cudaStream_t stream);
 
 cudaError_t cudaDeviceSynchronize(void);
+cudaError_t cudaDeviceReset(void);
+cudaError_t cudaThreadExit(void);
+cudaError_t cudaSetDeviceFlags(unsigned int flags);
+cudaError_t cudaConfigureCall(dim3 grid, dim3 block, size_t shared, cudaStream_t stream);
+cudaError_t cudaLaunchHostFunc(cudaStream_t stream, void (*function)(void *), void *data);
+cudaError_t cudaStreamAddCallback(cudaStream_t stream,
+    void (*callback)(cudaStream_t, cudaError_t, void *), void *data, unsigned int flags);
 
 cudaError_t cudaStreamCreate(cudaStream_t *pStream);
 cudaError_t cudaStreamCreateWithFlags(cudaStream_t *pStream, unsigned int flags);

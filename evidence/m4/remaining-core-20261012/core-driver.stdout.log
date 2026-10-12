@@ -1,0 +1,37 @@
+cuLaunchHostFunc(stream,host,(void *)&h)=0
+cuStreamAddCallback(stream,callback,(void *)&c,0)=0
+cuStreamSynchronize(stream)=0
+HOST_FUNC=1 CALLBACK=1
+cuLaunchKernelEx(&config,kernel,args,NULL)=0
+cuStreamSynchronize(stream)=0
+cuMemcpyDtoH(&output,ptr,4)=0
+LAUNCH_EX_DATA=43
+cuLaunchKernelEx(&config,kernel,args,NULL)=0
+cuDevicePrimaryCtxSetFlags(dev,CU_CTX_SCHED_SPIN)=0
+CONTEXT_CREATE flags=0 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=0
+CONTEXT_CREATE flags=1 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=1
+CONTEXT_CREATE flags=2 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=2
+CONTEXT_CREATE flags=4 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=4
+CONTEXT_CREATE flags=8 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=8
+CONTEXT_CREATE flags=16 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=16
+CONTEXT_CREATE flags=9 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=9
+CONTEXT_CREATE flags=3 rc=0
+cuCtxGetFlags(&flags)=0
+CONTEXT_FLAGS=3
+CONTEXT_CREATE flags=32 rc=1
+cuDeviceGetAttribute(&pageable,CU_DEVICE_ATTRIBUTE_PAGEABLE_MEMORY_ACCESS,dev)=0
+PAGEABLE_MEMORY_ACCESS=1

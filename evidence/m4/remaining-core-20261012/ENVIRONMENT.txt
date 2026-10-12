@@ -1,0 +1,8 @@
+UTC=2026-10-12T14:22:27Z
+HOST=server310p
+PLATFORM=Linux-5.15.0-185-generic-aarch64-with-glibc2.35
+COREX=/usr/local/corex-4.4.0
+BASE_HEAD=cf5f8a8654c70bc1a07d87dcbcf056f557df0f66
+TOPOLOGY=independent client -> 127.0.0.1 socket -> CRX9/V3 -> server -> CoreX Driver
+PORT=33015
+SERVER_PID=2124403

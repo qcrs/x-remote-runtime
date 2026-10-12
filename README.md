@@ -12,7 +12,9 @@ versioned shared library, and an installable SDK. It also supports pitched/3D
 pointer-backed memory and fills, function/occupancy queries, context
 configuration, partial compiled-library loading and registered global/constant
 symbol access in one server context, and partial client page-locked host staging
-with remote copies. Array allocation, texture objects, and managed
+with remote copies. Session reset, pre-resource context flags, basic extended
+launches and client host callbacks are supported within the documented limits.
+Array allocation, texture objects, and managed
 allocation are unavailable on the measured CoreX backend.
 
 ## Build
@@ -89,5 +91,5 @@ deployment, or cross-host x86_64-to-aarch64 validation.
 Detailed API status and limitations are recorded in the
 [compatibility ledger](compat/cuda-api-ledger.csv); validated development status
 and evidence links are in [PROJECT_STATE](docs/PROJECT_STATE.md). Graph/Stream
-Capture, Memory Pools, IPC, Peer/Multi-device, and External Interop were excluded
-from the latest compatibility expansion.
+Capture, IPC, Peer/Multi-device, and External Interop remain excluded. Native
+Memory Pools and stream-ordered allocation are the active development slice.

@@ -239,6 +239,11 @@ static const CorexGeneratedFieldMetadata corex_generated_cudaGetSymbolAddress_re
     {"bytes", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
 };
 #define COREX_GENERATED_CUDAGETSYMBOLADDRESS_REQUEST_NAME_MAX_BYTES 127u
+static const CorexGeneratedFieldMetadata corex_generated_cudaSetDeviceFlags_request_fields[] = {
+    {"flags", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaSetDeviceFlags_response_fields[] = {
+};
 static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaDeviceSynchronize", "OP_SYNC", 4u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 0u, 0u, 0u, 0u, "corex_backend_context_sync", "handle_sync", corex_generated_cudaDeviceSynchronize_request_fields, 0u, corex_generated_cudaDeviceSynchronize_response_fields, 0u},
     {"cudaStreamQuery", "OP_STREAM_QUERY", 14u, CRX_CAP_STREAM_EVENT, "object_query", 8u, 8u, 4u, 4u, "corex_backend_stream_query", "handle_stream_query", corex_generated_cudaStreamQuery_request_fields, 1u, corex_generated_cudaStreamQuery_response_fields, 1u},
@@ -270,8 +275,9 @@ static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaLibraryGetKernelCount", "OP_LIBRARY_COUNT", 71u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 8u, 8u, 4u, 4u, "CorexModuleMeta.kernel_count", "handle_library_count", corex_generated_cudaLibraryGetKernelCount_request_fields, 1u, corex_generated_cudaLibraryGetKernelCount_response_fields, 1u},
     {"cudaLibraryEnumerateKernels", "OP_LIBRARY_KERNEL_NAME", 72u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 12u, 12u, 4u, 131u, "CorexModuleMeta.kernels", "handle_library_kernel_name", corex_generated_cudaLibraryEnumerateKernels_request_fields, 2u, corex_generated_cudaLibraryEnumerateKernels_response_fields, 1u},
     {"cudaGetSymbolAddress", "OP_MODULE_GET_GLOBAL", 73u, CRX_CAP_MODULE_KERNEL, "semantic_rpc", 12u, 139u, 16u, 16u, "corex_backend_module_global", "handle_module_global", corex_generated_cudaGetSymbolAddress_request_fields, 2u, corex_generated_cudaGetSymbolAddress_response_fields, 2u},
+    {"cudaSetDeviceFlags", "OP_SET_DEVICE_FLAGS", 74u, CRX_CAP_DEVICE_INFO, "semantic_rpc", 4u, 4u, 0u, 0u, "corex_backend_context_create", "handle_set_device_flags", corex_generated_cudaSetDeviceFlags_request_fields, 1u, corex_generated_cudaSetDeviceFlags_response_fields, 0u},
 };
-#define COREX_GENERATED_API_COUNT 30u
+#define COREX_GENERATED_API_COUNT 31u
 static inline int corex_generated_validate_payload(uint32_t opcode, size_t length)
 {
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i)
@@ -317,7 +323,8 @@ static inline int corex_generated_validate_response(uint32_t opcode, size_t leng
     X(69u, handle_occupancy_potential, CRX_CAP_MODULE_KERNEL) \
     X(71u, handle_library_count, CRX_CAP_MODULE_KERNEL) \
     X(72u, handle_library_kernel_name, CRX_CAP_MODULE_KERNEL) \
-    X(73u, handle_module_global, CRX_CAP_MODULE_KERNEL)
+    X(73u, handle_module_global, CRX_CAP_MODULE_KERNEL) \
+    X(74u, handle_set_device_flags, CRX_CAP_DEVICE_INFO)
 typedef struct {
     uint8_t _empty;
 } CorexGeneratedcudaDeviceSynchronizeRequest;
@@ -2134,6 +2141,60 @@ static inline int corex_generated_call_cudaGetSymbolAddress(CorexGeneratedRpcCal
         return -1;
     }
     int result = corex_generated_decode_cudaGetSymbolAddress_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    uint32_t flags;
+} CorexGeneratedcudaSetDeviceFlagsRequest;
+static inline int corex_generated_encode_cudaSetDeviceFlags_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaSetDeviceFlagsRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->flags);
+    *encoded_length = position;
+    return position <= 4u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaSetDeviceFlags_request(const unsigned char *input, size_t length, CorexGeneratedcudaSetDeviceFlagsRequest *value)
+{
+    if (!input || !value || length != 4u) return -1;
+    size_t position = 0;
+    uint32_t flags_wire; if (corex_protocol_take_u32(input, length, &position, &flags_wire) != 0) return -1; value->flags = (uint32_t)flags_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaSetDeviceFlagsResponse;
+static inline int corex_generated_encode_cudaSetDeviceFlags_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaSetDeviceFlagsResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaSetDeviceFlags_response(const unsigned char *input, size_t length, CorexGeneratedcudaSetDeviceFlagsResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaSetDeviceFlags(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaSetDeviceFlagsRequest *request, CorexGeneratedcudaSetDeviceFlagsResponse *response)
+{
+    unsigned char request_wire[4u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaSetDeviceFlags_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(74u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaSetDeviceFlags_response(response_wire, response_length, response);
     free(response_wire);
     return result;
 }

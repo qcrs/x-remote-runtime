@@ -44,6 +44,7 @@ typedef enum {
     ST_METADATA_ERROR = 7,
     ST_INVALID_DEVICE  = 8,
     ST_SYMBOL_NOT_FOUND = 9,
+    ST_NOT_SUPPORTED = 10,
 } CorexProtocolStatus;
 
 typedef enum {
@@ -124,7 +125,9 @@ typedef enum {
 
     OP_MODULE_GET_GLOBAL = 73,
 
-    OP__COUNT               = 74,
+    OP_SET_DEVICE_FLAGS = 74,
+
+    OP__COUNT               = 75,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

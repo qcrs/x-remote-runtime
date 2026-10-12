@@ -1,25 +1,17 @@
 # Project State
 
-Current compatibility position: **26 additional public APIs supported** relative
-to `757e9ab`, completing the subsequent 25–40 API expansion target. The earlier
-47-API capability batch remains recorded below (CoreX 4.4 / MR-V100).
+Current goal: exhaust practical core Runtime compatibility, then implement native
+Memory Pools and stream-ordered allocation on CoreX 4.4 / MR-V100. The preceding
+26-API target is complete; this broader goal remains **active**.
 
 | Item | Current value |
 | --- | --- |
-| Hardware | Iluvatar MR-V100 / 智铠100 |
-| CoreX | 4.4.0 |
-| Architecture | aarch64 |
-| Protocol | CRX9 / VERSION 3 |
-| Public library | `libcorex_remote_cudart.so.1` |
-| CUDA ABI | `COREX_REMOTE_CUDART_1.0`, `COREX_REMOTE_CUDART_1.1` |
-| Extension ABI | `COREX_REMOTE_EXT_1.0` |
-| Development repository | `/home/lvtong/corex-remote-runtime` |
-| Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last validated slice | Registered global/constant symbols, 2026-10-12; public-ABI localhost CRX9 integration |
-| Previous PASS baseline | `91da4c0` (libraries, identity and legacy controls); goal baseline `757e9ab` |
-| Current Slice | 3D fills, function/occupancy queries, libraries, kernel identities, legacy controls and registered symbols |
-| Scope boundary | Graph/Capture, Pools, IPC, Peer/Multi-device and External Interop excluded |
-| Next action | Implementation target reached; remaining limitations are classified in the ledger |
+| Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
+| Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
+| Goal baseline | `cf5f8a8` |
+| Last validated slice | Remaining core controls, launches and host callbacks; 2026-10-12 |
+| Scope boundary | Graph/Capture, IPC, Peer/Multi-device and External Interop excluded |
+| Next action | Native Memory Pool and Async Allocation subsystem; prerequisite probes succeed |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;
@@ -415,3 +407,47 @@ reached without expanding Graph/Capture, IPC, peer/multidevice or external
 interop. Detailed limitations remain in the authoritative ledger; the README
 keeps only the major capability summary. Evidence and final goal audit:
 `evidence/m4/symbol-expansion-20261012/`.
+
+## Remaining practical core checkpoint (2026-10-12)
+
+Seven further public APIs are supported: reset and its deprecated thread-exit
+alias, context flags, legacy configuration setup, basic extended launch, host
+functions and stream callbacks. The existing async D2D implementation now has
+an accurate IMPLEMENTED ledger classification, verified with host copies and
+same-stream ordering. Basic extended launch accepts no attributes or Ignore
+entries and reuses registered kernels and existing launch RPCs. Other launch
+attributes remain outside this partial slice.
+
+Host functions run asynchronously on a client worker, after the requested
+remote stream completes and its existing host-transfer frontier retires. User
+code executes outside the Runtime mutex. Subsequent Runtime entrypoints wait
+for callback completion at the existing process-wide correctness boundary;
+this preserves ordering but serializes unrelated streams. Callback functions
+and userdata remain entirely client-side. The callback variant reports errors;
+host functions are skipped on completion errors, matching the CUDA contract.
+
+Flags are generated RPC opcode 74, applied through context creation before
+session native resources exist. Equal flags succeed with live resources;
+changing them returns NotSupported because the installed explicit-context
+Driver has no cuCtxSetFlags. Reset drains pending host transfers, closes and
+cleans the session and tombstones all remote identities. Each session teardown
+now recreates the native context, clearing context controls for the next client.
+Client page-locked staging remains process-owned. Old opcodes/statuses remain
+unchanged; status 10 explicitly represents NotSupported.
+
+Pageable-memory access is reported as supported natively, but stream memory
+attachment cannot attach client pages to the independent server context;
+managed allocations are already unsupported. Driver entry queries return
+native process-local function pointers and opaque export tables lack a remote
+ABI, so both are accurately blocked without exposing unusable pointers.
+IPC/multidevice/interop APIs remain excluded even when census families label
+some of them Device/Event/Memcpy. Graph user objects remain excluded.
+
+Validation: build/ABI/protocol, deterministic generation/rejection, backend
+seam and handler uniqueness, grouped Driver/native Runtime probes, independent
+public-library localhost integration, lifecycle and session-isolation checks.
+The latter two are justified by context teardown and callback ownership changes.
+The grouped pool prerequisite probe succeeds for native default/current/custom
+pools, allocation, asynchronous free (including a normal linear allocation),
+attributes, trim and access. Pool support is not yet claimed remotely.
+Evidence: `evidence/m4/remaining-core-20261012/`.

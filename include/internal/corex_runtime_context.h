@@ -194,6 +194,15 @@ typedef enum {
  */
 typedef struct CorexRuntimeContext {
     pthread_mutex_t mutex;
+    pthread_cond_t callback_condition;
+    int callback_worker_started;
+    int callback_pending;
+    cudaStream_t callback_stream;
+    void (*host_function)(void *);
+    void (*stream_callback)(cudaStream_t, cudaError_t, void *);
+    void *callback_data;
+    uint64_t callback_stream_id;
+    uint64_t callback_frontier[G6E_FRONTIER_SLOTS];
 
     int fd;
     uint32_t next_req_id;

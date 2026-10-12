@@ -389,6 +389,8 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback)
         return cudaErrorInvalidDevice;
     case ST_SYMBOL_NOT_FOUND:
         return cudaErrorSymbolNotFound;
+    case ST_NOT_SUPPORTED:
+        return cudaErrorNotSupported;
     case ST_NO_RESOURCE:
         return cudaErrorMemoryAllocation;
     case ST_CUDA_ERROR:
@@ -3198,6 +3200,88 @@ static cudaError_t cudaStreamSynchronize_locked(cudaStream_t stream)
     return cudaSuccess;
 }
 
+/* Client function pointers never cross CRX9. The worker uses the same stream
+ * completion and host-transfer frontier as synchronization, then calls user
+ * code outside the Runtime mutex. Subsequent Runtime entries wait at the
+ * context boundary, so GPU submissions cannot overtake the host function.
+ * This deliberately retains the existing process-wide serialization policy. */
+static void *host_callback_worker(void *opaque)
+{
+    CorexRuntimeContext *context = opaque;
+    pthread_mutex_lock(&context->mutex);
+    for (;;) {
+        while (!context->callback_pending)
+            pthread_cond_wait(&context->callback_condition, &context->mutex);
+        cudaError_t status = cudaSuccess;
+        if (remote_stream_sync(context->callback_stream_id) != 0)
+            status = map_last_rpc_error(cudaErrorUnknown);
+        if (status == cudaSuccess)
+            status = drain_frontier_blocking(context->callback_frontier);
+        void (*host)(void *) = context->host_function;
+        void (*callback)(cudaStream_t, cudaError_t, void *) = context->stream_callback;
+        cudaStream_t stream = context->callback_stream;
+        void *data = context->callback_data;
+        pthread_mutex_unlock(&context->mutex);
+        if (callback) callback(stream, status, data);
+        else if (status == cudaSuccess) host(data);
+        pthread_mutex_lock(&context->mutex);
+        context->callback_pending = 0;
+        context->host_function = NULL;
+        context->stream_callback = NULL;
+        context->callback_data = NULL;
+        pthread_cond_broadcast(&context->callback_condition);
+    }
+    return NULL;
+}
+
+static cudaError_t submit_host_callback_locked(cudaStream_t stream,
+    void (*host)(void *), void (*callback)(cudaStream_t, cudaError_t, void *), void *data)
+{
+    if (!host && !callback) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    G6EStreamView view;
+    if (get_stream_view(stream, &view) != 0) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    apply_legacy_default_ordering(&view);
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    if (!context->callback_worker_started) {
+        pthread_t worker;
+        if (pthread_create(&worker, NULL, host_callback_worker, context))
+            G6E_RETURN(cudaErrorMemoryAllocation);
+        pthread_detach(worker);
+        context->callback_worker_started = 1;
+    }
+    context->callback_stream = stream;
+    context->callback_stream_id = view.stream_id;
+    memcpy(context->callback_frontier, view.frontier, sizeof(context->callback_frontier));
+    context->host_function = host;
+    context->stream_callback = callback;
+    context->callback_data = data;
+    context->callback_pending = 1;
+    pthread_cond_broadcast(&context->callback_condition);
+    return cudaSuccess;
+}
+
+cudaError_t cudaLaunchHostFunc(cudaStream_t stream, void (*function)(void *), void *data)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = submit_host_callback_locked(stream, function, NULL, data);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
+cudaError_t cudaStreamAddCallback(cudaStream_t stream,
+    void (*callback)(cudaStream_t, cudaError_t, void *), void *data, unsigned flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = flags ? record_error(cudaErrorInvalidValue)
+        : submit_host_callback_locked(stream, NULL, callback, data);
+    corex_runtime_context_unlock(context);
+    return result;
+}
+
 static cudaError_t cudaStreamQuery_locked(cudaStream_t stream)
 {
     cudaError_t init = ensure_runtime();
@@ -5897,3 +5981,34 @@ cudaError_t cudaSetValidDevices(int *devices,int length)
     corex_runtime_context_unlock(context);
     return result;
 }
+
+cudaError_t cudaSetDeviceFlags(unsigned flags)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = ensure_runtime();
+    if (result == cudaSuccess) {
+        CorexGeneratedcudaSetDeviceFlagsRequest request = {.flags=flags};
+        CorexGeneratedcudaSetDeviceFlagsResponse response;
+        if (corex_generated_call_cudaSetDeviceFlags(generated_rpc_call, &request, &response))
+            result = map_last_rpc_error(cudaErrorInvalidValue);
+    }
+    corex_runtime_context_unlock(context);
+    return record_error(result);
+}
+
+cudaError_t cudaDeviceReset(void)
+{
+    CorexRuntimeContext *context = corex_runtime_context_get();
+    corex_runtime_context_lock(context);
+    cudaError_t result = cudaSuccess;
+    if (g_lifecycle == COREX_RUNTIME_ACTIVE) {
+        result = cudaDeviceSynchronize_locked();
+        corexRemoteRuntimeShutdown_locked();
+    }
+    g_current_device = 0;
+    corex_runtime_context_unlock(context);
+    return record_error(result);
+}
+
+cudaError_t cudaThreadExit(void) { return cudaDeviceReset(); }

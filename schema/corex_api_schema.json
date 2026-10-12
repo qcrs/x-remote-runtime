@@ -722,6 +722,24 @@
       ],
       "backend_binding": "corex_backend_module_global",
       "server_handler": "handle_module_global"
+    },
+    {
+      "name": "cudaSetDeviceFlags",
+      "opcode_name": "OP_SET_DEVICE_FLAGS",
+      "opcode": 74,
+      "capability_id": "CRX_CAP_DEVICE_INFO",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "flags",
+          "type": "u32"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_set_device_flags",
+      "backend_binding": "corex_backend_context_create"
     }
   ]
 }

@@ -117,3 +117,10 @@ cudaMemcpyFromSymbol
 cudaMemcpyToSymbolAsync
 cudaMemcpyFromSymbolAsync
 __cudaRegisterVar
+cudaSetDeviceFlags
+cudaDeviceReset
+cudaThreadExit
+cudaLaunchKernelExC
+cudaConfigureCall
+cudaLaunchHostFunc
+cudaStreamAddCallback

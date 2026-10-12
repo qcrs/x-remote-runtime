@@ -38,6 +38,7 @@ typedef struct G8ALaunchConfig {
 static __thread G8ALaunchConfig g_g8a_launch_stack[G8A_LAUNCH_CONFIG_STACK_MAX];
 static __thread unsigned g_g8a_launch_depth = 0;
 
+
 unsigned __cudaPushCallConfiguration(
     dim3 gridDim,
     dim3 blockDim,
@@ -106,4 +107,11 @@ cudaError_t __cudaPopCallConfiguration(
            cfg.stream);
 
     return cudaSuccess;
+}
+
+cudaError_t cudaConfigureCall(dim3 grid, dim3 block, size_t shared, cudaStream_t stream)
+{
+    if (!grid.x || !grid.y || !grid.z || !block.x || !block.y || !block.z)
+        return cudaErrorInvalidValue;
+    return (cudaError_t)__cudaPushCallConfiguration(grid, block, shared, stream);
 }

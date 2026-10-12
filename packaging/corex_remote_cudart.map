@@ -114,6 +114,13 @@ COREX_REMOTE_CUDART_1.1 {
         cudaMemcpyToSymbolAsync;
         cudaMemcpyFromSymbolAsync;
         __cudaRegisterVar;
+        cudaSetDeviceFlags;
+        cudaDeviceReset;
+        cudaThreadExit;
+        cudaLaunchKernelExC;
+        cudaConfigureCall;
+        cudaLaunchHostFunc;
+        cudaStreamAddCallback;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

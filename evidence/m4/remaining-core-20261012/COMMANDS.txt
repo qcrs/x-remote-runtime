@@ -1,0 +1,17 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_remaining_core_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/remaining-core/core-probe
+/home/lvtong/corex-remote-runtime/build/remaining-core/core-probe /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_remaining_core_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /home/lvtong/corex-remote-runtime/build/remaining-core/core-runtime
+/home/lvtong/corex-remote-runtime/build/remaining-core/core-runtime
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_pool_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /home/lvtong/corex-remote-runtime/build/remaining-core/pool-runtime
+/home/lvtong/corex-remote-runtime/build/remaining-core/pool-runtime
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_pool_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/remaining-core/pool-probe
+/home/lvtong/corex-remote-runtime/build/remaining-core/pool-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/remaining_core.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/remaining-core/remaining_core_app
+COREX_REMOTE_PORT=33015 dist/bin/runtime_server  # independent Popen PID=2124403
+/home/lvtong/corex-remote-runtime/build/remaining-core/remaining_core_app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+/home/lvtong/corex-remote-runtime/scripts/run-server-session-isolation.sh
+scripts/build.sh
+OUT=evidence/m4/remaining-core-20261012/schema scripts/test-api-schema.sh
+OUT=evidence/m4/remaining-core-20261012/registry scripts/test-handler-registry.sh
+OUT=evidence/m4/remaining-core-20261012/backend-seam scripts/test-backend-seam.sh

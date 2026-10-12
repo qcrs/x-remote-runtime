@@ -2467,6 +2467,38 @@ static int handle_function_attributes(ServerSession *session, int fd, uint32_t r
     return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_OK, response, 28);
 }
 
+static int handle_set_device_flags(ServerSession *session, int fd, uint32_t req_id,
+                                   const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaSetDeviceFlagsRequest request;
+    if (corex_generated_decode_cudaSetDeviceFlags_request(payload, len, &request) ||
+        (request.flags & ~31u))
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_BAD_REQUEST, NULL, 0);
+    unsigned current = 0;
+    if (corex_backend_context_get_flags(&current) != CUDA_SUCCESS)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
+    if (current == request.flags)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_OK, NULL, 0);
+    /* cuCtxSetFlags is unavailable for an existing explicit CoreX context.
+     * Recreate only while the session owns no native resources. */
+    for (int i=0;i<MAX_ALLOCS;++i) if (session->allocations[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (int i=0;i<MAX_STREAMS;++i) if (session->streams[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (int i=0;i<MAX_EVENTS;++i) if (session->events[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (int i=0;i<MAX_MODULES;++i) if (session->modules[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    if (corex_backend_context_destroy(g_ctx) != CUDA_SUCCESS)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
+    g_ctx = NULL;
+    CUresult result = corex_backend_context_create(&g_ctx, request.flags, g_device);
+    if (result != CUDA_SUCCESS)
+        (void)corex_backend_context_create(&g_ctx, current, g_device);
+    return send_response(fd, OP_SET_DEVICE_FLAGS, req_id,
+                         result == CUDA_SUCCESS ? ST_OK : ST_CUDA_ERROR, NULL, 0);
+}
+
 static int handle_set_limit(ServerSession *session, int fd, uint32_t req_id,
                                const unsigned char *payload, uint32_t len)
 {
@@ -4428,9 +4460,17 @@ int main(void)
         (void)serve_session(session, fd);
 
         cleanup_session(session);
+        /* Each independent Runtime session starts with a fresh context;
+         * reset also clears context controls and backend pool selection. */
+        CUresult reset_result = corex_backend_context_destroy(g_ctx);
+        g_ctx = NULL;
+        if (reset_result == CUDA_SUCCESS)
+            reset_result = corex_backend_context_create(&g_ctx, 0, g_device);
+        printf("SESSION_CONTEXT_RESET rc=%d\n", (int)reset_result);
         free(session);
         close(fd);
         fflush(stdout);
+        if (reset_result != CUDA_SUCCESS) break;
     }
 
     close(listen_fd);

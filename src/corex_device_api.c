@@ -5,6 +5,18 @@
 #include <stdio.h>
 #include <string.h>
 
+cudaError_t cudaLaunchKernelExC(const cudaLaunchConfig_t *config,
+                               const void *func, void **args)
+{
+    if (!config || (config->numAttrs && !config->attrs))
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    for (unsigned i = 0; i < config->numAttrs; ++i)
+        if (config->attrs[i].id != cudaLaunchAttributeIgnore)
+            return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
+    return cudaLaunchKernel(func, config->gridDim, config->blockDim, args,
+                            config->dynamicSmemBytes, config->stream);
+}
+
 struct cudaChannelFormatDesc cudaCreateChannelDesc(
     int x, int y, int z, int w, enum cudaChannelFormatKind f)
 {
