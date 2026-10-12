@@ -9,11 +9,11 @@ LEDGER_STATUSES = (
     "IMPLEMENTED",
     "PARTIAL_IMPLEMENTED",
     "GROUND_TRUTH_REQUIRED",
+    "GROUND_TRUTH_BLOCKED",
     "BACKEND_UNSUPPORTED",
     "DEPRECATED",
     "OUT_OF_SCOPE_CURRENT",
 )
-REPORT_ONLY_STATUSES = ("GROUND_TRUTH_BLOCKED",)
 
 
 def main():
@@ -34,8 +34,6 @@ def main():
     print(f"PUBLIC_RUNTIME_API_TOTAL={len(public_rows)}")
     for status in LEDGER_STATUSES:
         print(f"{status}={statuses[status]}")
-    for status in REPORT_ONLY_STATUSES:
-        print(f"{status}=0")
     for status in ("IMPLEMENTED", "PARTIAL_IMPLEMENTED"):
         public_count = sum(row["current_status"] == status for row in public_rows)
         print(f"{status}_PUBLIC_RUNTIME_API={public_count}")

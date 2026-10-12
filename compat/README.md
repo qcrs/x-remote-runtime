@@ -19,3 +19,10 @@ are not overwritten.
 New header declarations default to `GROUND_TRUTH_REQUIRED` and
 `BACKEND_CAPABILITY`. This is an explicit unclassified capability state, not a
 claim of support and not an inference from the C signature.
+
+`GROUND_TRUTH_BLOCKED` is a ledger status as well as a coverage-report status
+when the environment prevents validation. `BACKEND_UNSUPPORTED` requires backend
+evidence; incomplete Runtime semantics use `PARTIAL_IMPLEMENTED` instead.
+The existing `backend_requirement` column records measured backend truth for
+reviewed APIs. `protocol_change` lists actual used assignments; multiple
+opcodes are separated by semicolons and checked by the API contract verifier.

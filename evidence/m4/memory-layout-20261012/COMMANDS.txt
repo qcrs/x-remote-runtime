@@ -1,0 +1,42 @@
+Working directory: /home/lvtong/corex-remote-runtime
+Driver/server/client executions require host device/socket access outside the sandbox.
+
+git status --short
+git rev-parse HEAD
+git log --oneline -8
+
+# Baseline reproduction before edits (old smoke exits 4 at D2H).
+gcc -O2 -Wall -Wextra -Werror -Iinclude/internal tests/integration/memory_layout.c -Ldist/lib -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -o /tmp/memory_layout_before
+env COREX_REMOTE_PORT=50082 stdbuf -oL ./dist/bin/runtime_server
+env COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=50082 /tmp/memory_layout_before
+
+# Direct Driver probe. Async directions use cuMemAllocHost staging.
+gcc -O2 -Wall -Wextra -Werror -I/usr/local/corex-4.4.0/include tests/probes/corex_memory_layout_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /tmp/corex_memory_layout_probe
+/tmp/corex_memory_layout_probe
+
+# Final build includes API contracts, protocol golden, export ABI, and public/internal 3D struct layout checks.
+./scripts/build.sh
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-api-contracts.py .
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-evidence-links.py .
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/report-api-coverage.py
+
+# One independent two-process integration, after restarting the server with the repaired binary.
+# Terminal A (Ctrl-C after the client finishes):
+env COREX_REMOTE_PORT=50082 stdbuf -oL ./dist/bin/runtime_server
+# Terminal B:
+env COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=50082 ./dist/bin/memory_layout_app
+
+# Nonzero blocked-status report check, without altering the canonical ledger.
+PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+from pathlib import Path
+import subprocess
+p = Path('/tmp/memory-layout-blocked-ledger.csv')
+p.write_text(Path('compat/cuda-api-ledger.csv').read_text().replace(',GROUND_TRUTH_REQUIRED,', ',GROUND_TRUTH_BLOCKED,', 1))
+output = subprocess.check_output(['python3', 'scripts/report-api-coverage.py', str(p)], text=True)
+assert 'GROUND_TRUTH_BLOCKED=1\n' in output
+print('GROUND_TRUTH_BLOCKED_LEDGER_REPORT=PASS')
+PY
+
+git diff --check
+# MANIFEST.sha256 records repository-relative hashes for these five evidence files (excluding itself) and changed canonical files.
+sha256sum -c evidence/m4/memory-layout-20261012/MANIFEST.sha256

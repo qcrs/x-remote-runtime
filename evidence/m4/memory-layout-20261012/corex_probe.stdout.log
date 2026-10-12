@@ -1,0 +1,81 @@
+cuInit CUresult=0 name=CUDA_SUCCESS
+cuDeviceGet CUresult=0 name=CUDA_SUCCESS
+cuCtxCreate CUresult=0 name=CUDA_SUCCESS
+DEVICE=Iluvatar MR-V100 DRIVER_VERSION=10020
+cuMemAllocPitch(width=37,height=5,element=1) CUresult=1 name=CUDA_ERROR_INVALID_VALUE
+cuMemAlloc(a) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(b) CUresult=0 name=CUDA_SUCCESS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_H2D CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_H2D_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_D2H CUresult=0 name=CUDA_SUCCESS
+COREX_2D_D2H_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_D2D CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_D2D_DATA=PASS
+cuMemAlloc(a) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(b) CUresult=0 name=CUDA_SUCCESS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_H2D CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_H2D_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_D2H CUresult=0 name=CUDA_SUCCESS
+COREX_3D_D2H_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_D2D CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_D2D_DATA=PASS
+cuStreamCreate CUresult=0 name=CUDA_SUCCESS
+cuMemAllocHost(input) CUresult=0 name=CUDA_SUCCESS
+cuMemAllocHost(output) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(a) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(b) CUresult=0 name=CUDA_SUCCESS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_H2D CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_H2D_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_D2H CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_D2H_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_D2D CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_2D_ASYNC_D2D_DATA=PASS
+cuMemAllocHost(input) CUresult=0 name=CUDA_SUCCESS
+cuMemAllocHost(output) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(a) CUresult=0 name=CUDA_SUCCESS
+cuMemAlloc(b) CUresult=0 name=CUDA_SUCCESS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_H2D CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_H2D_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_D2H CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_D2H_DATA=PASS
+seed(a) CUresult=0 name=CUDA_SUCCESS
+seed(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_D2D CUresult=0 name=CUDA_SUCCESS
+cuStreamSynchronize CUresult=0 name=CUDA_SUCCESS
+readback(b) CUresult=0 name=CUDA_SUCCESS
+COREX_3D_ASYNC_D2D_DATA=PASS
+COREX_MEMORY_LAYOUT_PROBE_FAILURES=0

@@ -75,11 +75,9 @@ grep -q '^M3_S6_GENERATED_SCHEMA_TEST=PASS$' "$TMP/bounded.stdout"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-api-contracts.py" "$ROOT"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/report-api-coverage.py" \
     "$ROOT/compat/cuda-api-ledger.csv" >"$TMP/coverage.txt"
-for status in IMPLEMENTED PARTIAL_IMPLEMENTED GROUND_TRUTH_REQUIRED BACKEND_UNSUPPORTED DEPRECATED OUT_OF_SCOPE_CURRENT; do
+for status in IMPLEMENTED PARTIAL_IMPLEMENTED GROUND_TRUTH_REQUIRED GROUND_TRUTH_BLOCKED BACKEND_UNSUPPORTED DEPRECATED OUT_OF_SCOPE_CURRENT; do
     grep -Eq "^$status=[0-9]+$" "$TMP/coverage.txt"
 done
-grep -q '^BACKEND_UNSUPPORTED=0$' "$TMP/coverage.txt"
-grep -q '^GROUND_TRUTH_BLOCKED=0$' "$TMP/coverage.txt"
 cmp "$TMP/one.h" "$ROOT/include/generated/corex_api_schema.h"
 cmp "$TMP/one.c" "$ROOT/tests/generated/corex_api_schema_test.c"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/verify-evidence-links.py" "$ROOT"

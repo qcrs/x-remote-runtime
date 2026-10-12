@@ -39,11 +39,14 @@ def names_from_lines(path):
 
 def parse_protocol_change(value):
     if value == "NONE" or not value.startswith("OP_"):
-        return None
-    match = OPCODE_RE.fullmatch(value)
-    if not match:
-        fail(f"malformed ledger protocol_change {value!r}")
-    return match.group(1), int(match.group(2))
+        return []
+    pairs = []
+    for item in value.split(";"):
+        match = OPCODE_RE.fullmatch(item.strip())
+        if not match:
+            fail(f"malformed ledger protocol_change {value!r}")
+        pairs.append((match.group(1), int(match.group(2))))
+    return pairs
 
 
 def main():
@@ -77,9 +80,9 @@ def main():
     if missing_ledger:
         fail("missing ledger rows: " + ",".join(missing_ledger))
     for row in ledger_rows:
-        parsed = parse_protocol_change(row["protocol_change"])
-        if parsed and parsed[1] <= 0:
-            fail(f"ledger opcode must be positive for {row['api_name']}")
+        for _, opcode in parse_protocol_change(row["protocol_change"]):
+            if opcode <= 0:
+                fail(f"ledger opcode must be positive for {row['api_name']}")
         if row["implementation_class"] in SCHEMA_MANAGED_LEDGER_CLASSES:
             if row["api_name"] not in schema_names:
                 fail(
@@ -95,12 +98,12 @@ def main():
     if len(protocol_values) != len(protocol_pairs):
         fail("protocol enum symbols are not unique")
     for row in ledger_rows:
-        parsed = parse_protocol_change(row["protocol_change"])
-        if parsed and protocol_values.get(parsed[0]) != parsed[1]:
-            fail(
-                f"ledger protocol mismatch for {row['api_name']}: "
-                f"{parsed[0]}={parsed[1]}"
-            )
+        for name, opcode in parse_protocol_change(row["protocol_change"]):
+            if protocol_values.get(name) != opcode:
+                fail(
+                    f"ledger protocol mismatch for {row['api_name']}: "
+                    f"{name}={opcode}"
+                )
     for api in apis:
         row = ledger_by_name[api["name"]]
         expected_change = f"{api['opcode_name']}={api['opcode']}"

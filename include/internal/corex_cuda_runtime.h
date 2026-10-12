@@ -122,14 +122,17 @@ typedef struct cudaFuncAttributes {
 } cudaFuncAttributes;
 
 typedef struct cudaExtent { size_t width, height, depth; } cudaExtent;
+typedef struct cudaPos { size_t x, y, z; } cudaPos;
 typedef struct cudaPitchedPtr { void *ptr; size_t pitch, xsize, ysize; } cudaPitchedPtr;
 typedef struct cudaMemcpy3DParms {
+    const void *srcArray;
+    cudaPos srcPos;
     cudaPitchedPtr srcPtr;
+    void *dstArray;
+    cudaPos dstPos;
     cudaPitchedPtr dstPtr;
     cudaExtent extent;
     cudaMemcpyKind kind;
-    const void *srcArray;
-    void *dstArray;
 } cudaMemcpy3DParms;
 
 cudaError_t cudaGetDeviceCount(int *count);

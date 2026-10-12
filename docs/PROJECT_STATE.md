@@ -1,6 +1,7 @@
 # Project State
 
-Current autonomous roadmap position: **M3-S8 complete; M4-S1 ready** (M1–M3 PASS locally).
+Current compatibility position: **Memory Layout code present; 2D transfers
+validated; pointer-backed 3D partially implemented** (CoreX 4.4 / MR-V100).
 
 | Item | Current value |
 | --- | --- |
@@ -13,14 +14,15 @@ Current autonomous roadmap position: **M3-S8 complete; M4-S1 ready** (M1–M3 PA
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last validated milestone | M3-S8 Compatibility Contract Hardening |
+| Last validated slice | Memory Layout closeout, 2026-10-12: native probe and public-ABI localhost CRX9 integration |
 | Previous PASS baseline | `8f1e423` (`m3/s7: complete bounded device query batch`) |
-| Current Slice | M4-S1 pitched and two-dimensional memory |
-| Blockers | None |
-| Next action | Begin Wave 1 pitched and two-dimensional memory probe |
+| Current Slice | Memory Layout implementation, evidence, and ledger aligned |
+| Remaining limitations | 3D nonzero positions unsupported; 3D Async uses synchronous opcode and ignores backend stream |
+| Next action | This closeout is complete; remaining 3D position/Async semantics require a separate scoped task |
 
 Compatibility and operations work are tracked independently. The compatibility
-track has completed M3-S8 and is ready for M4-S1; M6-S1 network configuration
+track has completed M3-S8 and has implemented the bounded Memory Layout slice;
+its validation and remaining limitations are recorded below. M6-S1 network configuration
 and diagnostics remain an independent productization track, not evidence that
 M4/M5 API expansion is complete.
 
@@ -159,10 +161,38 @@ Schema opcode symbols, protocol values, ledger entries, exports, coverage
 statistics, and documented evidence links are checked from their authoritative
 sources. New evidence follows `docs/EVIDENCE_POLICY.md` and is retained under
 `evidence/m3/s8/`.
-# Memory layout expansion (current)
+## Memory layout closeout (2026-10-12)
 
 The runtime now has a unified linear/pitched allocation record, pitched
 allocation (CRX9 opcode 49), one-RPC 2D copy and 2D memset operations (opcodes
-50-53), and pointer-backed 3D transfer operations (opcodes 55-56). CoreX
+50-53), and pointer-backed 3D transfer handlers (opcodes 55-56). CoreX
 backend calls remain isolated in `server/corex_backend.c`; array-backed 3D
 transfers are explicitly unsupported because Array ownership is out of scope.
+
+Direct Driver probes on CoreX 4.4 / MR-V100 passed H2D, D2H, and D2D for both
+`cuMemcpy2D` and `cuMemcpy3D`: every call returned `CUDA_SUCCESS` (0) and data
+and padding matched. Their Async variants also passed with pinned host staging.
+The existing `cuMemAllocPitch(..., element_size=1)` call returned
+`CUDA_ERROR_INVALID_VALUE` (1); linear allocation with `pitch=width` remains.
+This result describes that invocation, not a blanket lack of backend support.
+
+The historical `FAIL_D2H_2D_RUNTIME` was a Runtime bug: the client checked the
+D2H response against an H2D-only length of zero, and native server copies used
+caller host pitches for packed staging. Both are fixed. The existing server
+row fallback is retained; no new fallback or client per-row RPC was added.
+2D Async also now returns the correct opcode for native D2D and accepts default
+stream host submissions, reusing the existing frontier and transfer retirement.
+`cudaMemcpy2D` and `cudaMemcpy2DAsync` are `IMPLEMENTED` for this pointer slice.
+
+The internal `cudaMemcpy3DParms` layout now matches the installed public header,
+and the build checks both layouts. Pointer H2D/D2H/D2D data checks pass through
+the public ABI, with zero positions, padded rows/slices, and pointer byte offsets.
+Nonzero `srcPos`/`dstPos` are explicitly rejected. `cudaMemcpy3DAsync` currently
+uses synchronous `OP_MEMCPY_3D=55`, ignores the requested backend stream, and
+has no async staging/retirement path; registered opcode 56 is unused by the
+public client. Both 3D APIs are therefore `PARTIAL_IMPLEMENTED`; successful
+Async data checks do not establish Async semantics.
+
+Minimal validation passed: build, API contracts, protocol/ABI checks, direct
+CoreX probe, and one local two-process integration over localhost socket →
+CRX9 → server → CoreX. Evidence: `evidence/m4/memory-layout-20261012/`.

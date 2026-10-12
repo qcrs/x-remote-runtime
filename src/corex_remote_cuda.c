@@ -477,7 +477,7 @@ static int remote_memcpy2d(uint32_t mode, uint64_t did, uint64_t doff, uint64_t 
     corex_protocol_write_u64(payload,&pos,sid); corex_protocol_write_u64(payload,&pos,soff); corex_protocol_write_u64(payload,&pos,spitch); corex_protocol_write_u64(payload,&pos,width); corex_protocol_write_u64(payload,&pos,height);
     if (data_len) memcpy(payload+pos,host,(size_t)data_len);
     unsigned char *resp=NULL; uint32_t len=0; int rc=rpc(g_fd,OP_MEMCPY_2D,payload,(uint32_t)total,&resp,&len);
-    if (rc==0 && mode==2 && len==data_len && data_len) memcpy(host_out,resp,(size_t)data_len); else if (rc==0 && mode==2 && len!=data_len) rc=-1;
+    if (rc==0 && mode==2 && len==width*height) memcpy(host_out,resp,(size_t)(width*height)); else if (rc==0 && mode==2) rc=-1;
     free(resp); free(payload); return rc;
 }
 
@@ -2387,8 +2387,10 @@ static cudaError_t cudaMemset2D_locked(void *devPtr,size_t pitch,int value,size_
 static cudaError_t cudaMemcpy2DAsync_locked(void *dst,size_t dpitch,const void *src,size_t spitch,size_t width,size_t height,cudaMemcpyKind kind,cudaStream_t stream)
 {
     if(!width||!height)return cudaSuccess;
+    cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
     G6EStreamView sv;
     if(get_stream_view(stream,&sv)!=0)G6E_RETURN(cudaErrorInvalidResourceHandle);
+    apply_legacy_default_ordering(&sv);
     int dr=pointer_in_remote_arena(dst),sr=pointer_in_remote_arena(src); if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;}
     if(kind==cudaMemcpyDeviceToDevice){ResolvedRemotePtr d,s;if(!dr||!sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK||resolve_remote_2d_region(src,spitch,width,height,&s)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);if(remote_memcpy2d_async_d2d(d.allocation_id,d.byte_offset,dpitch,s.allocation_id,s.byte_offset,spitch,width,height,sv.stream_id)!=0)G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}
     else if(kind==cudaMemcpyHostToDevice){ResolvedRemotePtr d;if(sr||resolve_remote_2d_region(dst,dpitch,width,height,&d)!=RESOLVE_OK)G6E_RETURN(cudaErrorInvalidValue);unsigned char*flat=(unsigned char*)malloc(width*height);if(!flat)G6E_RETURN(cudaErrorMemoryAllocation);for(size_t y=0;y<height;++y)memcpy(flat+y*width,(const unsigned char*)src+y*spitch,width);uint64_t transfer=0;if(remote_memcpy2d_h2d_async(d.allocation_id,d.byte_offset,dpitch,width,height,sv.stream_id,flat,&transfer)!=0){free(flat);G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));}free(flat);HiddenTransfer*t=find_free_hidden_transfer();if(!t)G6E_RETURN(cudaErrorMemoryAllocation);memset(t,0,sizeof(*t));t->live=1;t->session_generation=g_active_session_generation;t->transfer_id=transfer;t->kind=HIDDEN_TRANSFER_H2D_2D;t->allocation_id=d.allocation_id;t->origin_stream_slot=sv.slot_index;t->origin_stream_seq=*sv.next_transfer_seq+1;t->submit_order=++g_transfer_submit_order;t->bytes=width*height;t->width=width;t->height=height;t->host_pitch=spitch;}
@@ -2535,6 +2537,8 @@ static cudaError_t cudaMemcpy_locked(
 static cudaError_t cudaMemcpy3D_locked(const cudaMemcpy3DParms *p, cudaStream_t stream, int async)
 {
     if(!p||p->srcArray||p->dstArray||!p->extent.width||!p->extent.height||!p->extent.depth) G6E_RETURN(cudaErrorInvalidValue);
+    /* Position normalization is not implemented in this bounded pointer slice. */
+    if(p->srcPos.x||p->srcPos.y||p->srcPos.z||p->dstPos.x||p->dstPos.y||p->dstPos.z) G6E_RETURN(cudaErrorInvalidValue);
     if(p->extent.width>SIZE_MAX/p->extent.height||p->extent.width*p->extent.height>SIZE_MAX/p->extent.depth)G6E_RETURN(cudaErrorInvalidValue);
     cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);int dr=pointer_in_remote_arena(p->dstPtr.ptr),sr=pointer_in_remote_arena(p->srcPtr.ptr);cudaMemcpyKind kind=p->kind;if(kind==cudaMemcpyDefault){if(dr&&sr)kind=cudaMemcpyDeviceToDevice;else if(dr)kind=cudaMemcpyHostToDevice;else if(sr)kind=cudaMemcpyDeviceToHost;else kind=cudaMemcpyHostToHost;}
     size_t volume=p->extent.width*p->extent.height*p->extent.depth; if(kind==cudaMemcpyHostToHost){if(dr||sr)G6E_RETURN(cudaErrorInvalidValue);for(size_t z=0;z<p->extent.depth;++z)for(size_t y=0;y<p->extent.height;++y)memmove((unsigned char*)p->dstPtr.ptr+z*p->dstPtr.pitch*p->dstPtr.ysize+y*p->dstPtr.pitch,(const unsigned char*)p->srcPtr.ptr+z*p->srcPtr.pitch*p->srcPtr.ysize+y*p->srcPtr.pitch,p->extent.width);return cudaSuccess;}

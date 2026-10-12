@@ -143,6 +143,14 @@ python3 "$HERE/verify-abi.py" \
 python3 "$HERE/verify-scope.py" "$ROOT" \
     | tee "$BUILD/G8C-SCOPE-AUDIT.txt"
 
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -I"$INTERNAL" \
+    -DCOREX_LAYOUT_INTERNAL_ABI -c "$TESTS/memory_layout.c" \
+    -o "$OBJ/memory_layout_abi.o"
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -I"$COREX/include" \
+    "$TESTS/memory_layout.c" -L"$DIST/lib" -lcorex_remote_cudart \
+    -Wl,-rpath,'$ORIGIN/../lib' -o "$DIST/bin/memory_layout_app"
+echo "MEMORY_LAYOUT_ABI=PASS"
+
 if grep -qi 'libcudart' "$BUILD/library-readelf-dynamic.txt"; then
     echo "G8C_LIBRARY_LIBCUDART_DEPENDENCY=FAIL"
     exit 1

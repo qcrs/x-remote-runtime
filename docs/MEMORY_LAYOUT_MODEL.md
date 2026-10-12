@@ -15,7 +15,9 @@ extent information but is not a second ownership system.
 The CRX9 wire format uses explicit fixed-width fields. `OP_ALLOC_PITCHED`
 returns AllocationID, pitch, and physical bytes. `OP_MEMCPY_2D` carries a mode,
 allocation IDs and offsets, pitches, width, height, and a bounded host payload.
-The server performs the row loop, so one public 2D call creates one client RPC.
+The server first uses `cuMemcpy2D`, setting host pitch to the packed row width.
+The existing row loop is a fallback after native errors, so one public 2D call
+creates one client RPC. Caller host pitch is used only for client pack/scatter.
 `OP_MEMSET_2D` uses the backend D2D8 primitive and changes only logical row
 bytes, leaving pitch padding untouched.
 
@@ -23,10 +25,20 @@ bytes, leaving pitch padding untouched.
 `cuMemcpyDtoDAsync` and the existing stream frontier. 2D async entry points
 reuse the same stream validation and frontier rather than creating a second
 scheduler.
+Async D2D uses `OP_MEMCPY_2D_ASYNC=51`; H2D/D2H use submit opcodes 57/58 and
+the existing pinned staging, TransferID, and retirement paths, including the
+legacy default stream. Retirement query/wait RPCs are separate from submission.
 
 `cudaExtent`, `cudaPitchedPtr`, and `cudaMemcpy3DParms` are public ABI types,
 but are normalized at the API boundary. Array-backed 3D transfers remain
 unsupported because this subsystem owns only pointer memory. Pointer-backed
-3D transfers use explicit slice pitches and CoreX `cuMemcpy3D`/`Async`; the
-client resolver validates the final slice, row, and byte boundary before the
-single RPC.
+3D transfers use explicit slice pitches and CoreX `cuMemcpy3D`; the client
+resolver validates the final slice, row, and byte boundary before the single
+`OP_MEMCPY_3D=55` RPC. The public struct layout matches CoreX 4.4, but nonzero
+`srcPos`/`dstPos` are explicitly unsupported; byte offsets in the pointers work.
+`cudaMemcpy3DAsync` currently shares this synchronous RPC and ignores the
+backend stream. `OP_MEMCPY_3D_ASYNC=56` exists only as a server handler; its
+host staging lifetime/retirement is not implemented for public Async use.
+Both 3D APIs are `PARTIAL_IMPLEMENTED`, despite native sync/Async Driver probes
+passing all three directions. Target evidence is recorded in
+`evidence/m4/memory-layout-20261012/`.
