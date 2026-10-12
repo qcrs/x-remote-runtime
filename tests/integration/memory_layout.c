@@ -68,11 +68,6 @@ static int transfers(int three_d, int async, cudaStream_t stream)
             p.dstPtr = (struct cudaPitchedPtr){dst, dp, width, rows};
             p.extent = (struct cudaExtent){width, height, depth}; p.kind = kind;
             r = async ? cudaMemcpy3DAsync(&p, stream) : cudaMemcpy3D(&p);
-            if (!async && direction == 1) {
-                p.srcPos.x = 1;
-                if (cudaMemcpy3D(&p) != cudaErrorInvalidValue) return 1;
-                puts("REMOTE_3D_NONZERO_POS=EXPLICITLY_UNSUPPORTED");
-            }
         } else {
             r = async ? cudaMemcpy2DAsync(dst, dp, src, sp, width, height, kind, stream)
                       : cudaMemcpy2D(dst, dp, src, sp, width, height, kind);
@@ -105,7 +100,7 @@ int main(void)
     failures += transfers(1, 0, NULL);
     failures += transfers(1, 1, stream);
     failures += check("streamDestroy", cudaStreamDestroy(stream));
-    puts("REMOTE_3D_ASYNC_SEMANTICS=PARTIAL_SYNC_OPCODE_55_STREAM_IGNORED");
+    puts("REMOTE_3D_ASYNC_SEMANTICS=OPCODE_56_BACKEND_STREAM_TRANSFER_RETIREMENT");
     printf("MEMORY_LAYOUT_INTEGRATION=%s\n", failures ? "FAIL" : "PASS");
     return failures ? 1 : 0;
 }

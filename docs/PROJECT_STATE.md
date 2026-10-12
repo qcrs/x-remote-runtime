@@ -1,7 +1,7 @@
 # Project State
 
-Current compatibility position: **Memory Layout code present; 2D transfers
-validated; pointer-backed 3D partially implemented** (CoreX 4.4 / MR-V100).
+Current compatibility position: **3D pointer-backed memory complete; bounded
+Memory Layout slice closed** (CoreX 4.4 / MR-V100).
 
 | Item | Current value |
 | --- | --- |
@@ -14,11 +14,11 @@ validated; pointer-backed 3D partially implemented** (CoreX 4.4 / MR-V100).
 | Extension ABI | `COREX_REMOTE_EXT_1.0` |
 | Development repository | `/home/lvtong/corex-remote-runtime` |
 | Roadmap baseline | `159e7f95057a7ff4b2b3d1ef24d579a2ab2b8d2c` |
-| Last validated slice | Memory Layout closeout, 2026-10-12: native probe and public-ABI localhost CRX9 integration |
-| Previous PASS baseline | `8f1e423` (`m3/s7: complete bounded device query batch`) |
+| Last validated slice | Pointer-backed 3D allocation/position/Async completion, 2026-10-12; public-ABI localhost CRX9 integration |
+| Previous PASS baseline | `fdcb82260110846d31d333128cd843ce3972f0b7` (Memory Layout ground truth closeout) |
 | Current Slice | Memory Layout implementation, evidence, and ledger aligned |
-| Remaining limitations | 3D nonzero positions unsupported; 3D Async uses synchronous opcode and ignores backend stream |
-| Next action | This closeout is complete; remaining 3D position/Async semantics require a separate scoped task |
+| Scope boundary | Pointer-backed memory only; Array endpoints, Host Memory public APIs, Texture, Graph, and Memory Pool remain outside this slice |
+| Next action | Memory Layout pointer slice complete; no further subsystem expansion in this task |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;
@@ -184,15 +184,27 @@ row fallback is retained; no new fallback or client per-row RPC was added.
 stream host submissions, reusing the existing frontier and transfer retirement.
 `cudaMemcpy2D` and `cudaMemcpy2DAsync` are `IMPLEMENTED` for this pointer slice.
 
-The internal `cudaMemcpy3DParms` layout now matches the installed public header,
-and the build checks both layouts. Pointer H2D/D2H/D2D data checks pass through
-the public ABI, with zero positions, padded rows/slices, and pointer byte offsets.
-Nonzero `srcPos`/`dstPos` are explicitly rejected. `cudaMemcpy3DAsync` currently
-uses synchronous `OP_MEMCPY_3D=55`, ignores the requested backend stream, and
-has no async staging/retirement path; registered opcode 56 is unused by the
-public client. Both 3D APIs are therefore `PARTIAL_IMPLEMENTED`; successful
-Async data checks do not establish Async semantics.
+The internal `cudaMemcpy3DParms` layout matches the installed public header,
+and the build checks both layouts. The subsequent pointer-memory completion
+normalizes nonzero positions in a shared checked 3D region helper, implements
+`cudaMalloc3D` through opcode 49 and the unified allocation registry, and routes
+all remote `cudaMemcpy3DAsync` directions through opcode 56 and the requested
+backend stream. H2D/D2H use compact pinned staging, TransferID/event lifetime,
+and existing HiddenTransfer/frontier/query/wait retirement; D2H host data stays
+unchanged until retirement and scatters with destination row/slice pitches.
+
+`cudaMalloc3D`, `cudaMemcpy3D`, and `cudaMemcpy3DAsync` are `IMPLEMENTED` for
+the pointer-backed slice. Sync H2H/H2D/D2H/D2D and Default allocation roundtrip
+pass, including nonzero positions and padding. The targeted Async chain passes
+explicit H2D/D2D followed by default-stream D2H, including source reuse,
+cross-stream frontier, and deferred host visibility. Old opcode 56 mode 1/2
+response shapes are preserved; new submit modes 4/5 use the existing DTO.
+Protocol query/wait retirement and invalid pitch checks pass. Array endpoints
+remain outside this subsystem.
 
 Minimal validation passed: build, API contracts, protocol/ABI checks, direct
 CoreX probe, and one local two-process integration over localhost socket →
 CRX9 → server → CoreX. Evidence: `evidence/m4/memory-layout-20261012/`.
+The 3D completion passed build, API contracts, protocol/ABI, targeted public API
+and wire compatibility integration, and evidence-link checks. Historical
+regression suites were not rerun. Evidence: `evidence/m4/3d-memory-20261012-092736/`.

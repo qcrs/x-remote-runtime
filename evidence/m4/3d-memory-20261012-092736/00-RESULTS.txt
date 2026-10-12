@@ -1,0 +1,49 @@
+BASELINE_HEAD=fdcb82260110846d31d333128cd843ce3972f0b7
+BASELINE_WORKTREE=CLEAN
+COREX=4.4.0
+DEVICE=Iluvatar MR-V100
+PROTOCOL=CRX9/V3
+cudaMalloc3D=IMPLEMENTED_POINTER_BACKED_ONLY
+cudaMemcpy3D=IMPLEMENTED_POINTER_BACKED_ONLY
+cudaMemcpy3DAsync=IMPLEMENTED_POINTER_BACKED_ONLY
+ARRAY_ENDPOINTS=OUTSIDE_THIS_SUBSYSTEM
+MALLOC3D_MODEL=Existing OP_ALLOC_PITCHED=49 with width and height*depth; unified VirtualAllocation records PITCHED_3D, logical width/height/depth, pitch, slice_pitch, physical bytes, AllocationID; same server Allocation and cudaFree
+PITCH_ALLOC_FALLBACK=RETAINED; basic pitch=17 slice_pitch=85 physical_bytes=255; padded pitch=32 slice_pitch=256 physical_bytes=1280
+POSITION_NORMALIZATION=Shared checked_3d_region and resolve_remote_3d_region; byte_offset=base_offset+z*slice_pitch+y*pitch+x; x is bytes; host pack/scatter shares position checks
+ASYNC_PUBLIC_PATH=OP_MEMCPY_3D_ASYNC=56 -> server async handler -> corex_backend_copy_3d_async -> cuMemcpy3DAsync with requested stream
+ASYNC_EXPLICIT_BACKEND_STREAM=stream_id=1; H2D submit mode=4 and D2D mode=3
+ASYNC_DEFAULT_BACKEND_STREAM=stream_id=0; D2H submit mode=5
+ASYNC_H2D=Client packs positioned host source; server pinned staging pitch=width height=transfer height; event and TransferID retain staging; client source reuse PASS
+ASYNC_D2H=Compact pinned staging; HiddenTransfer keeps normalized destination, row/slice pitch, width/height/depth; existing query/wait/frontier retirement scatters to host
+ASYNC_HOST_VISIBILITY=Host destination unchanged before retirement; correct after default stream sync; padding preserved
+SCHEDULER_AND_LIFETIME=Existing stream/frontier/TransferID/HiddenTransfer/event/query/wait; no new scheduler or ownership registry
+MALLOC3D_BASIC_DEFAULT_H2D_D2H_COMPARE_FREE=PASS
+SYNC_3D_H2H_NONZERO_POS=PASS
+SYNC_3D_H2D_NONZERO_POS_PADDING=PASS
+SYNC_3D_D2H_NONZERO_POS_PADDING=PASS
+SYNC_3D_D2D_NONZERO_POS_PADDING=PASS
+POSITION_OOB_AND_OVERFLOW_REJECTED=PASS
+ASYNC_3D_H2D_EXPLICIT_PACKED_SNAPSHOT=PASS
+ASYNC_3D_D2D_EXPLICIT_STREAM_ORDER=PASS
+ASYNC_3D_D2H_DEFAULT_SCATTER_RETIREMENT_PADDING=PASS
+EXPLICIT_TO_DEFAULT_FRONTIER=PASS
+MEMORY_3D_INTEGRATION=PASS
+OPCODE_56_LEGACY_MODES_1_2_RESPONSE_COMPATIBILITY=PASS
+OPCODE_56_SUBMIT_MODES_4_5_QUERY_WAIT_RETIREMENT=PASS
+OPCODE_56_INVALID_DEVICE_PITCH_REJECTED=PASS
+MEMORY_3D_PROTOCOL=PASS
+WIRE_COMPATIBILITY=Existing 92/100-byte headers, fields, opcodes, version and modes 1/2/3 responses retained; new mode values 4/5 return eight-byte TransferID; older servers reject new modes
+PUBLIC_ABI=cudaMalloc3D exported at COREX_REMOTE_CUDART_1.1; cudaMemcpy3DParms installed-header layout unchanged
+BUILD=PASS
+API_CONTRACTS=PASS
+PROTOCOL_GOLDEN=PASS
+ABI_SURFACE=PASS
+MEMORY_LAYOUT_ABI=PASS
+EVIDENCE_LINKS=PASS
+REMOTE_PATH=Independent client/server processes; localhost:50082 -> socket -> CRX9 -> server -> CoreX backend
+DIRECT_COREX_PROBE=NOT_REPEATED; prior native sync/Async direction proof reused
+HISTORICAL_REGRESSION_SUITES=NOT_RUN
+LEDGER=Three rows fully updated with measured backend_requirement, actual protocol_change, notes, completion_rule and pointer-only scope
+PROJECT_STATE=3D pointer-backed memory complete; prior position/Async limitations removed
+GENERATED_ARTIFACTS_COPIED=NONE
+RESULT=PASS

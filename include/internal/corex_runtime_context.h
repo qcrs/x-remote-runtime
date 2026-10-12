@@ -137,6 +137,8 @@ typedef enum {
     HIDDEN_TRANSFER_D2H = 2,
     HIDDEN_TRANSFER_H2D_2D = 3,
     HIDDEN_TRANSFER_D2H_2D = 4,
+    HIDDEN_TRANSFER_H2D_3D = 5,
+    HIDDEN_TRANSFER_D2H_3D = 6,
 } HiddenTransferKind;
 
 typedef struct {
@@ -153,6 +155,8 @@ typedef struct {
     size_t host_pitch;
     size_t width;
     size_t height;
+    size_t depth;
+    size_t host_slice_pitch;
 } HiddenTransfer;
 
 typedef enum {

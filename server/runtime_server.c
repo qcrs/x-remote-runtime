@@ -838,30 +838,102 @@ static int handle_memset_2d_async(ServerSession *session, int fd, uint32_t req_i
                                   const unsigned char *payload, uint32_t len)
 { return handle_memset_2d(session, fd, req_id, payload, len, 1); }
 
+static int valid_3d_allocation(const Allocation *a, uint64_t offset, uint64_t pitch,
+                               uint64_t slice, uint64_t width, uint64_t height, uint64_t depth)
+{
+    if(!a||!pitch||!slice||slice%pitch||width>pitch||height>slice/pitch||offset>a->size) return 0;
+    if(depth-1>(a->size-offset)/slice) return 0;
+    uint64_t last=offset+(depth-1)*slice;
+    if(height-1>(a->size-last)/pitch) return 0;
+    last+=(height-1)*pitch;
+    return width<=a->size-last;
+}
+
 static int handle_memcpy_3d(ServerSession *session, int fd, uint32_t req_id,
                             const unsigned char *payload, uint32_t len, int async)
 {
-    const uint32_t header = async ? 100u : 92u;
-    if (!payload || len < header) return send_response(fd, async ? OP_MEMCPY_3D_ASYNC : OP_MEMCPY_3D, req_id, ST_BAD_REQUEST, NULL, 0);
-    uint32_t mode = corex_protocol_read_u32(payload); uint64_t did=corex_protocol_read_u64(payload+4), doff=corex_protocol_read_u64(payload+12), dp=corex_protocol_read_u64(payload+20), ds=corex_protocol_read_u64(payload+28);
-    uint64_t sid=corex_protocol_read_u64(payload+36), soff=corex_protocol_read_u64(payload+44), sp=corex_protocol_read_u64(payload+52), ss=corex_protocol_read_u64(payload+60);
-    uint64_t w=corex_protocol_read_u64(payload+68), h=corex_protocol_read_u64(payload+76), d=corex_protocol_read_u64(payload+84);
-    uint64_t stream_id=async ? corex_protocol_read_u64(payload+92) : 0;
-    Allocation *dst=did?find_allocation(session,did):NULL, *src=sid?find_allocation(session,sid):NULL; StreamEntry *stream_entry=stream_id?find_stream(session,stream_id):NULL;
-    if (!w||!h||!d||w>SIZE_MAX||h>SIZE_MAX||d>SIZE_MAX||((mode==1&&!dst)||(mode==2&&!src)||(mode==3&&(!dst||!src)))||(stream_id&&!stream_entry)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    if (mode != 1 && mode != 2 && mode != 3) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    if (w > UINT64_MAX / h || w*h > UINT64_MAX/d) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    uint64_t volume=w*h*d, host_bytes=(uint64_t)len-header; if ((mode==1&&host_bytes!=volume)||(mode!=1&&host_bytes!=0)||volume>UINT32_MAX) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    if ((mode==1&&(!dp||!ds||w>dp||ds<dp*h))||(mode!=1&&(!sp||!ss||w>sp||ss<sp*h))) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    if (dst && (doff>dst->size || d-1>(dst->size-doff)/ds || h-1>(dst->size-doff-(d-1)*ds)/dp || w>dst->size-doff-(d-1)*ds-(h-1)*dp)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    if (src && (soff>src->size || d-1>(src->size-soff)/ss || h-1>(src->size-soff-(d-1)*ss)/sp || w>src->size-soff-(d-1)*ss-(h-1)*sp)) return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_BAD_REQUEST,NULL,0);
-    unsigned char *out=mode==2?malloc((size_t)volume):NULL; if(mode==2&&!out)return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_INTERNAL,NULL,0);
-    CUDA_MEMCPY3D copy; memset(&copy,0,sizeof(copy)); copy.WidthInBytes=(size_t)w; copy.Height=(size_t)h; copy.Depth=(size_t)d;
-    if(mode==1){copy.srcMemoryType=CU_MEMORYTYPE_HOST;copy.srcHost=payload+header;copy.srcPitch=(size_t)w;copy.srcHeight=(size_t)h;copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=dst->ptr+doff;copy.dstPitch=(size_t)dp;copy.dstHeight=(size_t)(ds/dp);}
-    else if(mode==2){copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=src->ptr+soff;copy.srcPitch=(size_t)sp;copy.srcHeight=(size_t)(ss/sp);copy.dstMemoryType=CU_MEMORYTYPE_HOST;copy.dstHost=out;copy.dstPitch=(size_t)w;copy.dstHeight=(size_t)h;}
-    else {copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=src->ptr+soff;copy.srcPitch=(size_t)sp;copy.srcHeight=(size_t)(ss/sp);copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=dst->ptr+doff;copy.dstPitch=(size_t)dp;copy.dstHeight=(size_t)(ds/dp);}
-    CUresult result = async ? corex_backend_copy_3d_async(&copy, stream_entry ? stream_entry->stream : NULL) : corex_backend_copy_3d(&copy);
-    if(result!=CUDA_SUCCESS){free(out);return send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_CUDA_ERROR,NULL,0);} int rc=send_response(fd,async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D,req_id,ST_OK,out,mode==2?(uint32_t)volume:0);free(out);return rc;
+    const uint32_t opcode=async?OP_MEMCPY_3D_ASYNC:OP_MEMCPY_3D;
+    const uint32_t header=async?CRX_MEMCPY3D_ASYNC_HEADER_BYTES:CRX_MEMCPY3D_HEADER_BYTES;
+    if(!payload||len<header) return send_response(fd,opcode,req_id,ST_BAD_REQUEST,NULL,0);
+    uint32_t wire_mode=corex_protocol_read_u32(payload),mode=wire_mode;
+    int submit=async&&(mode==CRX_MEMCPY3D_H2D_SUBMIT||mode==CRX_MEMCPY3D_D2H_SUBMIT);
+    if(submit)mode=mode==CRX_MEMCPY3D_H2D_SUBMIT?1:2;
+    uint64_t did=corex_protocol_read_u64(payload+4),doff=corex_protocol_read_u64(payload+12);
+    uint64_t dp=corex_protocol_read_u64(payload+20),ds=corex_protocol_read_u64(payload+28);
+    uint64_t sid=corex_protocol_read_u64(payload+36),soff=corex_protocol_read_u64(payload+44);
+    uint64_t sp=corex_protocol_read_u64(payload+52),ss=corex_protocol_read_u64(payload+60);
+    uint64_t w=corex_protocol_read_u64(payload+68),h=corex_protocol_read_u64(payload+76),d=corex_protocol_read_u64(payload+84);
+    uint64_t stream_id=async?corex_protocol_read_u64(payload+92):0;
+    Allocation *dst=did?find_allocation(session,did):NULL,*src=sid?find_allocation(session,sid):NULL;
+    StreamEntry *stream_entry=stream_id?find_stream(session,stream_id):NULL;
+    if(mode<1||mode>3||!w||!h||!d||w>SIZE_MAX||h>SIZE_MAX||d>SIZE_MAX||
+       w>UINT64_MAX/h||w*h>UINT64_MAX/d||(stream_id&&!stream_entry))
+        return send_response(fd,opcode,req_id,ST_BAD_REQUEST,NULL,0);
+    uint64_t volume=w*h*d,host_bytes=(uint64_t)len-header;
+    if(volume>UINT32_MAX||(mode==1?host_bytes!=volume:host_bytes!=0)||
+       ((mode==1||mode==3)&&!valid_3d_allocation(dst,doff,dp,ds,w,h,d))||
+       ((mode==2||mode==3)&&!valid_3d_allocation(src,soff,sp,ss,w,h,d)))
+        return send_response(fd,opcode,req_id,ST_BAD_REQUEST,NULL,0);
+    CUstream stream=stream_entry?stream_entry->stream:NULL;
+    TransferEntry *entry=NULL;
+    void *host_buffer=mode==1?(void *)(payload+header):NULL;
+    CUresult result=CUDA_SUCCESS;
+    if(async&&mode!=3) {
+        entry=new_transfer_slot(session);
+        if(!entry)return send_response(fd,opcode,req_id,ST_NO_RESOURCE,NULL,0);
+        entry->kind=mode==1?TRANSFER_KIND_H2D:TRANSFER_KIND_D2H;
+        entry->allocation_id=mode==1?did:sid;entry->stream_id=stream_id;entry->bytes=(size_t)volume;
+        result=corex_backend_host_alloc(&entry->host_buffer,entry->bytes);
+        if(result==CUDA_SUCCESS)result=corex_backend_event_create(&entry->done_event,CU_EVENT_DEFAULT);
+        if(result!=CUDA_SUCCESS) {
+            release_transfer(entry);
+            return send_response(fd,opcode,req_id,ST_CUDA_ERROR,NULL,0);
+        }
+        host_buffer=entry->host_buffer;
+        if(mode==1)memcpy(host_buffer,payload+header,(size_t)volume);
+    } else if(mode==2) {
+        host_buffer=malloc((size_t)volume);
+        if(!host_buffer)return send_response(fd,opcode,req_id,ST_INTERNAL,NULL,0);
+    }
+    CUDA_MEMCPY3D copy;memset(&copy,0,sizeof(copy));
+    copy.WidthInBytes=(size_t)w;copy.Height=(size_t)h;copy.Depth=(size_t)d;
+    if(mode==1) {
+        copy.srcMemoryType=CU_MEMORYTYPE_HOST;copy.srcHost=host_buffer;
+        copy.srcPitch=(size_t)w;copy.srcHeight=(size_t)h;
+    } else {
+        copy.srcMemoryType=CU_MEMORYTYPE_DEVICE;copy.srcDevice=src->ptr+soff;
+        copy.srcPitch=(size_t)sp;copy.srcHeight=(size_t)(ss/sp);
+    }
+    if(mode==2) {
+        copy.dstMemoryType=CU_MEMORYTYPE_HOST;copy.dstHost=host_buffer;
+        copy.dstPitch=(size_t)w;copy.dstHeight=(size_t)h;
+    } else {
+        copy.dstMemoryType=CU_MEMORYTYPE_DEVICE;copy.dstDevice=dst->ptr+doff;
+        copy.dstPitch=(size_t)dp;copy.dstHeight=(size_t)(ds/dp);
+    }
+    result=async?corex_backend_copy_3d_async(&copy,stream):corex_backend_copy_3d(&copy);
+    if(entry&&result==CUDA_SUCCESS)result=corex_backend_event_record(entry->done_event,stream);
+    if(result!=CUDA_SUCCESS) {
+        if(entry){(void)corex_backend_stream_sync(stream);release_transfer(entry);}
+        else if(mode==2)free(host_buffer);
+        return send_response(fd,opcode,req_id,ST_CUDA_ERROR,NULL,0);
+    }
+    printf("MEMCPY_3D request=%u opcode=%u mode=%u stream_id=%llu backend=%s src_offset=%llu dst_offset=%llu packed_bytes=%llu transfer_id=%llu\n",
+           req_id,opcode,wire_mode,(unsigned long long)stream_id,async?"cuMemcpy3DAsync":"cuMemcpy3D",
+           (unsigned long long)soff,(unsigned long long)doff,(unsigned long long)volume,
+           (unsigned long long)(entry?entry->id:0));
+    if(submit) {
+        uint64_t wire=corex_protocol_to_be64(entry->id);
+        return send_response(fd,opcode,req_id,ST_OK,&wire,sizeof(wire));
+    }
+    /* Preserve opcode 56's legacy modes 1/2 response contract. Staging stays
+     * pinned/alive until completion even for these consuming wire requests. */
+    if(entry)result=corex_backend_event_sync(entry->done_event);
+    int rc=send_response(fd,opcode,req_id,result==CUDA_SUCCESS?ST_OK:ST_CUDA_ERROR,
+                         result==CUDA_SUCCESS&&mode==2?host_buffer:NULL,
+                         result==CUDA_SUCCESS&&mode==2?(uint32_t)volume:0);
+    if(entry)release_transfer(entry);else if(mode==2)free(host_buffer);
+    return rc;
 }
 
 static int handle_memcpy_3d_sync_entry(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len){return handle_memcpy_3d(session,fd,req_id,payload,len,0);}

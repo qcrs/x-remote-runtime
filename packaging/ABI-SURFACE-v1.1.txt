@@ -41,6 +41,7 @@ corexRemoteModuleUnload
 corexRemoteRegisterKernel
 
 [COREX_REMOTE_CUDART_1.1]
+cudaMalloc3D
 cudaDriverGetVersion
 cudaRuntimeGetVersion
 cudaFuncGetAttributes

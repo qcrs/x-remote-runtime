@@ -58,6 +58,7 @@ COREX_REMOTE_EXT_1.0 {
 
 COREX_REMOTE_CUDART_1.1 {
     global:
+        cudaMalloc3D;
         cudaGetDeviceProperties;
         cudaMemGetInfo;
         cudaDeviceGetAttribute;

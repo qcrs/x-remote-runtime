@@ -5,6 +5,12 @@ record contains the fake VA span, AllocationID, physical byte size, layout kind,
 logical extent, pitch, and slice pitch. `cudaMalloc` records a linear layout;
 `cudaMallocPitch` records the backend pitch and the physical `pitch * height`
 size in the same registry, so `cudaFree` and stale-pointer checks are shared.
+`cudaMalloc3D` reuses `OP_ALLOC_PITCHED=49` with `height * depth` rows and
+records `PITCHED_3D`, the original width/height/depth, `slice_pitch=pitch*height`,
+and `physical_bytes=slice_pitch*depth` in that same registry. The server owns
+one contiguous Allocation; native pitch allocation and its existing linear
+fallback are unchanged. The returned `cudaPitchedPtr` has `xsize=width` and
+`ysize=height`.
 
 2D validation checks the supplied pitch and the final row expression
 `offset + (height - 1) * pitch + width` with checked arithmetic against the
@@ -32,13 +38,31 @@ legacy default stream. Retirement query/wait RPCs are separate from submission.
 `cudaExtent`, `cudaPitchedPtr`, and `cudaMemcpy3DParms` are public ABI types,
 but are normalized at the API boundary. Array-backed 3D transfers remain
 unsupported because this subsystem owns only pointer memory. Pointer-backed
-3D transfers use explicit slice pitches and CoreX `cuMemcpy3D`; the client
-resolver validates the final slice, row, and byte boundary before the single
-`OP_MEMCPY_3D=55` RPC. The public struct layout matches CoreX 4.4, but nonzero
-`srcPos`/`dstPos` are explicitly unsupported; byte offsets in the pointers work.
-`cudaMemcpy3DAsync` currently shares this synchronous RPC and ignores the
-backend stream. `OP_MEMCPY_3D_ASYNC=56` exists only as a server handler; its
-host staging lifetime/retirement is not implemented for public Async use.
-Both 3D APIs are `PARTIAL_IMPLEMENTED`, despite native sync/Async Driver probes
-passing all three directions. Target evidence is recorded in
-`evidence/m4/memory-layout-20261012/`.
+3D transfers use explicit slice pitches. The checked region helper normalizes
+`srcPos`/`dstPos` as `z*slice_pitch + y*pitch + x`, where x is bytes, then checks
+the final slice/row/byte against allocation size. Host pack/scatter uses the
+same position rules. Synchronous remote directions use `OP_MEMCPY_3D=55` and
+`cuMemcpy3D`; H2H is local, and Default uses existing fake-VA classification.
+Native public structs never cross the wire.
+
+All remote `cudaMemcpy3DAsync` directions use `OP_MEMCPY_3D_ASYNC=56` and the
+requested backend stream (StreamID zero selects the legacy default stream).
+D2D uses mode 3; H2D/D2H use submit modes 4/5 and return TransferID. Host staging
+is compact `width*height*depth`, with pitch=width and height=transfer height.
+The server uses the existing pinned TransferEntry and event lifetime. The client
+uses HiddenTransfer, the existing frontier, and query/wait retirement; D2H
+scatters into the normalized destination with its caller row/slice pitches only
+at retirement. No scheduler or separate lifetime model is added.
+
+The 92-byte sync and 100-byte Async request headers retain their existing field
+order. Opcode 56's old modes 1/2 keep their empty/data response shapes and
+consume pinned staging after completion; mode 3 retains its empty response.
+New modes 4/5 extend the existing mode field and return an eight-byte TransferID,
+avoiding an incompatible response change for legacy clients. New submit modes
+are rejected by older servers. CRX9/V3, opcode assignments, and payload fields
+remain unchanged.
+
+`cudaMalloc3D`, `cudaMemcpy3D`, and `cudaMemcpy3DAsync` are `IMPLEMENTED` for
+pointer-backed memory. Array endpoints remain outside this subsystem. Current
+target evidence is `evidence/m4/3d-memory-20261012-092736/`; the preceding native
+probe and 2D closeout evidence is `evidence/m4/memory-layout-20261012/`.

@@ -151,6 +151,10 @@ python3 "$HERE/verify-scope.py" "$ROOT" \
     -Wl,-rpath,'$ORIGIN/../lib' -o "$DIST/bin/memory_layout_app"
 echo "MEMORY_LAYOUT_ABI=PASS"
 
+"$CC" -O2 -Wall -Wextra -Werror -std=gnu11 -I"$COREX/include" \
+    "$TESTS/memory_3d.c" -L"$DIST/lib" -lcorex_remote_cudart \
+    -Wl,-rpath,'$ORIGIN/../lib' -o "$DIST/bin/memory_3d_app"
+
 if grep -qi 'libcudart' "$BUILD/library-readelf-dynamic.txt"; then
     echo "G8C_LIBRARY_LIBCUDART_DEPENDENCY=FAIL"
     exit 1

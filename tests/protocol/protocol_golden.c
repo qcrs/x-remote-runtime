@@ -5,6 +5,9 @@
 
 _Static_assert(CRX_REQUEST_HEADER_BYTES == 20, "V3 request header changed");
 _Static_assert(CRX_RESPONSE_HEADER_BYTES == 24, "V3 response header changed");
+_Static_assert(CRX_MEMCPY3D_HEADER_BYTES == 92 && CRX_MEMCPY3D_ASYNC_HEADER_BYTES == 100 &&
+               CRX_MEMCPY3D_H2D_SUBMIT == 4 && CRX_MEMCPY3D_D2H_SUBMIT == 5,
+               "3D DTO header or submit mode changed");
 _Static_assert(OP_ALLOC == 1 && OP_H2D == 2 && OP_LAUNCH == 3 &&
                OP_SYNC == 4 && OP_D2H == 5 && OP_FREE == 6 &&
                OP_CLOSE == 7 && OP_UPLOAD_MODULE == 8 &&

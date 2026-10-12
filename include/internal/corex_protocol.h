@@ -25,6 +25,14 @@ typedef uint64_t CorexTransferId;
 typedef uint64_t CorexModuleId;
 typedef uint64_t CorexKernelId;
 
+/* Existing 3D DTO: mode:u32 plus eleven u64 fields; Async appends StreamID.
+ * Modes 1/2 keep their legacy empty/data responses. New Async submit modes
+ * return TransferID and use OP_TRANSFER_QUERY/WAIT for retirement. */
+#define CRX_MEMCPY3D_HEADER_BYTES 92u
+#define CRX_MEMCPY3D_ASYNC_HEADER_BYTES 100u
+#define CRX_MEMCPY3D_H2D_SUBMIT 4u
+#define CRX_MEMCPY3D_D2H_SUBMIT 5u
+
 typedef enum {
     ST_OK             = 0,
     ST_BAD_REQUEST    = 1,

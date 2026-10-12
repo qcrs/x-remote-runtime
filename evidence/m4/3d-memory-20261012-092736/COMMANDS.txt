@@ -1,0 +1,24 @@
+Working directory: /home/lvtong/corex-remote-runtime
+Server and socket clients ran outside the sandbox for host device/socket access.
+
+git status --short
+git rev-parse HEAD
+git log --oneline -8
+
+# Build includes existing API contract, protocol golden, public/internal 3D struct ABI and export checks.
+./scripts/build.sh
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-api-contracts.py .
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify-evidence-links.py .
+
+# Terminal A; remains running for both targeted clients, then Ctrl-C.
+env COREX_REMOTE_PORT=50082 stdbuf -oL ./dist/bin/runtime_server
+
+# Terminal B: public-header pointer 3D integration.
+env COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=50082 ./dist/bin/memory_3d_app
+
+# Targeted wire check: opcode 56 legacy response compatibility, submit/query/wait and invalid pitch.
+env COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=50082 python3 tests/integration/memory_3d_protocol.py
+
+git diff --check
+# Manifest hashes canonical modified files and this evidence; no generated artifacts or binaries copied.
+sha256sum -c evidence/m4/3d-memory-20261012-092736/MANIFEST.sha256

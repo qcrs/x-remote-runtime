@@ -135,6 +135,8 @@ typedef struct cudaMemcpy3DParms {
     cudaMemcpyKind kind;
 } cudaMemcpy3DParms;
 
+cudaError_t cudaMalloc3D(cudaPitchedPtr *pitchedDevPtr, cudaExtent extent);
+
 cudaError_t cudaGetDeviceCount(int *count);
 cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
