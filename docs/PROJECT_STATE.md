@@ -9,6 +9,11 @@ and Memory Pool goal is complete and was revalidated at `6d30df8`; its full
 scope audit and current public transport checks are in
 `evidence/m5/memory-pools-20261012/revalidation-20261013/`.
 
+Graph/Capture was revalidated from `c24f07b` with fresh grouped native probes,
+public localhost CRX9 integration, build/ABI/protocol and schema checks. The
+current requirements and evidence-version audit is in
+`evidence/m5/graphs-capture-20261013/revalidation-20261013/GOAL_AUDIT.md`.
+
 | Item | Current value |
 | --- | --- |
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |

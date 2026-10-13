@@ -1,0 +1,9 @@
+UTC=2026-10-13T03:39:57Z
+HOST=server310p
+PLATFORM=Linux-5.15.0-185-generic-aarch64-with-glibc2.35
+COREX=/usr/local/corex-4.4.0
+BASE_HEAD=c24f07b9110752205ff4bc06c3f6f427dbc0dd42
+TOPOLOGY=independent client -> 127.0.0.1 socket -> CRX9/V3 -> server -> CoreX Driver
+INTEGRATION_PORT=40511
+INTEGRATION_SERVER_PID=2332949
+PROBE_MODE=separate native grouped probes after integration

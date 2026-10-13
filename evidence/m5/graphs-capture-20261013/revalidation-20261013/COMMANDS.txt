@@ -1,0 +1,18 @@
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+COREX_REMOTE_PORT=40511 dist/bin/runtime_server # independent PID=2332949
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+python3 /home/lvtong/corex-remote-runtime/tests/integration/graphs_protocol.py
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_graph_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/graphs/driver-probe
+/home/lvtong/corex-remote-runtime/build/graphs/driver-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_graph_runtime_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcudart -o /home/lvtong/corex-remote-runtime/build/graphs/runtime-probe
+/home/lvtong/corex-remote-runtime/build/graphs/runtime-probe
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/probes/corex_graph_execution_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /home/lvtong/corex-remote-runtime/build/graphs/execution-probe
+/home/lvtong/corex-remote-runtime/build/graphs/execution-probe /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+./scripts/build.sh
+OUT=evidence/m5/graphs-capture-20261013/revalidation-20261013/schema ./scripts/test-api-schema.sh
+python3 scripts/run-graphs.py --integration-only --out evidence/m5/graphs-capture-20261013/revalidation-20261013
+python3 scripts/run-graphs.py --probes-only --out evidence/m5/graphs-capture-20261013/revalidation-20261013
+python3 scripts/verify-evidence-links.py .
+sha256sum -c evidence/m5/graphs-capture-20261013/revalidation-20261013/MANIFEST.sha256
+git diff --check
