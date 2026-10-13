@@ -20,7 +20,8 @@ mixed resource creation/replay/cleanup. Every application passed and all twelve
 server sessions ended empty with a successful context reset. Required build,
 ABI/export, protocol/golden, schema/contracts, registry and backend seam gates
 passed. RC-005 (macro shadowing) and RC-006 (expected last-error handling) were
-new workload infrastructure bugs, recorded and fixed; no new Runtime
+new workload infrastructure bugs, recorded and fixed. RC-007 corrects an aggregate
+audit miscount of binding metadata; all named application results passed. No new Runtime
 implementation defect was observed. Existing integration/API tests were not
 counted or rerun as application evidence.
 

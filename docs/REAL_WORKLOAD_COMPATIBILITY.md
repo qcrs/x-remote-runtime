@@ -52,7 +52,8 @@ compatibility. No controlled-module substitute is used for compiler registration
 
 Findings continue in [RC issue ledger](REMOTE_CORRECTNESS_ISSUES.md): RC-005 macro
 shadowing and RC-006 expected last-error handling are workload infrastructure
-bugs, not evidence of Runtime implementation failures. Original failure logs are
+bugs, not evidence of Runtime implementation failures. RC-007 fixes a final audit
+miscount that included binding metadata among applications; named-result checks pass. Original failure logs are
 retained alongside their regression runs. The [final audit](../evidence/m6/real-workloads-20261013/GOAL_AUDIT.md) maps
 all completion requirements to committed source hashes, build/provenance,
 application runs and static gates. All twelve sessions finished empty and reset

@@ -113,3 +113,13 @@ nsenter --net=/proc/2446332/ns/net -- /home/lvtong/corex-remote-runtime/build/wo
 sha256sum -c evidence/m6/real-workloads-20261013/MANIFEST.sha256
 git diff e225f3f311875b06016ea5ab0278eb36ef10696d HEAD -- src server include tests scripts schema packaging compat
 git status --porcelain
+# RC-007 corrected final result audit
+python3 - <<'AUDIT'
+from pathlib import Path
+names=sorted(p.stem for p in Path('tests/workloads').glob('*.cu'))
+records=dict(line.split('=',1) for line in Path('evidence/m6/real-workloads-20261013/WORKLOAD_RUN_SUMMARY.txt').read_text().splitlines())
+assert len(names)==12
+for name in names: assert records[name]=='PASS',name
+assert records['REAL_WORKLOADS']=='FULL_PASS'
+assert records['DYNAMIC_BINDINGS']=='PASS'
+AUDIT

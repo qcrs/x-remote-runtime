@@ -95,3 +95,16 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Resolution: assert the expected last-error value; graph memory and mixed app
   regression passed, followed by the full committed namespace suite.
 - Fixing commit: `e225f3f311875b06016ea5ab0278eb36ef10696d`.
+
+## RC-007
+
+- Status: FIXED; category: TEST_INFRA_BUG; subsystem: final evidence audit.
+- Workload: aggregate twelve-application qualification.
+- Observed → expected: final ad-hoc audit counts 13 PASS lines and asserts 12 →
+  check the twelve named applications, excluding the dynamic-binding PASS metadata.
+- Evidence: `evidence/m6/real-workloads-20261013/rc007-audit-before.{stdout,stderr}.log`.
+- Root cause: aggregate string counting included DYNAMIC_BINDINGS=PASS; no
+  workload execution or Runtime defect. All twelve application results already pass.
+- Resolution: named-result audit passed for all twelve applications plus bindings;
+  application rerun unnecessary because only the post-run assertion changes.
+- Fixing commit: final audit correction commit (hash in workload FINALIZATION.txt).
