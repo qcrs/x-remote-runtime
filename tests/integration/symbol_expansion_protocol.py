@@ -4,7 +4,7 @@ from function_occupancy_protocol import call
 image=open(sys.argv[1],'rb').read()
 name=b'symbol.cubin'
 image_payload=struct.pack('!I',len(name))+name+struct.pack('!Q',len(image))+image
-endpoint=('127.0.0.1',int(os.environ['COREX_REMOTE_PORT']))
+endpoint=(os.environ.get('COREX_REMOTE_HOST','127.0.0.1'),int(os.environ['COREX_REMOTE_PORT']))
 def query_payload(module,name):return struct.pack('!QI',module,len(name))+name
 with socket.create_connection(endpoint,timeout=10) as sock:
     status,body=call(sock,8,1,image_payload);assert status==0 and len(body)==8

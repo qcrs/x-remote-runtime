@@ -4770,7 +4770,15 @@ int main(void)
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons((uint16_t)listen_port);
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    const char *listen_host = getenv("COREX_REMOTE_BIND");
+    if (!listen_host || !*listen_host)
+        listen_host = "127.0.0.1";
+    if (inet_pton(AF_INET, listen_host, &addr.sin_addr) != 1) {
+        fprintf(stderr, "COREX_REMOTE_BIND must be an IPv4 address: %s\n", listen_host);
+        close(listen_fd);
+        corex_backend_context_destroy(g_ctx);
+        return 1;
+    }
 
     if (bind(
             listen_fd,
@@ -4795,7 +4803,7 @@ int main(void)
     printf("startup_modules=0\n");
     printf("startup_kernels=0\n");
     printf("protocol=CRX9 version=%u default_stream=LEGACY\n", CRX_PROTOCOL_VERSION);
-    printf("listen=127.0.0.1:%d\n", listen_port);
+    printf("listen=%s:%d\n", listen_host, listen_port);
     printf("SERVER_READY\n");
     fflush(stdout);
 

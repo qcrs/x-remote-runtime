@@ -15,7 +15,7 @@ def exact(sock, length):
     return result
 
 
-with socket.create_connection(("127.0.0.1", int(os.environ["COREX_REMOTE_PORT"]))) as sock:
+with socket.create_connection((os.environ.get("COREX_REMOTE_HOST", "127.0.0.1"), int(os.environ["COREX_REMOTE_PORT"]))) as sock:
     sock.settimeout(10)
     request_id = 0
 

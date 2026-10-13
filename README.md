@@ -5,6 +5,10 @@ Iluvatar MR-V100 on CoreX 4.4.0. A CUDA-style client runtime translates the
 application-facing calls into CRX9/V3 requests. The Runtime Server owns the
 remote CoreX objects and uses the CoreX Driver API to access the device.
 
+Client and Server are built for the same CPU architecture and compatible host
+ABI. The current deployment boundary is aarch64 → TCP/IP → aarch64 → CoreX;
+cross-ISA compiler ABI translation is outside the project scope.
+
 The current validated baseline supports allocation and copies, streams and
 events, asynchronous transfers, automatic compiler registration, kernel ABI
 acquisition, ordinary `kernel<<<...>>>` launches, device identity queries, a
@@ -53,7 +57,8 @@ Build first, then use two terminals on `server310p`:
 
 The default endpoint is `127.0.0.1:50051`. Set `COREX_REMOTE_HOST` and
 `COREX_REMOTE_PORT` to override the client endpoint; the server reads
-`COREX_REMOTE_PORT` and binds its loopback listener on that port.
+`COREX_REMOTE_PORT`. Set server `COREX_REMOTE_BIND` to a numeric IPv4 address
+to accept remote connections; it defaults to `127.0.0.1`.
 
 The integration runner records a validation bundle below
 `evidence/gate8d/runs/` when no `OUT` is supplied. These generated runs are
@@ -88,6 +93,10 @@ The clean external consumer check is run with:
 ```bash
 ./scripts/run-clean-consumer.sh
 ```
+
+The [remote correctness matrix](docs/REMOTE_CORRECTNESS_MATRIX.md) describes
+same-host namespace/veth validation and its reusable runner; findings are in the
+[issue register](docs/REMOTE_CORRECTNESS_ISSUES.md).
 
 ## Current limits and next work
 

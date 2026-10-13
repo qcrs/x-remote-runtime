@@ -5,7 +5,7 @@ import socket
 import struct
 from function_occupancy_protocol import call
 
-endpoint = ('127.0.0.1', int(os.environ['COREX_REMOTE_PORT']))
+endpoint = (os.environ.get('COREX_REMOTE_HOST', '127.0.0.1'), int(os.environ['COREX_REMOTE_PORT']))
 
 
 def u64(*values):

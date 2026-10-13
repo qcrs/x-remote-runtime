@@ -2,7 +2,7 @@
 import os,socket,struct
 from function_occupancy_protocol import call
 port=int(os.environ['COREX_REMOTE_PORT'])
-with socket.create_connection(('127.0.0.1',port),timeout=10) as sock:
+with socket.create_connection((os.environ.get('COREX_REMOTE_HOST','127.0.0.1'),port),timeout=10) as sock:
     status,body=call(sock,1,1,struct.pack('!Q',384))
     assert status==0 and len(body)==8
     allocation=struct.unpack('!Q',body)[0]
