@@ -1,0 +1,2 @@
+GRAPHS_PROTOCOL=PASS bounded_commands stale_IDs graph_exec_ownership capture_EOF session_isolation
+GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds dependency_ownership supplied_graph_EOF

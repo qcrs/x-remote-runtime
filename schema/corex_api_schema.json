@@ -1159,6 +1159,77 @@
       ],
       "backend_binding": "corex_backend_graph_create",
       "server_handler": "handle_graph"
+    },
+    {
+      "name": "cudaDeviceGetGraphMemAttribute",
+      "opcode_name": "OP_GRAPH_MEM_GET",
+      "opcode": 89,
+      "capability_id": "CRX_CAP_GRAPHS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        },
+        {
+          "name": "attribute",
+          "type": "u32"
+        }
+      ],
+      "response": [
+        {
+          "name": "value",
+          "type": "u64"
+        }
+      ],
+      "server_handler": "handle_graph_mem_get",
+      "backend_binding": "corex_backend_graph_mem_get"
+    },
+    {
+      "name": "cudaDeviceSetGraphMemAttribute",
+      "opcode_name": "OP_GRAPH_MEM_SET",
+      "opcode": 90,
+      "capability_id": "CRX_CAP_GRAPHS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        },
+        {
+          "name": "attribute",
+          "type": "u32"
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_graph_mem_set",
+      "backend_binding": "corex_backend_graph_mem_set"
+    },
+    {
+      "name": "cudaDeviceGraphMemTrim",
+      "opcode_name": "OP_GRAPH_MEM_TRIM",
+      "opcode": 91,
+      "capability_id": "CRX_CAP_GRAPHS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "device",
+          "type": "i32"
+        }
+      ],
+      "response": [],
+      "server_handler": "handle_graph_mem_trim",
+      "backend_binding": "corex_backend_graph_mem_trim"
     }
   ]
 }

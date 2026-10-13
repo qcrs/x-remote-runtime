@@ -1,5 +1,16 @@
 # Project State
 
+The post-baseline Graph/Capture expansion is active at
+`0383270696516c003743e4784f3c5795168052f6`. The 40 supported APIs at that HEAD
+count as zero progress for this expansion. Its first implementation checkpoint
+adds **11 supported APIs**: six graph event query/mutation APIs, capture into an
+existing graph, capture dependency updates, and three graph memory controls.
+Eight are IMPLEMENTED and three PARTIAL_IMPLEMENTED. Native probes, independent
+public localhost CRX9 integration, bounded protocol tests, build/ABI/schema,
+lifecycle and session isolation pass. Baseline snapshots and continuing work are
+in `evidence/m5/graph-expansion-20261013/`; this checkpoint does **not** complete
+the goal. Child graph ownership and graph memory node integration are next.
+
 The Native Graph and practical Stream Capture goal is complete on CoreX 4.4 /
 MR-V100, within the measured limits in the ledger: 40 additional public APIs
 (22 IMPLEMENTED, 18 PARTIAL_IMPLEMENTED). The architecture and limits are in

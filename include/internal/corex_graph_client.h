@@ -13,6 +13,7 @@ struct corexCudaGraphExecHandle {
     uint64_t source_graph_id;
     size_t event_count;
     cudaEvent_t events[CRX_GRAPH_MAX_NODES];
+    uint64_t event_nodes[CRX_GRAPH_MAX_NODES];
     uint32_t event_kinds[CRX_GRAPH_MAX_NODES];
 };
 struct corexCudaGraphNodeHandle {
@@ -38,6 +39,9 @@ typedef struct {
         cudaStream_t stream;
         cudaGraph_t graph;
         cudaGraphNode_t tail;
+        cudaGraphNode_t dependencies[CRX_GRAPH_MAX_NODES];
+        size_t dependency_count;
+        int supplied_graph;
         uint64_t id;
         pthread_t owner;
     } capture;

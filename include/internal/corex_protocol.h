@@ -147,7 +147,10 @@ typedef enum {
     OP_FREE_ASYNC = 87,
 
     OP_GRAPH = 88,
-    OP__COUNT               = 89,
+    OP_GRAPH_MEM_GET = 89,
+    OP_GRAPH_MEM_SET = 90,
+    OP_GRAPH_MEM_TRIM = 91,
+    OP__COUNT               = 92,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u

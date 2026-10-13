@@ -307,6 +307,14 @@ static cudaError_t graph_set_node_locked(cudaGraphExec_t exec, cudaGraphNode_t n
     struct corexCudaGraphExecHandle *e = exec ? resolve_graph_exec_handle(exec) : NULL;
     if (exec && !e)
         return cudaErrorInvalidResourceHandle;
+    size_t event_index = 0;
+    if (e && (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent)) {
+        for (; event_index < e->event_count; ++event_index)
+            if (e->event_nodes[event_index] == n->id)
+                break;
+        if (event_index == e->event_count)
+            return cudaErrorInvalidValue;
+    }
     ClientGraphParams p;
     r = graph_params_locked(kind, params, &p);
     if (r)
@@ -321,6 +329,8 @@ static cudaError_t graph_set_node_locked(cudaGraphExec_t exec, cudaGraphNode_t n
     r = graph_rpc(&q, &reply);
     if (!r && !exec)
         graph_commit_params(n, &p);
+    if (!r && e && (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent))
+        e->events[event_index] = p.cache.event;
     free(p.cache.arg_storage);
     return r;
 }
@@ -341,6 +351,8 @@ static cudaError_t graph_get_params_locked(cudaGraphNode_t node, uint32_t kind, 
         *(cudaMemcpy3DParms *)params = n->copy;
     else if (kind == cudaGraphNodeTypeKernel)
         *(struct cudaKernelNodeParams *)params = n->kernel;
+    else if (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent)
+        *(cudaEvent_t *)params = n->event;
     return cudaSuccess;
 }
 static cudaError_t graph_instantiate_locked(cudaGraphExec_t *out, cudaGraph_t h,
@@ -384,6 +396,7 @@ static cudaError_t graph_instantiate_locked(cudaGraphExec_t *out, cudaGraph_t h,
         if (n->live && n->generation == g_active_session_generation && n->graph_id == g->id &&
             (n->kind == cudaGraphNodeTypeEventRecord || n->kind == cudaGraphNodeTypeWaitEvent)) {
             e->events[e->event_count] = n->event;
+            e->event_nodes[e->event_count] = n->id;
             e->event_kinds[e->event_count++] = n->kind;
         }
     }
@@ -698,6 +711,7 @@ static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t gr
         if (n->live && n->generation == g_active_session_generation && n->graph_id == g->id &&
             (n->kind == cudaGraphNodeTypeEventRecord || n->kind == cudaGraphNodeTypeWaitEvent)) {
             e->events[e->event_count] = n->event;
+            e->event_nodes[e->event_count] = n->id;
             e->event_kinds[e->event_count++] = n->kind;
         }
     }
@@ -705,6 +719,41 @@ static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t gr
 }
 
 /* Repetitive exported mutex boundaries, with semantic bodies above. */
+static cudaError_t graph_mem_attribute_locked(int device, enum cudaGraphMemAttributeType attr,
+                                              void *value, int set) {
+    if (!value || attr<0 || attr>3) return cudaErrorInvalidValue;
+    if (device != 0) return cudaErrorInvalidDevice;
+    uint64_t scalar=0;
+    if (set) {
+        memcpy(&scalar,value,sizeof(scalar));
+        if ((attr!=1 && attr!=3) || scalar) return cudaErrorInvalidValue;
+    }
+    cudaError_t r=graph_runtime_locked();
+    if(r) return r;
+    if(set) {
+        CorexGeneratedcudaDeviceSetGraphMemAttributeRequest q={.device=device,.attribute=attr,.value=scalar};
+        CorexGeneratedcudaDeviceSetGraphMemAttributeResponse reply;
+        if(corex_generated_call_cudaDeviceSetGraphMemAttribute(generated_rpc_call,&q,&reply))
+            return map_last_rpc_error(cudaErrorUnknown);
+    } else {
+        CorexGeneratedcudaDeviceGetGraphMemAttributeRequest q={.device=device,.attribute=attr};
+        CorexGeneratedcudaDeviceGetGraphMemAttributeResponse reply;
+        if(corex_generated_call_cudaDeviceGetGraphMemAttribute(generated_rpc_call,&q,&reply))
+            return map_last_rpc_error(cudaErrorUnknown);
+        memcpy(value,&reply.value,sizeof(reply.value));
+    }
+    return cudaSuccess;
+}
+static cudaError_t graph_mem_trim_locked(int device) {
+    if(device != 0) return cudaErrorInvalidDevice;
+    cudaError_t r=graph_runtime_locked();
+    if(r) return r;
+    CorexGeneratedcudaDeviceGraphMemTrimRequest q={.device=device};
+    CorexGeneratedcudaDeviceGraphMemTrimResponse reply;
+    if(corex_generated_call_cudaDeviceGraphMemTrim(generated_rpc_call,&q,&reply))
+        return map_last_rpc_error(cudaErrorUnknown);
+    return cudaSuccess;
+}
 #define GRAPH_API(name, signature, body)                                                           \
     cudaError_t name signature {                                                                   \
         CorexRuntimeContext *context = corex_runtime_context_get();                                \
@@ -716,6 +765,11 @@ static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t gr
         return record_error(graph_api_error);                                                      \
     }
 GRAPH_API(cudaGraphCreate, (cudaGraph_t * out, unsigned flags), graph_create_locked(out, flags))
+GRAPH_API(cudaDeviceGetGraphMemAttribute, (int device, enum cudaGraphMemAttributeType attr, void *value),
+          graph_mem_attribute_locked(device,attr,value,0))
+GRAPH_API(cudaDeviceSetGraphMemAttribute, (int device, enum cudaGraphMemAttributeType attr, void *value),
+          graph_mem_attribute_locked(device,attr,value,1))
+GRAPH_API(cudaDeviceGraphMemTrim, (int device), graph_mem_trim_locked(device))
 GRAPH_API(cudaGraphDestroy, (cudaGraph_t graph), graph_destroy_locked(graph))
 GRAPH_API(cudaGraphAddEmptyNode,
           (cudaGraphNode_t * out, cudaGraph_t graph, const cudaGraphNode_t *deps, size_t count),
@@ -793,6 +847,13 @@ GRAPH_API(cudaGraphNodeGetEnabled, (cudaGraphExec_t exec, cudaGraphNode_t node, 
           graph_node_enabled_locked(exec, node, enabled, 0))
 GRAPH_API(cudaStreamBeginCapture, (cudaStream_t stream, enum cudaStreamCaptureMode mode),
           capture_begin_locked(stream, mode))
+GRAPH_API(cudaStreamBeginCaptureToGraph,
+          (cudaStream_t stream, cudaGraph_t graph, const cudaGraphNode_t *deps,
+           const cudaGraphEdgeData *edge_data, size_t count, enum cudaStreamCaptureMode mode),
+          capture_begin_to_graph_locked(stream, graph, deps, edge_data, count, mode))
+GRAPH_API(cudaStreamUpdateCaptureDependencies,
+          (cudaStream_t stream, cudaGraphNode_t *deps, size_t count, unsigned flags),
+          capture_dependencies_locked(stream, deps, count, flags))
 GRAPH_API(cudaStreamEndCapture, (cudaStream_t stream, cudaGraph_t *graph),
           capture_end_locked(stream, graph))
 GRAPH_API(cudaStreamIsCapturing, (cudaStream_t stream, enum cudaStreamCaptureStatus *status),
@@ -821,4 +882,18 @@ GRAPH_API(cudaGraphAddEventWaitNode,
           (cudaGraphNode_t * out, cudaGraph_t graph, const cudaGraphNode_t *deps, size_t count,
            cudaEvent_t event),
           graph_add_node_locked(out, graph, deps, count, cudaGraphNodeTypeWaitEvent, &event))
+GRAPH_API(cudaGraphEventRecordNodeGetEvent, (cudaGraphNode_t node, cudaEvent_t *event),
+          graph_get_params_locked(node, cudaGraphNodeTypeEventRecord, event))
+GRAPH_API(cudaGraphEventWaitNodeGetEvent, (cudaGraphNode_t node, cudaEvent_t *event),
+          graph_get_params_locked(node, cudaGraphNodeTypeWaitEvent, event))
+GRAPH_API(cudaGraphEventRecordNodeSetEvent, (cudaGraphNode_t node, cudaEvent_t event),
+          graph_set_node_locked(NULL, node, cudaGraphNodeTypeEventRecord, &event))
+GRAPH_API(cudaGraphEventWaitNodeSetEvent, (cudaGraphNode_t node, cudaEvent_t event),
+          graph_set_node_locked(NULL, node, cudaGraphNodeTypeWaitEvent, &event))
+GRAPH_API(cudaGraphExecEventRecordNodeSetEvent,
+          (cudaGraphExec_t exec, cudaGraphNode_t node, cudaEvent_t event),
+          graph_set_node_locked(exec, node, cudaGraphNodeTypeEventRecord, &event))
+GRAPH_API(cudaGraphExecEventWaitNodeSetEvent,
+          (cudaGraphExec_t exec, cudaGraphNode_t node, cudaEvent_t event),
+          graph_set_node_locked(exec, node, cudaGraphNodeTypeWaitEvent, &event))
 #undef GRAPH_API

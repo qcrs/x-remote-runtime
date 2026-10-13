@@ -1,0 +1,7 @@
+cudaGraphUpload(exec,stream)=0
+cudaStreamSynchronize(stream)=0
+cudaGraphLaunch(exec,stream)=0
+cudaStreamSynchronize(stream)=0
+cudaGraphExecDestroy(exec)=0
+cudaGraphDestroy(graph)=0
+cudaStreamDestroy(stream)=0

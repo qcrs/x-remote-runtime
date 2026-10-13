@@ -1,0 +1,14 @@
+M1_S4_CHECK name=session-a-alloc actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-stream actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-event actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-module actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-kernel actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-a-allocation-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-stream-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-event-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-kernel-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-a-kernel-cache-hidden-from-b actual=2 expected=2 result=PASS
+M1_S4_CHECK name=session-b-alloc actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-b-stream actual=0 expected=0 result=PASS
+M1_S4_CHECK name=session-b-close actual=0 expected=0 result=PASS
+M1_S4_SERVER_SESSION_ISOLATION=PASS

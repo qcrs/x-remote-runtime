@@ -4,7 +4,9 @@ CoreX 4.4 / MR-V100 passes the grouped native graph and capture probes in
 `tests/probes/corex_graph*_probe.c`. The remote subsystem uses those real native
 graphs, nodes and executable graphs. The authoritative API classifications and
 per-API limits are in `compat/cuda-api-ledger.csv`. This batch adds 40 supported
-public APIs: 22 IMPLEMENTED and 18 PARTIAL_IMPLEMENTED.
+public APIs: 22 IMPLEMENTED and 18 PARTIAL_IMPLEMENTED. Those 40 APIs are the
+baseline for the subsequent expansion at `0383270`; the active expansion's
+first checkpoint adds 11 APIs and is not goal completion.
 
 ## Objects and execution
 
@@ -51,6 +53,13 @@ launch streams. Event wait node frontiers join the launch frontier; event record
 nodes publish the launch frontier so normal event synchronization retires prior
 host transfers. No alternate allocator, transfer queue or scheduler was added.
 
+Event record/wait queries and graph setters now share the canonical event DTO.
+Exec event setters call native CoreX and replace only that executable's EventID
+and client frontier owner. Each exec event snapshot records its source NodeID,
+so updates reject unrelated nodes and keep graph parameters and other execs
+independent. Destroyed events still invalidate future launches; setters do not
+extend an event's lifetime.
+
 Node parameters can change on a graph or executable. Executable kernel setters
 retain function identity. Whole-executable update supports the original live
 graph and existing node correspondence; clone/recapture update is rejected.
@@ -87,6 +96,28 @@ then usable again. Wrong-thread end returns cudaErrorStreamCaptureWrongThread
 without consuming capture. This is a bounded capture slice, including a
 conservative guard on other GPU operations while capture is active. It does not
 claim CUDA's complete multi-thread, multi-stream or host-staging capture model.
+
+BeginCaptureToGraph now starts native capture into an existing graph, with
+bounded dependencies and zero edge data. End returns the same graph token.
+Explicit node additions to the capture graph permit branch construction;
+UpdateCaptureDependencies adds to or replaces the current native frontier.
+Capture info returns its bounded borrowed dependency array, including multiple
+or zero dependencies. Updates retain initiating-thread ownership. Software
+invalidation of capture into a caller-supplied graph ends native capture and
+leaves that graph alive for inspection and destruction. Global/Relaxed modes,
+nonzero edge data and multi-stream capture remain unsupported.
+
+## Graph memory controls
+
+Generated opcodes 89–91 expose four native uint64 graph memory attributes,
+zero-only high-water resets and native trim on device zero. The grouped native
+allocation/fill/copy/free probe measures actual data and replay: CoreX reports
+2 MiB allocation granules, holds used counts through same-graph free until graph
+destruction, and then trim releases reservations. High-water reset reads back
+zero after destruction. Default Memory Pool counters remain independent.
+Accounting queries are therefore partial CUDA accounting; reset and trim use
+the native semantics without synthetic counters. Public graph memory allocation
+and free nodes remain implementation work for this active expansion.
 
 ## Validation and continuation boundary
 

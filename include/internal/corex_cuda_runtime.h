@@ -103,6 +103,15 @@ typedef struct corexCudaGraphNodeHandle *cudaGraphNode_t;
 typedef struct corexCudaGraphExecHandle *cudaGraphExec_t;
 enum cudaStreamCaptureStatus { cudaStreamCaptureStatusNone=0,cudaStreamCaptureStatusActive=1,cudaStreamCaptureStatusInvalidated=2 };
 enum cudaStreamCaptureMode { cudaStreamCaptureModeGlobal=0,cudaStreamCaptureModeThreadLocal=1,cudaStreamCaptureModeRelaxed=2 };
+typedef struct { unsigned char from_port, to_port, type, reserved[5]; } cudaGraphEdgeData;
+enum cudaGraphMemAttributeType {
+    cudaGraphMemAttrUsedMemCurrent=0, cudaGraphMemAttrUsedMemHigh=1,
+    cudaGraphMemAttrReservedMemCurrent=2, cudaGraphMemAttrReservedMemHigh=3
+};
+cudaError_t cudaDeviceGetGraphMemAttribute(int device, enum cudaGraphMemAttributeType attr, void *value);
+cudaError_t cudaDeviceSetGraphMemAttribute(int device, enum cudaGraphMemAttributeType attr, void *value);
+cudaError_t cudaDeviceGraphMemTrim(int device);
+enum cudaStreamUpdateCaptureDependenciesFlags { cudaStreamAddCaptureDependencies=0, cudaStreamSetCaptureDependencies=1 };
 enum cudaGraphExecUpdateResult {
     cudaGraphExecUpdateSuccess=0,cudaGraphExecUpdateError=1,cudaGraphExecUpdateErrorTopologyChanged=2,
     cudaGraphExecUpdateErrorNodeTypeChanged=3,cudaGraphExecUpdateErrorFunctionChanged=4,
@@ -477,6 +486,16 @@ cudaError_t cudaGraphExecUpdate(cudaGraphExec_t hGraphExec, cudaGraph_t hGraph, 
 cudaError_t cudaGraphAddEventRecordNode(cudaGraphNode_t *pGraphNode, cudaGraph_t graph, const cudaGraphNode_t *pDependencies, size_t numDependencies, cudaEvent_t event);
 
 cudaError_t cudaGraphAddEventWaitNode(cudaGraphNode_t *pGraphNode, cudaGraph_t graph, const cudaGraphNode_t *pDependencies, size_t numDependencies, cudaEvent_t event);
+
+cudaError_t cudaGraphEventRecordNodeGetEvent(cudaGraphNode_t node, cudaEvent_t *event);
+cudaError_t cudaGraphEventWaitNodeGetEvent(cudaGraphNode_t node, cudaEvent_t *event);
+cudaError_t cudaGraphEventRecordNodeSetEvent(cudaGraphNode_t node, cudaEvent_t event);
+cudaError_t cudaGraphEventWaitNodeSetEvent(cudaGraphNode_t node, cudaEvent_t event);
+cudaError_t cudaGraphExecEventRecordNodeSetEvent(cudaGraphExec_t exec, cudaGraphNode_t node, cudaEvent_t event);
+cudaError_t cudaGraphExecEventWaitNodeSetEvent(cudaGraphExec_t exec, cudaGraphNode_t node, cudaEvent_t event);
+
+cudaError_t cudaStreamBeginCaptureToGraph(cudaStream_t stream, cudaGraph_t graph, const cudaGraphNode_t *deps, const cudaGraphEdgeData *edge_data, size_t count, enum cudaStreamCaptureMode mode);
+cudaError_t cudaStreamUpdateCaptureDependencies(cudaStream_t stream, cudaGraphNode_t *deps, size_t count, unsigned flags);
 
 #ifdef __cplusplus
 }

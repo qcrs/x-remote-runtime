@@ -354,6 +354,25 @@ static const CorexGeneratedFieldMetadata corex_generated_cudaGraphCreate_respons
 };
 #define COREX_GENERATED_CUDAGRAPHCREATE_REQUEST_DATA_MAX_BYTES 8192u
 #define COREX_GENERATED_CUDAGRAPHCREATE_RESPONSE_DATA_MAX_BYTES 65535u
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceGetGraphMemAttribute_request_fields[] = {
+    {"device", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"attribute", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceGetGraphMemAttribute_response_fields[] = {
+    {"value", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetGraphMemAttribute_request_fields[] = {
+    {"device", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+    {"attribute", COREX_WIRE_U32, 4u, 4u, 0u, "none"},
+    {"value", COREX_WIRE_U64, 8u, 8u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceSetGraphMemAttribute_response_fields[] = {
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceGraphMemTrim_request_fields[] = {
+    {"device", COREX_WIRE_I32, 4u, 4u, 0u, "none"},
+};
+static const CorexGeneratedFieldMetadata corex_generated_cudaDeviceGraphMemTrim_response_fields[] = {
+};
 static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaDeviceSynchronize", "OP_SYNC", 4u, CRX_CAP_STREAM_EVENT, "semantic_rpc", 0u, 0u, 0u, 0u, "corex_backend_context_sync", "handle_sync", corex_generated_cudaDeviceSynchronize_request_fields, 0u, corex_generated_cudaDeviceSynchronize_response_fields, 0u},
     {"cudaStreamQuery", "OP_STREAM_QUERY", 14u, CRX_CAP_STREAM_EVENT, "object_query", 8u, 8u, 4u, 4u, "corex_backend_stream_query", "handle_stream_query", corex_generated_cudaStreamQuery_request_fields, 1u, corex_generated_cudaStreamQuery_response_fields, 1u},
@@ -400,8 +419,11 @@ static const CorexGeneratedApiMetadata corex_generated_apis[] = {
     {"cudaMallocFromPoolAsync", "OP_ALLOC_FROM_POOL_ASYNC", 86u, CRX_CAP_MEMORY_POOLS, "semantic_rpc", 24u, 24u, 8u, 8u, "corex_backend_mem_alloc_from_pool_async", "handle_alloc_from_pool_async", corex_generated_cudaMallocFromPoolAsync_request_fields, 3u, corex_generated_cudaMallocFromPoolAsync_response_fields, 1u},
     {"cudaFreeAsync", "OP_FREE_ASYNC", 87u, CRX_CAP_MEMORY_POOLS, "semantic_rpc", 16u, 16u, 0u, 0u, "corex_backend_mem_free_async", "handle_free_async", corex_generated_cudaFreeAsync_request_fields, 2u, corex_generated_cudaFreeAsync_response_fields, 0u},
     {"cudaGraphCreate", "OP_GRAPH", 88u, CRX_CAP_GRAPHS, "semantic_rpc", 52u, 8244u, 16u, 65551u, "corex_backend_graph_create", "handle_graph", corex_generated_cudaGraphCreate_request_fields, 8u, corex_generated_cudaGraphCreate_response_fields, 3u},
+    {"cudaDeviceGetGraphMemAttribute", "OP_GRAPH_MEM_GET", 89u, CRX_CAP_GRAPHS, "semantic_rpc", 8u, 8u, 8u, 8u, "corex_backend_graph_mem_get", "handle_graph_mem_get", corex_generated_cudaDeviceGetGraphMemAttribute_request_fields, 2u, corex_generated_cudaDeviceGetGraphMemAttribute_response_fields, 1u},
+    {"cudaDeviceSetGraphMemAttribute", "OP_GRAPH_MEM_SET", 90u, CRX_CAP_GRAPHS, "semantic_rpc", 16u, 16u, 0u, 0u, "corex_backend_graph_mem_set", "handle_graph_mem_set", corex_generated_cudaDeviceSetGraphMemAttribute_request_fields, 3u, corex_generated_cudaDeviceSetGraphMemAttribute_response_fields, 0u},
+    {"cudaDeviceGraphMemTrim", "OP_GRAPH_MEM_TRIM", 91u, CRX_CAP_GRAPHS, "semantic_rpc", 4u, 4u, 0u, 0u, "corex_backend_graph_mem_trim", "handle_graph_mem_trim", corex_generated_cudaDeviceGraphMemTrim_request_fields, 1u, corex_generated_cudaDeviceGraphMemTrim_response_fields, 0u},
 };
-#define COREX_GENERATED_API_COUNT 45u
+#define COREX_GENERATED_API_COUNT 48u
 static inline int corex_generated_validate_payload(uint32_t opcode, size_t length)
 {
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i)
@@ -462,7 +484,10 @@ static inline int corex_generated_validate_response(uint32_t opcode, size_t leng
     X(85u, handle_alloc_async, CRX_CAP_MEMORY_POOLS) \
     X(86u, handle_alloc_from_pool_async, CRX_CAP_MEMORY_POOLS) \
     X(87u, handle_free_async, CRX_CAP_MEMORY_POOLS) \
-    X(88u, handle_graph, CRX_CAP_GRAPHS)
+    X(88u, handle_graph, CRX_CAP_GRAPHS) \
+    X(89u, handle_graph_mem_get, CRX_CAP_GRAPHS) \
+    X(90u, handle_graph_mem_set, CRX_CAP_GRAPHS) \
+    X(91u, handle_graph_mem_trim, CRX_CAP_GRAPHS)
 typedef struct {
     uint8_t _empty;
 } CorexGeneratedcudaDeviceSynchronizeRequest;
@@ -3189,6 +3214,178 @@ static inline int corex_generated_call_cudaGraphCreate(CorexGeneratedRpcCall rpc
         return -1;
     }
     int result = corex_generated_decode_cudaGraphCreate_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t device;
+    uint32_t attribute;
+} CorexGeneratedcudaDeviceGetGraphMemAttributeRequest;
+static inline int corex_generated_encode_cudaDeviceGetGraphMemAttribute_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceGetGraphMemAttributeRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 8u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->device);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->attribute);
+    *encoded_length = position;
+    return position <= 8u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceGetGraphMemAttribute_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceGetGraphMemAttributeRequest *value)
+{
+    if (!input || !value || length != 8u) return -1;
+    size_t position = 0;
+    uint32_t device_wire; if (corex_protocol_take_u32(input, length, &position, &device_wire) != 0) return -1; value->device = (int32_t)device_wire;
+    uint32_t attribute_wire; if (corex_protocol_take_u32(input, length, &position, &attribute_wire) != 0) return -1; value->attribute = (uint32_t)attribute_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint64_t value;
+} CorexGeneratedcudaDeviceGetGraphMemAttributeResponse;
+static inline int corex_generated_encode_cudaDeviceGetGraphMemAttribute_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceGetGraphMemAttributeResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 8u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u64(output, &position, (uint64_t)value->value);
+    *encoded_length = position;
+    return position <= 8u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceGetGraphMemAttribute_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceGetGraphMemAttributeResponse *value)
+{
+    if (!input || !value || length != 8u) return -1;
+    size_t position = 0;
+    uint64_t value_wire; if (corex_protocol_take_u64(input, length, &position, &value_wire) != 0) return -1; value->value = (uint64_t)value_wire;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceGetGraphMemAttribute(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceGetGraphMemAttributeRequest *request, CorexGeneratedcudaDeviceGetGraphMemAttributeResponse *response)
+{
+    unsigned char request_wire[8u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceGetGraphMemAttribute_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(89u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceGetGraphMemAttribute_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t device;
+    uint32_t attribute;
+    uint64_t value;
+} CorexGeneratedcudaDeviceSetGraphMemAttributeRequest;
+static inline int corex_generated_encode_cudaDeviceSetGraphMemAttribute_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetGraphMemAttributeRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 16u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->device);
+    corex_protocol_write_u32(output, &position, (uint32_t)value->attribute);
+    corex_protocol_write_u64(output, &position, (uint64_t)value->value);
+    *encoded_length = position;
+    return position <= 16u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetGraphMemAttribute_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetGraphMemAttributeRequest *value)
+{
+    if (!input || !value || length != 16u) return -1;
+    size_t position = 0;
+    uint32_t device_wire; if (corex_protocol_take_u32(input, length, &position, &device_wire) != 0) return -1; value->device = (int32_t)device_wire;
+    uint32_t attribute_wire; if (corex_protocol_take_u32(input, length, &position, &attribute_wire) != 0) return -1; value->attribute = (uint32_t)attribute_wire;
+    uint64_t value_wire; if (corex_protocol_take_u64(input, length, &position, &value_wire) != 0) return -1; value->value = (uint64_t)value_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaDeviceSetGraphMemAttributeResponse;
+static inline int corex_generated_encode_cudaDeviceSetGraphMemAttribute_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceSetGraphMemAttributeResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceSetGraphMemAttribute_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceSetGraphMemAttributeResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceSetGraphMemAttribute(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceSetGraphMemAttributeRequest *request, CorexGeneratedcudaDeviceSetGraphMemAttributeResponse *response)
+{
+    unsigned char request_wire[16u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceSetGraphMemAttribute_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(90u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceSetGraphMemAttribute_response(response_wire, response_length, response);
+    free(response_wire);
+    return result;
+}
+typedef struct {
+    int32_t device;
+} CorexGeneratedcudaDeviceGraphMemTrimRequest;
+static inline int corex_generated_encode_cudaDeviceGraphMemTrim_request(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceGraphMemTrimRequest *value)
+{
+    if (!encoded_length || !value) return -1;
+    if (!output || capacity < 4u) return -1;
+    size_t position = 0;
+    corex_protocol_write_u32(output, &position, (uint32_t)value->device);
+    *encoded_length = position;
+    return position <= 4u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceGraphMemTrim_request(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceGraphMemTrimRequest *value)
+{
+    if (!input || !value || length != 4u) return -1;
+    size_t position = 0;
+    uint32_t device_wire; if (corex_protocol_take_u32(input, length, &position, &device_wire) != 0) return -1; value->device = (int32_t)device_wire;
+    return position == length ? 0 : -1;
+}
+typedef struct {
+    uint8_t _empty;
+} CorexGeneratedcudaDeviceGraphMemTrimResponse;
+static inline int corex_generated_encode_cudaDeviceGraphMemTrim_response(unsigned char *output, size_t capacity, size_t *encoded_length, const CorexGeneratedcudaDeviceGraphMemTrimResponse *value)
+{
+    if (!encoded_length || !value) return -1;
+    (void)output; (void)capacity;
+    size_t position = 0;
+    *encoded_length = position;
+    return position <= 0u ? 0 : -1;
+}
+static inline int corex_generated_decode_cudaDeviceGraphMemTrim_response(const unsigned char *input, size_t length, CorexGeneratedcudaDeviceGraphMemTrimResponse *value)
+{
+    if (!value || length != 0u) return -1;
+    (void)input;
+    size_t position = 0;
+    return position == length ? 0 : -1;
+}
+static inline int corex_generated_call_cudaDeviceGraphMemTrim(CorexGeneratedRpcCall rpc_call, const CorexGeneratedcudaDeviceGraphMemTrimRequest *request, CorexGeneratedcudaDeviceGraphMemTrimResponse *response)
+{
+    unsigned char request_wire[4u];
+    size_t request_length = 0;
+    unsigned char *response_wire = NULL;
+    uint32_t response_length = 0;
+    if (!rpc_call || !request || !response ||
+        corex_generated_encode_cudaDeviceGraphMemTrim_request(request_wire, sizeof(request_wire), &request_length, request) != 0)
+        return -1;
+    if (rpc_call(91u, request_wire, (uint32_t)request_length, &response_wire, &response_length) != 0) {
+        free(response_wire);
+        return -1;
+    }
+    int result = corex_generated_decode_cudaDeviceGraphMemTrim_response(response_wire, response_length, response);
     free(response_wire);
     return result;
 }

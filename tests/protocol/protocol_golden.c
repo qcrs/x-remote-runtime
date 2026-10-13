@@ -49,11 +49,14 @@ _Static_assert(OP_SET_LIMIT == 59 && OP_SET_CACHE_CONFIG == 60 &&
                OP_OCCUPANCY_POTENTIAL == 69 && OP_UPLOAD_LIBRARY == 70 &&
                OP_LIBRARY_COUNT == 71 && OP_LIBRARY_KERNEL_NAME == 72 && OP_MODULE_GET_GLOBAL == 73 && OP_SET_DEVICE_FLAGS == 74 && OP_DEVICE_DEFAULT_POOL == 75 &&
                OP_ALLOC_ASYNC == 85 && OP_ALLOC_FROM_POOL_ASYNC == 86 &&
-               OP_FREE_ASYNC == 87 && OP_GRAPH == 88 && OP__COUNT == 89, "compatibility expansion opcode assignment changed");
+               OP_FREE_ASYNC == 87 && OP_GRAPH == 88 && OP_GRAPH_MEM_GET == 89 &&
+               OP_GRAPH_MEM_SET == 90 && OP_GRAPH_MEM_TRIM == 91 && OP__COUNT == 92,
+               "compatibility expansion opcode assignment changed");
 
 _Static_assert(GRAPH_CREATE==1 && GRAPH_INSTANTIATE==8 && GRAPH_LAUNCH==10 &&
                GRAPH_CLONE==21 && GRAPH_EXEC_UPDATE==23 && GRAPH_CAPTURE_BEGIN==24 &&
-               GRAPH_CAPTURE_ADD==25 && GRAPH_CAPTURE_END==26 && GRAPH_CAPTURE_ABORT==27,
+               GRAPH_CAPTURE_ADD==25 && GRAPH_CAPTURE_END==26 && GRAPH_CAPTURE_ABORT==27 &&
+               GRAPH_CAPTURE_BEGIN_TO_GRAPH==28 && GRAPH_CAPTURE_DEPENDENCIES==29,
                "graph command wire assignments changed");
 
 static int test_hello(void)

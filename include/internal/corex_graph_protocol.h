@@ -19,6 +19,7 @@ enum CorexGraphAction {
     GRAPH_SET_ENABLED, GRAPH_GET_ENABLED,
     GRAPH_CLONE, GRAPH_FIND_CLONE, GRAPH_EXEC_UPDATE,
     GRAPH_CAPTURE_BEGIN, GRAPH_CAPTURE_ADD, GRAPH_CAPTURE_END, GRAPH_CAPTURE_ABORT,
+    GRAPH_CAPTURE_BEGIN_TO_GRAPH, GRAPH_CAPTURE_DEPENDENCIES,
 };
 /* Query/control RPCs outside this allowlist must not execute while a native
  * capture is active. This guard also protects against a direct CRX9 peer. */

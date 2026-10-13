@@ -142,6 +142,7 @@ typedef struct {
     GraphExecEntry graph_execs[CRX_GRAPH_MAX_EXECS];
     uint64_t next_graph_id, next_graph_node_id, next_graph_exec_id;
     uint64_t capture_stream, capture_graph;
+    int capture_supplied_graph;
     uint64_t default_pool_id;
     uint64_t current_pool_id;
     uint64_t next_pool_id;

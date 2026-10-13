@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 45u) return 1;
+    if (COREX_GENERATED_API_COUNT != 48u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -384,6 +384,31 @@ int main(void) {
     if (corex_generated_validate_response(88u, 15u) == 0) return 1;
     if (corex_generated_validate_response(88u, 65552u) == 0) return 1;
     (void)corex_generated_cudaGraphCreate_request_fields;
+    if (corex_generated_validate_payload(89u, 8u) != 0) return 1;
+    if (corex_generated_validate_payload(89u, 8u) != 0) return 1;
+    if (corex_generated_validate_response(89u, 8u) != 0) return 1;
+    if (corex_generated_validate_response(89u, 8u) != 0) return 1;
+    if (corex_generated_validate_payload(89u, 7u) == 0) return 1;
+    if (corex_generated_validate_payload(89u, 9u) == 0) return 1;
+    if (corex_generated_validate_response(89u, 7u) == 0) return 1;
+    if (corex_generated_validate_response(89u, 9u) == 0) return 1;
+    (void)corex_generated_cudaDeviceGetGraphMemAttribute_request_fields;
+    if (corex_generated_validate_payload(90u, 16u) != 0) return 1;
+    if (corex_generated_validate_payload(90u, 16u) != 0) return 1;
+    if (corex_generated_validate_response(90u, 0u) != 0) return 1;
+    if (corex_generated_validate_response(90u, 0u) != 0) return 1;
+    if (corex_generated_validate_payload(90u, 15u) == 0) return 1;
+    if (corex_generated_validate_payload(90u, 17u) == 0) return 1;
+    if (corex_generated_validate_response(90u, 1u) == 0) return 1;
+    (void)corex_generated_cudaDeviceSetGraphMemAttribute_request_fields;
+    if (corex_generated_validate_payload(91u, 4u) != 0) return 1;
+    if (corex_generated_validate_payload(91u, 4u) != 0) return 1;
+    if (corex_generated_validate_response(91u, 0u) != 0) return 1;
+    if (corex_generated_validate_response(91u, 0u) != 0) return 1;
+    if (corex_generated_validate_payload(91u, 3u) == 0) return 1;
+    if (corex_generated_validate_payload(91u, 5u) == 0) return 1;
+    if (corex_generated_validate_response(91u, 1u) == 0) return 1;
+    (void)corex_generated_cudaDeviceGraphMemTrim_request_fields;
     if (COREX_GENERATED_CUDADEVICEGETPCIBUSID_RESPONSE_PCI_BUS_ID_MAX_BYTES != 32u) return 1;
     CorexGeneratedcudaDeviceGetPCIBusIdResponse input_cudaDeviceGetPCIBusId_response_pci_bus_id = {0}, output_cudaDeviceGetPCIBusId_response_pci_bus_id = {0};
     unsigned char wire_cudaDeviceGetPCIBusId_response_pci_bus_id[36u]; size_t wire_length_cudaDeviceGetPCIBusId_response_pci_bus_id = 0;

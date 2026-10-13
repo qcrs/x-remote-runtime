@@ -1,0 +1,21 @@
+python3 scripts/generate-api-schema.py (twice)
+python3 scripts/verify-api-contracts.py
+python3 scripts/report-api-coverage.py
+python3 scripts/verify-evidence-links.py
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=57679 dist/bin/runtime_server # independent PID=2344875
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+python3 /home/lvtong/corex-remote-runtime/tests/integration/graphs_protocol.py
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+/home/lvtong/corex-remote-runtime/scripts/run-server-session-isolation.sh
+
+./scripts/build.sh
+OUT=evidence/m5/graph-expansion-20261013 ./scripts/test-api-schema.sh
+OUT=evidence/m5/graph-expansion-20261013 ./scripts/test-handler-registry.sh
+python3 scripts/verify-api-contracts.py .
+python3 scripts/verify-evidence-links.py .
+git diff --check

@@ -36,13 +36,14 @@ static void cleanup_graphs(ServerSession *s) {
     if (stream)
       corex_backend_capture_end(stream->stream, &captured);
     /* A failed EndCapture discards the invalidated native graph. */
-    if (!captured && graph) {
+    if (!captured && graph && !s->capture_supplied_graph) {
       for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i)
         if (s->graph_nodes[i].used && s->graph_nodes[i].graph_id == graph->id)
           release_graph_node(&s->graph_nodes[i]);
       memset(graph, 0, sizeof(*graph));
     }
     s->capture_graph = s->capture_stream = 0;
+    s->capture_supplied_graph = 0;
   }
   /* Native graph launches may use default/nonblocking streams. Complete
    * them before releasing executable snapshots and their resource owners. */
@@ -72,6 +73,40 @@ static uint32_t graph_result(CUresult r) {
   if (r == CUDA_ERROR_NOT_SUPPORTED)
     return ST_NOT_SUPPORTED;
   return ST_CUDA_ERROR;
+}
+static int handle_graph_mem_get(ServerSession *s, int fd, uint32_t req_id,
+                                 const unsigned char *payload, uint32_t len) {
+  (void)s;
+  CorexGeneratedcudaDeviceGetGraphMemAttributeRequest q;
+  if(corex_generated_decode_cudaDeviceGetGraphMemAttribute_request(payload,len,&q) || q.attribute>3)
+    return send_response(fd,OP_GRAPH_MEM_GET,req_id,ST_BAD_REQUEST,NULL,0);
+  if(q.device != 0) return send_response(fd,OP_GRAPH_MEM_GET,req_id,ST_INVALID_DEVICE,NULL,0);
+  CorexGeneratedcudaDeviceGetGraphMemAttributeResponse reply={0};
+  CUresult r=corex_backend_graph_mem_get(g_device,(CUgraphMem_attribute)q.attribute,&reply.value);
+  if(r) return send_response(fd,OP_GRAPH_MEM_GET,req_id,graph_result(r),NULL,0);
+  unsigned char wire[8];size_t length=0;
+  corex_generated_encode_cudaDeviceGetGraphMemAttribute_response(wire,sizeof(wire),&length,&reply);
+  return send_response(fd,OP_GRAPH_MEM_GET,req_id,ST_OK,wire,(uint32_t)length);
+}
+static int handle_graph_mem_set(ServerSession *s, int fd, uint32_t req_id,
+                                 const unsigned char *payload, uint32_t len) {
+  (void)s;
+  CorexGeneratedcudaDeviceSetGraphMemAttributeRequest q;
+  if(corex_generated_decode_cudaDeviceSetGraphMemAttribute_request(payload,len,&q) ||
+      (q.attribute != 1 && q.attribute != 3) || q.value)
+    return send_response(fd,OP_GRAPH_MEM_SET,req_id,ST_BAD_REQUEST,NULL,0);
+  if(q.device != 0) return send_response(fd,OP_GRAPH_MEM_SET,req_id,ST_INVALID_DEVICE,NULL,0);
+  return send_response(fd,OP_GRAPH_MEM_SET,req_id,
+    graph_result(corex_backend_graph_mem_set(g_device,(CUgraphMem_attribute)q.attribute,q.value)),NULL,0);
+}
+static int handle_graph_mem_trim(ServerSession *s, int fd, uint32_t req_id,
+                                  const unsigned char *payload, uint32_t len) {
+  (void)s;
+  CorexGeneratedcudaDeviceGraphMemTrimRequest q;
+  if(corex_generated_decode_cudaDeviceGraphMemTrim_request(payload,len,&q))
+    return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,ST_BAD_REQUEST,NULL,0);
+  if(q.device != 0) return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,ST_INVALID_DEVICE,NULL,0);
+  return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,graph_result(corex_backend_graph_mem_trim(g_device)),NULL,0);
 }
 typedef struct {
   CUDA_MEMCPY3D copy;
@@ -260,9 +295,60 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       q.action != GRAPH_GET_NODES && q.action != GRAPH_GET_ROOTS &&
       q.action != GRAPH_GET_EDGES && q.action != GRAPH_GET_DEPENDENCIES &&
       q.action != GRAPH_GET_DEPENDENTS && q.action != GRAPH_GET_TYPE &&
-      q.action != GRAPH_GET_PARAMS)
+      q.action != GRAPH_GET_PARAMS && q.action != GRAPH_CAPTURE_DEPENDENCIES &&
+      !((q.action == GRAPH_ADD_NODE || q.action == GRAPH_ADD_DEPENDENCIES) &&
+        g && g->id == s->capture_graph))
     return send_response(fd, OP_GRAPH, req_id, ST_NOT_SUPPORTED, NULL, 0);
   switch (q.action) {
+  case GRAPH_CAPTURE_BEGIN_TO_GRAPH: {
+    StreamEntry *stream=find_stream(s,q.stream);
+    if (!g || !stream) {status=ST_NOT_FOUND;break;}
+    if (q.value != CU_STREAM_CAPTURE_MODE_THREAD_LOCAL) {status=ST_NOT_SUPPORTED;break;}
+    if (q.data_length%8 || q.data_length/8 > CRX_GRAPH_MAX_NODES) {status=ST_BAD_REQUEST;break;}
+    size_t count=q.data_length/8;
+    CUgraphNode deps[CRX_GRAPH_MAX_NODES];
+    status=resolve_graph_dependencies(s,g->id,q.data,count,deps);
+    if(status) break;
+    r=corex_backend_capture_begin_to_graph(stream->stream,g->graph,deps,count);
+    if(!r) {
+      s->capture_stream=q.stream;s->capture_graph=g->id;s->capture_supplied_graph=1;
+      out.object=g->id;
+    }
+    break;
+  }
+  case GRAPH_CAPTURE_DEPENDENCIES: {
+    StreamEntry *stream=find_stream(s,q.stream);
+    if(!g || !stream || g->id != s->capture_graph || q.stream != s->capture_stream) {status=ST_BAD_REQUEST;break;}
+    if(q.value>1 || q.data_length%8 || q.data_length/8 > CRX_GRAPH_MAX_NODES) {status=ST_BAD_REQUEST;break;}
+    CUgraphNode deps[CRX_GRAPH_MAX_NODES];
+    size_t count=q.data_length/8;
+    status=resolve_graph_dependencies(s,g->id,q.data,count,deps);
+    if(status) break;
+    /* Bound the union before changing native state. */
+    CUstreamCaptureStatus cs;cuuint64_t id;CUgraph cg;const CUgraphNode *current=NULL;size_t n=0;
+    r=corex_backend_capture_info(stream->stream,&cs,&id,&cg,&current,&n);
+    if(r) break;
+    if(cs != CU_STREAM_CAPTURE_STATUS_ACTIVE || cg != g->graph) {status=ST_BAD_REQUEST;break;}
+    size_t total=q.value ? count : n;
+    if(!q.value) for(size_t i=0;i<count;++i) {
+      int present=0;for(size_t j=0;j<n;++j) if(deps[i]==current[j]) present=1;
+      if(!present) ++total;
+    }
+    if(total>CRX_GRAPH_MAX_NODES) {status=ST_NO_RESOURCE;break;}
+    r=corex_backend_capture_dependencies(stream->stream,deps,count,(unsigned)q.value);
+    if(r) break;
+    r=corex_backend_capture_info(stream->stream,&cs,&id,&cg,&current,&n);
+    if(r) break;
+    if(n>CRX_GRAPH_MAX_NODES) {status=ST_INTERNAL;break;}
+    size_t pos=0;
+    for(size_t i=0;i<n;++i) {
+      uint64_t node_id=native_graph_node_id(s,current[i]);
+      if(!node_id) {status=ST_INTERNAL;break;}
+      corex_protocol_write_u64(out.data,&pos,node_id);
+    }
+    out.value=(uint32_t)n;out.data_length=(uint32_t)pos;
+    break;
+  }
   case GRAPH_CLONE: {
     if (!g) {
       status = ST_NOT_FOUND;
@@ -468,6 +554,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     slot->id = ++s->next_graph_id;
     s->capture_stream = q.stream;
     s->capture_graph = slot->id;
+    s->capture_supplied_graph = 0;
     out.object = slot->id;
     break;
   }
@@ -571,7 +658,9 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       break;
     }
     r = corex_backend_capture_end(stream->stream, &native_graph);
+    int supplied=s->capture_supplied_graph;
     s->capture_graph = s->capture_stream = 0;
+    s->capture_supplied_graph = 0;
     if (q.action == GRAPH_CAPTURE_END && !r && native_graph == g->graph) {
       size_t count = 0, tracked = 0;
       r = corex_backend_graph_nodes(g->graph, NULL, &count);
@@ -584,6 +673,10 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       }
       status = ST_CUDA_ERROR;
     }
+    /* BeginCaptureToGraph uses caller-owned storage. Software invalidation
+     * must not destroy that graph; captured nodes remain inspectable. */
+    if (supplied && !r && native_graph == g->graph)
+      break;
     if (native_graph)
       corex_backend_graph_destroy(native_graph);
     for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i)
@@ -777,6 +870,12 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       r = e ? corex_backend_graph_exec_set_kernel(e->exec, n->node,
                                                   &d.kernel.native)
             : corex_backend_graph_set_kernel(n->node, &d.kernel.native);
+    else if (q.kind == CU_GRAPH_NODE_TYPE_EVENT_RECORD)
+      r = e ? corex_backend_graph_exec_set_record(e->exec, n->node, d.event)
+            : corex_backend_graph_set_record(n->node, d.event);
+    else if (q.kind == CU_GRAPH_NODE_TYPE_WAIT_EVENT)
+      r = e ? corex_backend_graph_exec_set_wait(e->exec, n->node, d.event)
+            : corex_backend_graph_set_wait(n->node, d.event);
     else
       r = CUDA_ERROR_NOT_SUPPORTED;
     release_graph_params(q.kind, &d);

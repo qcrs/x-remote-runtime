@@ -13,6 +13,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--out", type=Path, required=True)
 parser.add_argument("--integration-only", action="store_true")
 parser.add_argument("--probes-only", action="store_true")
+parser.add_argument("--expansion", action="store_true", help="validate the post-0383270 expansion")
+parser.add_argument("--ownership-checks", action="store_true", help="include lifecycle and session isolation")
 args = parser.parse_args()
 if args.integration_only and args.probes_only:
     parser.error("--integration-only and --probes-only are mutually exclusive")
@@ -44,12 +46,17 @@ cc = os.environ.get("CC", "gcc")
 common = [cc, "-O2", "-Wall", "-Wextra", "-Werror", "-std=gnu11"]
 image = root / "build/session_lifecycle.cubin"
 if not args.integration_only:
-    for source, label, lib in [("corex_graph_probe.c", "driver-probe", "cuda"),
+    probes=[("corex_graph_probe.c", "driver-probe", "cuda"),
                                ("corex_graph_runtime_probe.c", "runtime-probe", "cudart"),
-                               ("corex_graph_execution_probe.c", "execution-probe", "cuda")]:
+                               ("corex_graph_execution_probe.c", "execution-probe", "cuda")]
+    if args.expansion:
+        probes=[("corex_graph_expansion_probe.c", "native-expansion", "cuda"),
+                ("corex_graph_memory_probe.c", "native-memory", "cuda"),
+                ("corex_graph_expansion_runtime_probe.c", "native-runtime-expansion", "cudart")]
+    for source, label, lib in probes:
         binary = work / label
         run(common + [f"-I{corex}/include", root / "tests/probes" / source,
-                      f"-L{corex}/lib64", f"-Wl,-rpath,{corex}/lib64", "-l" + lib, "-o", binary], label + "-compile")
+                      f"-L{corex}/lib64", f"-Wl,-rpath,{corex}/lib64", "-l" + lib, "-ldl", "-o", binary], label + "-compile")
         run([binary] + ([image] if label == "execution-probe" else []), label)
 if args.probes_only:
     print("GRAPH_PROBES=PASS",flush=True)
@@ -59,9 +66,17 @@ run(common + [f"-I{corex}/include", root / "tests/integration/graphs.c",
               f"-L{root}/dist/lib", "-lcorex_remote_cudart", f"-Wl,-rpath,{root}/dist/lib", "-pthread", "-o", binary], "public-client-compile")
 run(common + ["-DCOREX_GRAPH_INTERNAL_ABI", f"-I{root}/include/internal", "-c",
               root / "tests/integration/graphs.c", "-o", work / "graph-abi.o"], "internal-graph-abi")
+if args.expansion:
+    expansion_binary=work / "graph-expansion-app"
+    run(common + [f"-I{corex}/include", root / "tests/integration/graph_expansion.c",
+                  f"-L{root}/dist/lib", "-lcorex_remote_cudart", f"-Wl,-rpath,{root}/dist/lib", "-pthread", "-o", expansion_binary], "expansion-client-compile")
+    run(common + ["-DCOREX_GRAPH_INTERNAL_ABI", f"-I{root}/include/internal", "-c",
+                  root / "tests/integration/graph_expansion.c", "-o", work / "graph-expansion-abi.o"], "expansion-abi")
 env = os.environ.copy()
 env["PYTHONDONTWRITEBYTECODE"] = "1"
 env["COREX_REMOTE_HOST"] = "127.0.0.1"
+if args.expansion:
+    env["COREX_GRAPH_EXPANSION"]="1"
 with socket.socket() as reserve:
     reserve.bind(("127.0.0.1", 0))
     env["COREX_REMOTE_PORT"] = str(reserve.getsockname()[1])
@@ -83,14 +98,17 @@ with (out / "server.stdout.log").open("w") as stdout, (out / "server.stderr.log"
         with (out / "ENVIRONMENT.txt").open("a") as environment:
             environment.write(f"PORT={port}\nSERVER_PID={server.pid}\n")
         run([binary, image], "integration", env)
+        if args.expansion:
+            run([expansion_binary], "expansion-integration", env)
         run(["python3", root / "tests/integration/graphs_protocol.py"], "protocol-integration", env)
-        if not args.integration_only:
+        if not args.integration_only or args.ownership_checks:
             lifecycle_env=env.copy();lifecycle_env["OUT"]=str(out / "lifecycle")
             run([root / "scripts/run-lifecycle-integration.sh"], "lifecycle", lifecycle_env)
             isolation_env=env.copy();isolation_env["OUT"]=str(out / "session-isolation")
             run([root / "scripts/run-server-session-isolation.sh"], "session-isolation", isolation_env)
-            baseline_env=env.copy();baseline_env["OUT"]=str(out / "baseline")
-            run([root / "scripts/run-integration.sh"], "baseline", baseline_env)
+            if not args.expansion:
+                baseline_env=env.copy();baseline_env["OUT"]=str(out / "baseline")
+                run([root / "scripts/run-integration.sh"], "baseline", baseline_env)
     finally:
         server.terminate()
         try:

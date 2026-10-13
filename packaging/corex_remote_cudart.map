@@ -178,6 +178,17 @@ COREX_REMOTE_CUDART_1.1 {
         cudaMallocAsync;
         cudaMallocFromPoolAsync;
         cudaFreeAsync;
+        cudaGraphEventRecordNodeGetEvent;
+        cudaGraphEventWaitNodeGetEvent;
+        cudaGraphEventRecordNodeSetEvent;
+        cudaGraphEventWaitNodeSetEvent;
+        cudaGraphExecEventRecordNodeSetEvent;
+        cudaGraphExecEventWaitNodeSetEvent;
+        cudaStreamBeginCaptureToGraph;
+        cudaStreamUpdateCaptureDependencies;
+        cudaDeviceGetGraphMemAttribute;
+        cudaDeviceSetGraphMemAttribute;
+        cudaDeviceGraphMemTrim;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

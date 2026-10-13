@@ -67,3 +67,33 @@ with socket.create_connection(endpoint, timeout=10) as sock:
     assert call(sock, 4, 1) == (0, b"")
     assert call(sock, 7, 2) == (0, b"")
 print("GRAPHS_PROTOCOL=PASS bounded_commands stale_IDs graph_exec_ownership capture_EOF session_isolation")
+if os.environ.get("COREX_GRAPH_EXPANSION"):
+    with socket.create_connection(endpoint, timeout=10) as sock:
+        for opcode,size in [(89,8),(90,16),(91,4)]:
+            assert call(sock,opcode,10,b"bad") == (1,b"")
+            assert call(sock,opcode,11,b"\0"*(size+1)) == (1,b"")
+        assert call(sock,89,12,struct.pack("!iI",1,0)) == (8,b"")
+        assert call(sock,89,13,struct.pack("!iI",0,4)) == (1,b"")
+        assert call(sock,90,14,struct.pack("!iIQ",0,1,1)) == (1,b"")
+        assert call(sock,90,15,struct.pack("!iIQ",0,0,0)) == (1,b"")
+        assert call(sock,89,16,struct.pack("!iI",0,0))[0] == 0
+        graph=object_id(command(sock,1))
+        first=object_id(command(sock,3,graph=graph,kind=5,data=struct.pack("!I",0)))
+        foreign=object_id(command(sock,1))
+        foreign_node=object_id(command(sock,3,graph=foreign,kind=5,data=struct.pack("!I",0)))
+        status,data=call(sock,12,17,struct.pack("!I",1));assert status==0
+        stream=struct.unpack("!Q",data)[0]
+        assert command(sock,28,graph=graph,stream=stream,value=1,data=b"bad") == (1,b"")
+        assert command(sock,28,graph=graph,stream=stream,value=1,data=struct.pack("!Q",foreign_node)) == (1,b"")
+        assert object_id(command(sock,28,graph=graph,stream=stream,value=1,data=struct.pack("!Q",first)))==graph
+        assert command(sock,29,graph=graph,stream=stream,value=2) == (1,b"")
+        assert command(sock,29,graph=graph,stream=stream,value=1,data=b"bad") == (1,b"")
+        assert command(sock,29,graph=graph,stream=stream,value=1,data=struct.pack("!Q",foreign_node)) == (1,b"")
+        assert command(sock,29,graph=graph,stream=stream,value=1,data=struct.pack("!Q",first))[0]==0
+        # EOF must finish supplied-graph capture before releasing native graph ownership.
+    with socket.create_connection(endpoint, timeout=10) as sock:
+        graph=object_id(command(sock,1))
+        executable=object_id(command(sock,8,graph=graph))
+        assert command(sock,10,exec_id=executable)[0]==0
+        assert call(sock,4,18)==(0,b"")
+    print("GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds dependency_ownership supplied_graph_EOF")
