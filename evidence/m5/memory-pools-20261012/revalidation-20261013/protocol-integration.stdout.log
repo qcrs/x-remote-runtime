@@ -1,0 +1,1 @@
+MEMORY_POOLS_PROTOCOL=PASS capabilities bounded_DTO invalid_ID deferred_destroy async_free EOF_isolation

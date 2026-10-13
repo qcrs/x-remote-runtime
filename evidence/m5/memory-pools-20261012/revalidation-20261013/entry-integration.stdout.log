@@ -1,0 +1,44 @@
+G6A_VA_ARENA base=0xffef83790000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=45959 protocol=CRX9 version=3 default_stream=LEGACY
+cudaSetDevice(0)=0
+G6A_CUDA_MALLOC ptr=0xffef83790000 allocation_id=1 bytes=32 span=131072 result=PASS
+cudaMalloc((void **)&b,sizeof(source))=0
+cudaGetDriverEntryPoint("cuMemAlloc",(void **)&alloc,cudaEnableDefault)=0
+cudaGetDriverEntryPoint("cuMemFree",(void **)&release,cudaEnableDefault)=0
+cudaGetDriverEntryPoint("cuMemcpyHtoD",(void **)&htod,cudaEnableDefault)=0
+cudaGetDriverEntryPoint("cuMemcpyDtoH",(void **)&dtoh,cudaEnableDefault)=0
+cudaGetDriverEntryPoint("cuMemcpyDtoD",(void **)&dtod,cudaEnableDefault)=0
+cudaGetDriverEntryPoint("cuCtxSynchronize",(void **)&sync,cudaEnableDefault)=0
+G6A_CUDA_MALLOC ptr=0xffef837b0000 allocation_id=2 bytes=32 span=131072 result=PASS
+alloc(&a,sizeof(source))=0
+G6A_PTR_RESOLVE ptr=0xffef837b0000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=32 result=PASS
+htod(a,source,sizeof(source))=0
+G6A_PTR_RESOLVE ptr=0xffef83790000 allocation_id=1 offset=0 bytes=32
+G6A_PTR_RESOLVE ptr=0xffef837b0000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2D bytes=32 result=PASS
+dtod(b,a,sizeof(source))=0
+G6A_PTR_RESOLVE ptr=0xffef83790000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+dtoh(host,b,sizeof(host))=0
+G6A_PTR_RESOLVE ptr=0xffef837b0000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMSET allocation_id=2 offset=0 value=57 bytes=32 result=PASS
+cudaMemset((void *)a,0x39,sizeof(source))=0
+G6A_PTR_RESOLVE ptr=0xffef837b0000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=32 result=PASS
+dtoh(host,a,sizeof(host))=0
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+sync()=0
+G6A_CUDA_FREE ptr=0xffef837b0000 allocation_id=2 result=PASS tombstone=YES
+release(a)=0
+G6A_CUDA_FREE ptr=0xffef83790000 allocation_id=1 result=PASS tombstone=YES
+cudaFree((void *)b)=0
+cudaGetDriverEntryPoint("cuMemAlloc",&entry,cudaEnableLegacyStream)=0
+DRIVER_ZERO_FREE=0
+DRIVER_ZERO_ALLOC=1
+DRIVER_ENTRIES_REMOTE=PASS
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS
+cudaDeviceReset()=0
+M1_S2_RUNTIME_SHUTDOWN state=DISCONNECTED action=NOOP result=PASS

@@ -5,7 +5,9 @@ MR-V100, within the measured limits in the ledger: 40 additional public APIs
 (22 IMPLEMENTED, 18 PARTIAL_IMPLEMENTED). The architecture and limits are in
 [GRAPH_CAPTURE_MODEL](GRAPH_CAPTURE_MODEL.md); the requirements audit is in
 `evidence/m5/graphs-capture-20261013/GOAL_AUDIT.md`. The preceding core Runtime
-and Memory Pool goal remains recorded in `evidence/m5/memory-pools-20261012/`.
+and Memory Pool goal is complete and was revalidated at `6d30df8`; its full
+scope audit and current public transport checks are in
+`evidence/m5/memory-pools-20261012/revalidation-20261013/`.
 
 | Item | Current value |
 | --- | --- |

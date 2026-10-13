@@ -1,0 +1,6 @@
+EVIDENCE_MANIFEST.sha256: 62 hashes match preserved artifacts
+SOURCE_MANIFEST.sha256: 43 hashes match commit 154dde1
+Current eligible records: 139; statuses: {'PARTIAL_IMPLEMENTED': 41, 'IMPLEMENTED': 75, 'GROUND_TRUTH_BLOCKED': 18, 'BACKEND_UNSUPPORTED': 5}
+Additional supported public APIs relative to cf5f8a8: 21
+All 116 supported eligible public APIs have expected exports.
+All 13 practical pool APIs have generated public RPCs 75–87 and capability 8.
