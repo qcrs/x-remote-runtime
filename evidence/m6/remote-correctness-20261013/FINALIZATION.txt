@@ -1,6 +1,12 @@
-IMPLEMENTATION_DIFF_FROM_cbcbc26=empty
+PACKAGING_COMMIT=65d66352de56fe3d96544be1a38f1939e9c71e73
+IMPLEMENTATION_HEAD=cbcbc2636c5d186a0b1c0e0238c9e79c5e36117d
+IMPLEMENTATION_DIFF=empty for src/server/include/tests/scripts/schema/packaging/compat
+CLEAN_TREE_AFTER_PACKAGING_COMMIT=YES
+MANIFEST_AFTER_PACKAGING_COMMIT=PASS all 413 entries
 FINAL_FULL_MATRIX_AND_FRESH_TOPOLOGY=PASS
 STATIC_GATES=PASS
 ISSUES_TERMINAL=4 of 4
 EVIDENCE_HAS_NO_BUILD_BINARY_OR_COPIED_SOURCE=PASS
-Final clean-tree and manifest verification will be captured after packaging commit.
+RUNTIME_SERVER_PROCESSES_REMAINING=0
+INITIAL_HOST_rc-server_LINK=absent
+This finalization commit changes only this record and its manifest entry. Final clean-tree/source-diff/hash checks are repeated after committing.
