@@ -1,0 +1,33 @@
+STREAM_ATTR id=1 get=0 set=1 after=0 value=0
+STREAM_ATTR id=3 get=801 set=801 after=801 value=0
+STREAM_ATTR id=8 get=801 set=801 after=801 value=0
+STREAM_ATTR id=9 get=801 set=801 after=801 value=0
+STREAM_ATTR id=10 get=801 set=801 after=801 value=0
+STREAM_ATTR id=16 get=801 set=801 after=801 value=0
+LAUNCH_ATTR id=0 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=1 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=2 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=4 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=5 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=6 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=8 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=9 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=10 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=11 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=14 result=0 sync=0 copy=0 data=41
+LAUNCH_ATTR id=16 result=0 sync=0 copy=0 data=41
+LAUNCH_INVALID_ATTRIBUTE=0
+LAUNCH_INVALID_CLUSTER=0
+DIRECT_COOPERATIVE=801
+LAUNCH_COMPLETION_EVENT=0
+LAUNCH_TIMED_COMPLETION_EVENT=0
+LAUNCH_EVENT_ELAPSED=400
+DIRECT_EVENT_RECORD=0
+DIRECT_EVENT_ELAPSED=0
+MODULE_JIT id=0 result=0
+MODULE_JIT_UNLOAD=0
+MODULE_JIT id=7 result=0
+MODULE_JIT_UNLOAD=0
+MODULE_JIT id=8 result=0
+MODULE_JIT_UNLOAD=0
+PARTIAL_SEMANTICS_NATIVE=COMPLETE

@@ -1,0 +1,20 @@
+G6A_VA_ARENA base=0xffef8c380000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=10
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=55053 protocol=CRX9 version=3 default_stream=LEGACY
+cudaGraphCreate(&graph,0)=0
+FLAGS_WITH_GRAPH=801 expected=801
+cudaSetDeviceFlags(0)=0
+cudaGraphInstantiateWithFlags(&exec,graph,0)=0
+cudaGraphDestroy(graph)=0
+FLAGS_WITH_EXEC=801 expected=801
+cudaGraphLaunch(exec,NULL)=0
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+cudaDeviceSynchronize()=0
+cudaGraphExecDestroy(exec)=0
+cudaSetDeviceFlags(cudaDeviceScheduleSpin)=0
+cudaGetDeviceFlags(&flags)=0
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS
+cudaDeviceReset()=0
+PARTIAL_CONTEXT_FLAGS=PASS
+M1_S2_RUNTIME_SHUTDOWN state=DISCONNECTED action=NOOP result=PASS

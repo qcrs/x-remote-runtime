@@ -2873,6 +2873,12 @@ static int handle_set_device_flags(ServerSession *session, int fd, uint32_t req_
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
     for (int i=0;i<MAX_POOLS;++i) if (session->pools[i].used)
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (unsigned i=0;i<CRX_GRAPH_MAX_GRAPHS;++i) if (session->graphs[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (unsigned i=0;i<CRX_GRAPH_MAX_EXECS;++i) if (session->graph_execs[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
+    for (int i=0;i<MAX_TRANSFERS;++i) if (session->transfers[i].used)
+        return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_NOT_SUPPORTED, NULL, 0);
     if (corex_backend_context_destroy(g_ctx) != CUDA_SUCCESS)
         return send_response(fd, OP_SET_DEVICE_FLAGS, req_id, ST_CUDA_ERROR, NULL, 0);
     g_ctx = NULL;

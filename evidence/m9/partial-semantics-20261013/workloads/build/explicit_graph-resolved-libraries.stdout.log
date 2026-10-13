@@ -1,0 +1,7 @@
+	linux-vdso.so.1 (0x0000ffff7fc2f000)
+	libcorex_remote_cudart.so.1 => /home/lvtong/corex-remote-runtime/dist/lib/libcorex_remote_cudart.so.1 (0x0000ffff7f7b0000)
+	libstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ffff7f580000)
+	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffff7f550000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffff7f3a0000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffff7fbf6000)
+	libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ffff7f300000)

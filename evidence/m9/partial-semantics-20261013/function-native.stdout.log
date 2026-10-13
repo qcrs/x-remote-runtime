@@ -1,0 +1,14 @@
+FUNCTION_ATTRIBUTE id=0 result=0 value=4096
+FUNCTION_ATTRIBUTE id=1 result=0 value=0
+FUNCTION_ATTRIBUTE id=2 result=0 value=0
+FUNCTION_ATTRIBUTE id=3 result=0 value=0
+FUNCTION_ATTRIBUTE id=4 result=0 value=1
+FUNCTION_ATTRIBUTE id=5 result=0 value=30
+FUNCTION_ATTRIBUTE id=6 result=0 value=0
+FUNCTION_ATTRIBUTE id=7 result=0 value=0
+FUNCTION_ATTRIBUTE id=8 result=0 value=131072
+FUNCTION_ATTRIBUTE id=9 result=801 value=-777
+FUNCTION_ATTRIBUTE id=10 result=801 value=-777
+cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(&blocks, function, 32, 0, CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE) result=801
+OCCUPANCY_DISABLE_CACHING_BLOCKS=-1
+CLOSURE_FUNCTION_PROBE=COMPLETE

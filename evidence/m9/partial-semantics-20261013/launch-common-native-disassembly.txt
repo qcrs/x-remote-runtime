@@ -1,0 +1,357 @@
+
+/usr/local/corex/lib64/libcuda.so:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+00000000001341b8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj>:
+  1341b8:	d10703ff 	sub	sp, sp, #0x1c0
+  1341bc:	a9027bfd 	stp	x29, x30, [sp, #32]
+  1341c0:	910083fd 	add	x29, sp, #0x20
+  1341c4:	a9066bf9 	stp	x25, x26, [sp, #96]
+  1341c8:	d00052da 	adrp	x26, b8e000 <_GLOBAL_OFFSET_TABLE_+0x440>
+  1341cc:	a90353f3 	stp	x19, x20, [sp, #48]
+  1341d0:	f947bf54 	ldr	x20, [x26, #3960]
+  1341d4:	88dffe88 	ldar	w8, [x20]
+  1341d8:	529b5da9 	mov	w9, #0xdaed                	// #56045
+  1341dc:	72bfdd69 	movk	w9, #0xfeeb, lsl #16
+  1341e0:	6b09011f 	cmp	w8, w9
+  1341e4:	54000860 	b.eq	1342f0 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x138>  // b.none
+  1341e8:	a90563f7 	stp	x23, x24, [sp, #80]
+  1341ec:	aa0003f7 	mov	x23, x0
+  1341f0:	5297dde0 	mov	w0, #0xbeef                	// #48879
+  1341f4:	72bbd5a0 	movk	w0, #0xdead, lsl #16
+  1341f8:	6b00011f 	cmp	w8, w0
+  1341fc:	540004c1 	b.ne	134294 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xdc>  // b.any
+  134200:	f940e7e0 	ldr	x0, [sp, #456]
+  134204:	f100001f 	cmp	x0, #0x0
+  134208:	f940ebe0 	ldr	x0, [sp, #464]
+  13420c:	fa401804 	ccmp	x0, #0x0, #0x4, ne  // ne = any
+  134210:	54000321 	b.ne	134274 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xbc>  // b.any
+  134214:	b9008fe5 	str	w5, [sp, #140]
+  134218:	b40007b7 	cbz	x23, 13430c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x154>
+  13421c:	2a0103f8 	mov	w24, w1
+  134220:	2a0203f9 	mov	w25, w2
+  134224:	a9045bf5 	stp	x21, x22, [sp, #64]
+  134228:	2a0603f6 	mov	w22, w6
+  13422c:	2a0703f5 	mov	w21, w7
+  134230:	a90773fb 	stp	x27, x28, [sp, #112]
+  134234:	2a0303fb 	mov	w27, w3
+  134238:	2a0403fc 	mov	w28, w4
+  13423c:	94142a9d 	bl	63ecb0 <_Z14GetLastIXErrorv>
+  134240:	2a0003f3 	mov	w19, w0
+  134244:	35000440 	cbnz	w0, 1342cc <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x114>
+  134248:	b941ebe0 	ldr	w0, [sp, #488]
+  13424c:	b9408fe5 	ldr	w5, [sp, #140]
+  134250:	7100001f 	cmp	w0, #0x0
+  134254:	f940f3e0 	ldr	x0, [sp, #480]
+  134258:	1a9f07e1 	cset	w1, ne  // ne = any
+  13425c:	f100001f 	cmp	x0, #0x0
+  134260:	1a9f07e0 	cset	w0, ne  // ne = any
+  134264:	6b00003f 	cmp	w1, w0
+  134268:	54000580 	b.eq	134318 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x160>  // b.none
+  13426c:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134270:	a94773fb 	ldp	x27, x28, [sp, #112]
+  134274:	52800033 	mov	w19, #0x1                   	// #1
+  134278:	a94563f7 	ldp	x23, x24, [sp, #80]
+  13427c:	2a1303e0 	mov	w0, w19
+  134280:	a9427bfd 	ldp	x29, x30, [sp, #32]
+  134284:	a94353f3 	ldp	x19, x20, [sp, #48]
+  134288:	a9466bf9 	ldp	x25, x26, [sp, #96]
+  13428c:	910703ff 	add	sp, sp, #0x1c0
+  134290:	d65f03c0 	ret
+  134294:	52800073 	mov	w19, #0x3                   	// #3
+  134298:	2a1303e0 	mov	w0, w19
+  13429c:	a9427bfd 	ldp	x29, x30, [sp, #32]
+  1342a0:	a94353f3 	ldp	x19, x20, [sp, #48]
+  1342a4:	a94563f7 	ldp	x23, x24, [sp, #80]
+  1342a8:	a9466bf9 	ldp	x25, x26, [sp, #96]
+  1342ac:	910703ff 	add	sp, sp, #0x1c0
+  1342b0:	d65f03c0 	ret
+  1342b4:	f9403a80 	ldr	x0, [x20, #112]
+  1342b8:	b9008fe5 	str	w5, [sp, #140]
+  1342bc:	9411a7f7 	bl	59e298 <_ZN10CIXContext23SyncLegacyDefaultStreamEv>
+  1342c0:	2a0003f3 	mov	w19, w0
+  1342c4:	b9408fe5 	ldr	w5, [sp, #140]
+  1342c8:	34000ed3 	cbz	w19, 1344a0 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x2e8>
+  1342cc:	2a1303e0 	mov	w0, w19
+  1342d0:	a9427bfd 	ldp	x29, x30, [sp, #32]
+  1342d4:	a94353f3 	ldp	x19, x20, [sp, #48]
+  1342d8:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  1342dc:	a94563f7 	ldp	x23, x24, [sp, #80]
+  1342e0:	a9466bf9 	ldp	x25, x26, [sp, #96]
+  1342e4:	a94773fb 	ldp	x27, x28, [sp, #112]
+  1342e8:	910703ff 	add	sp, sp, #0x1c0
+  1342ec:	d65f03c0 	ret
+  1342f0:	52800093 	mov	w19, #0x4                   	// #4
+  1342f4:	2a1303e0 	mov	w0, w19
+  1342f8:	a9427bfd 	ldp	x29, x30, [sp, #32]
+  1342fc:	a94353f3 	ldp	x19, x20, [sp, #48]
+  134300:	a9466bf9 	ldp	x25, x26, [sp, #96]
+  134304:	910703ff 	add	sp, sp, #0x1c0
+  134308:	d65f03c0 	ret
+  13430c:	52803213 	mov	w19, #0x190                 	// #400
+  134310:	a94563f7 	ldp	x23, x24, [sp, #80]
+  134314:	17ffffda 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  134318:	aa1403e0 	mov	x0, x20
+  13431c:	b9008fe5 	str	w5, [sp, #140]
+  134320:	94001f22 	bl	13bfa8 <_ZN11globalState3CtxEv>
+  134324:	aa0003f3 	mov	x19, x0
+  134328:	b9408fe5 	ldr	w5, [sp, #140]
+  13432c:	b4000f40 	cbz	x0, 134514 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x35c>
+  134330:	f9442800 	ldr	x0, [x0, #2128]
+  134334:	b40006c0 	cbz	x0, 13440c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x254>
+  134338:	f00052c0 	adrp	x0, b8f000 <_GLOBAL_OFFSET_TABLE_+0x1440>
+  13433c:	aa1703e1 	mov	x1, x23
+  134340:	b9008fe5 	str	w5, [sp, #140]
+  134344:	f9469000 	ldr	x0, [x0, #3360]
+  134348:	f9004fff 	str	xzr, [sp, #152]
+  13434c:	f9400000 	ldr	x0, [x0]
+  134350:	9419dfee 	bl	7ac308 <_ZN13CIXLibraryMgr11IsCIXKernelEP9CIXKernel>
+  134354:	72001c1f 	tst	w0, #0xff
+  134358:	b9408fe5 	ldr	w5, [sp, #140]
+  13435c:	54000861 	b.ne	134468 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x2b0>  // b.any
+  134360:	f9004ff7 	str	x23, [sp, #152]
+  134364:	f940e3e0 	ldr	x0, [sp, #448]
+  134368:	f100081f 	cmp	x0, #0x2
+  13436c:	540005a9 	b.ls	134420 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x268>  // b.plast
+  134370:	f9403800 	ldr	x0, [x0, #112]
+  134374:	b4000d00 	cbz	x0, 134514 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x35c>
+  134378:	f9442800 	ldr	x0, [x0, #2128]
+  13437c:	b4000480 	cbz	x0, 13440c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x254>
+  134380:	f940e3f4 	ldr	x20, [sp, #448]
+  134384:	b9008fe5 	str	w5, [sp, #140]
+  134388:	9412409a 	bl	5c45f0 <_Z20GraphCaptureInstancev>
+  13438c:	aa0003f3 	mov	x19, x0
+  134390:	aa1403e1 	mov	x1, x20
+  134394:	94123eef 	bl	5c3f50 <_ZN15CIXGraphCapture18GraphGetFromStreamEP9CIXStream>
+  134398:	aa0003f7 	mov	x23, x0
+  13439c:	aa1403e1 	mov	x1, x20
+  1343a0:	aa1303e0 	mov	x0, x19
+  1343a4:	aa1703e2 	mov	x2, x23
+  1343a8:	94128112 	bl	5d47f0 <_ZN15CIXGraphCapture15PreCheckCaptureEP9CIXStreamP11CIXgraph_st>
+  1343ac:	2a0003f3 	mov	w19, w0
+  1343b0:	35000bc0 	cbnz	w0, 134528 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x370>
+  1343b4:	b9408fe5 	ldr	w5, [sp, #140]
+  1343b8:	b4000697 	cbz	x23, 134488 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x2d0>
+  1343bc:	f9404fe4 	ldr	x4, [sp, #152]
+  1343c0:	f9005be4 	str	x4, [sp, #176]
+  1343c4:	f940e7e4 	ldr	x4, [sp, #456]
+  1343c8:	f9006fe4 	str	x4, [sp, #216]
+  1343cc:	f940ebe4 	ldr	x4, [sp, #464]
+  1343d0:	aa1703e0 	mov	x0, x23
+  1343d4:	aa1403e1 	mov	x1, x20
+  1343d8:	9102c3e3 	add	x3, sp, #0xb0
+  1343dc:	52800002 	mov	w2, #0x0                   	// #0
+  1343e0:	291767f8 	stp	w24, w25, [sp, #184]
+  1343e4:	291873fb 	stp	w27, w28, [sp, #192]
+  1343e8:	29195be5 	stp	w5, w22, [sp, #200]
+  1343ec:	b900d3f5 	str	w21, [sp, #208]
+  1343f0:	f90073e4 	str	x4, [sp, #224]
+  1343f4:	941284b3 	bl	5d56c0 <_ZN11CIXgraph_st14AddCaptureNodeEP9CIXStream18GraphNodeType_enumP14GraphNodeParam>
+  1343f8:	2a0003f3 	mov	w19, w0
+  1343fc:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134400:	a94563f7 	ldp	x23, x24, [sp, #80]
+  134404:	a94773fb 	ldp	x27, x28, [sp, #112]
+  134408:	17ffff9d 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  13440c:	528058b3 	mov	w19, #0x2c5                 	// #709
+  134410:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134414:	a94563f7 	ldp	x23, x24, [sp, #80]
+  134418:	a94773fb 	ldp	x27, x28, [sp, #112]
+  13441c:	17ffff98 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  134420:	f947bf40 	ldr	x0, [x26, #3960]
+  134424:	b9008fe5 	str	w5, [sp, #140]
+  134428:	94001ee0 	bl	13bfa8 <_ZN11globalState3CtxEv>
+  13442c:	b4000740 	cbz	x0, 134514 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x35c>
+  134430:	f9442801 	ldr	x1, [x0, #2128]
+  134434:	b4fffec1 	cbz	x1, 13440c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x254>
+  134438:	f940e3e1 	ldr	x1, [sp, #448]
+  13443c:	b9408fe5 	ldr	w5, [sp, #140]
+  134440:	b4000981 	cbz	x1, 134570 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x3b8>
+  134444:	f100043f 	cmp	x1, #0x1
+  134448:	540009a0 	b.eq	13457c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x3c4>  // b.none
+  13444c:	f100083f 	cmp	x1, #0x2
+  134450:	54fff981 	b.ne	134380 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x1c8>  // b.any
+  134454:	b9008fe5 	str	w5, [sp, #140]
+  134458:	9411a646 	bl	59dd70 <_ZN10CIXContext18GetPerThreadStreamEv>
+  13445c:	b9408fe5 	ldr	w5, [sp, #140]
+  134460:	aa0003f4 	mov	x20, x0
+  134464:	17ffffc8 	b	134384 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x1cc>
+  134468:	aa1303e1 	mov	x1, x19
+  13446c:	aa1703e0 	mov	x0, x23
+  134470:	910263e2 	add	x2, sp, #0x98
+  134474:	52800023 	mov	w3, #0x1                   	// #1
+  134478:	b9008fe5 	str	w5, [sp, #140]
+  13447c:	9412e755 	bl	5ee1d0 <_ZN9CIXKernel17GetTlsCtxFunctionEP10CIXContextPP7CIXFuncb>
+  134480:	b9408fe5 	ldr	w5, [sp, #140]
+  134484:	17ffffb8 	b	134364 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x1ac>
+  134488:	b9407e80 	ldr	w0, [x20, #124]
+  13448c:	121f0c00 	and	w0, w0, #0x1e
+  134490:	7100101f 	cmp	w0, #0x4
+  134494:	54000780 	b.eq	134584 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x3cc>  // b.none
+  134498:	39422680 	ldrb	w0, [x20, #137]
+  13449c:	35fff0c0 	cbnz	w0, 1342b4 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xfc>
+  1344a0:	f940ebe0 	ldr	x0, [sp, #464]
+  1344a4:	291467f8 	stp	w24, w25, [sp, #160]
+  1344a8:	b900abfb 	str	w27, [sp, #168]
+  1344ac:	291617fc 	stp	w28, w5, [sp, #176]
+  1344b0:	b900bbf6 	str	w22, [sp, #184]
+  1344b4:	f9404ff7 	ldr	x23, [sp, #152]
+  1344b8:	b40008a0 	cbz	x0, 1345cc <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x414>
+  1344bc:	f9400000 	ldr	x0, [x0]
+  1344c0:	f100041f 	cmp	x0, #0x1
+  1344c4:	540006e0 	b.eq	1345a0 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x3e8>  // b.none
+  1344c8:	a95d03e7 	ldp	x7, x0, [sp, #464]
+  1344cc:	f90003e0 	str	x0, [sp]
+  1344d0:	b940abe3 	ldr	w3, [sp, #168]
+  1344d4:	2a1503e6 	mov	w6, w21
+  1344d8:	b940bbe5 	ldr	w5, [sp, #184]
+  1344dc:	aa1703e1 	mov	x1, x23
+  1344e0:	f94053e2 	ldr	x2, [sp, #160]
+  1344e4:	f9405be4 	ldr	x4, [sp, #176]
+  1344e8:	f940f3e0 	ldr	x0, [sp, #480]
+  1344ec:	f90007e0 	str	x0, [sp, #8]
+  1344f0:	b941ebe0 	ldr	w0, [sp, #488]
+  1344f4:	b90013e0 	str	w0, [sp, #16]
+  1344f8:	aa1403e0 	mov	x0, x20
+  1344fc:	9413dffb 	bl	62c4e8 <_ZN9CIXStream12LaunchKernelEP7CIXFunc6DIM3_SS2_jPvPK16PrivateConfig_stPK20CUlaunchAttribute_stj>
+  134500:	2a0003f3 	mov	w19, w0
+  134504:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134508:	a94563f7 	ldp	x23, x24, [sp, #80]
+  13450c:	a94773fb 	ldp	x27, x28, [sp, #112]
+  134510:	17ffff5b 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  134514:	52801933 	mov	w19, #0xc9                  	// #201
+  134518:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  13451c:	a94563f7 	ldp	x23, x24, [sp, #80]
+  134520:	a94773fb 	ldp	x27, x28, [sp, #112]
+  134524:	17ffff56 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  134528:	941317ca 	bl	5fa450 <_ZN6CIXLog14GetLogInstanceEv>
+  13452c:	f940e3e1 	ldr	x1, [sp, #448]
+  134530:	f90003e1 	str	x1, [sp]
+  134534:	2a1303e7 	mov	w7, w19
+  134538:	b0003a06 	adrp	x6, 875000 <_ZTSN2ix6spdlog7details11R_formatterINS1_18null_scoped_padderEEE+0x28>
+  13453c:	90003a24 	adrp	x4, 878000 <_ZZNSt19_Sp_make_shared_tag5_S_tiEvE5__tag+0x2b90>
+  134540:	911a40c6 	add	x6, x6, #0x690
+  134544:	9117a084 	add	x4, x4, #0x5e8
+  134548:	90003a23 	adrp	x3, 878000 <_ZZNSt19_Sp_make_shared_tag5_S_tiEvE5__tag+0x2b90>
+  13454c:	5280b465 	mov	w5, #0x5a3                 	// #1443
+  134550:	9116a063 	add	x3, x3, #0x5a8
+  134554:	92800002 	mov	x2, #0xffffffffffffffff    	// #-1
+  134558:	52800001 	mov	w1, #0x0                   	// #0
+  13455c:	94132045 	bl	5fc670 <_ZN6CIXLog10UmdLogInfoE11LOG_LEVEL_SyPKcS2_iS2_z>
+  134560:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134564:	a94563f7 	ldp	x23, x24, [sp, #80]
+  134568:	a94773fb 	ldp	x27, x28, [sp, #112]
+  13456c:	17ffff44 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  134570:	f940efe1 	ldr	x1, [sp, #472]
+  134574:	39400021 	ldrb	w1, [x1]
+  134578:	3707f6e1 	tbnz	w1, #0, 134454 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x29c>
+  13457c:	f9440c14 	ldr	x20, [x0, #2072]
+  134580:	17ffff81 	b	134384 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x1cc>
+  134584:	f9403a80 	ldr	x0, [x20, #112]
+  134588:	b9008fe5 	str	w5, [sp, #140]
+  13458c:	9411a68d 	bl	59dfc0 <_ZN10CIXContext15SyncBlockStreamEv>
+  134590:	2a0003f3 	mov	w19, w0
+  134594:	b9408fe5 	ldr	w5, [sp, #140]
+  134598:	35ffe9b3 	cbnz	w19, 1342cc <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x114>
+  13459c:	17ffffc1 	b	1344a0 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x2e8>
+  1345a0:	f940ebe0 	ldr	x0, [sp, #464]
+  1345a4:	f9400800 	ldr	x0, [x0, #16]
+  1345a8:	f100081f 	cmp	x0, #0x2
+  1345ac:	54fff8e1 	b.ne	1344c8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x310>  // b.any
+  1345b0:	f940ebe0 	ldr	x0, [sp, #464]
+  1345b4:	f9401000 	ldr	x0, [x0, #32]
+  1345b8:	b5fff880 	cbnz	x0, 1344c8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x310>
+  1345bc:	f940ebe0 	ldr	x0, [sp, #464]
+  1345c0:	f9400400 	ldr	x0, [x0, #8]
+  1345c4:	f900ebe0 	str	x0, [sp, #464]
+  1345c8:	17ffffc0 	b	1344c8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x310>
+  1345cc:	b94082f3 	ldr	w19, [x23, #128]
+  1345d0:	91000e73 	add	x19, x19, #0x3
+  1345d4:	f27e7673 	ands	x19, x19, #0xfffffffc
+  1345d8:	540000e0 	b.eq	1345f4 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x43c>  // b.none
+  1345dc:	aa1303e0 	mov	x0, x19
+  1345e0:	97fe9d60 	bl	dbb60 <_Znwm@plt>
+  1345e4:	aa1303e2 	mov	x2, x19
+  1345e8:	52800001 	mov	w1, #0x0                   	// #0
+  1345ec:	f900ebe0 	str	x0, [sp, #464]
+  1345f0:	97fe9e24 	bl	dbe80 <memset@plt>
+  1345f4:	a94d02e2 	ldp	x2, x0, [x23, #208]
+  1345f8:	b202e7f6 	mov	x22, #0xcccccccccccccccc    	// #-3689348814741910324
+  1345fc:	d2800013 	mov	x19, #0x0                   	// #0
+  134600:	f29999b6 	movk	x22, #0xcccd
+  134604:	eb02001f 	cmp	x0, x2
+  134608:	54000220 	b.eq	13464c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x494>  // b.none
+  13460c:	d503201f 	nop
+  134610:	a95c8fe1 	ldp	x1, x3, [sp, #456]
+  134614:	8b130a60 	add	x0, x19, x19, lsl #2
+  134618:	8b000c40 	add	x0, x2, x0, lsl #3
+  13461c:	f8737821 	ldr	x1, [x1, x19, lsl #3]
+  134620:	91000673 	add	x19, x19, #0x1
+  134624:	f9400402 	ldr	x2, [x0, #8]
+  134628:	f9400c00 	ldr	x0, [x0, #24]
+  13462c:	8b000060 	add	x0, x3, x0
+  134630:	97fe9ef4 	bl	dc200 <memcpy@plt>
+  134634:	a94d02e2 	ldp	x2, x0, [x23, #208]
+  134638:	cb020000 	sub	x0, x0, x2
+  13463c:	9343fc00 	asr	x0, x0, #3
+  134640:	9b167c00 	mul	x0, x0, x22
+  134644:	eb00027f 	cmp	x19, x0
+  134648:	54fffe43 	b.cc	134610 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x458>  // b.lo, b.ul, b.last
+  13464c:	a95d93e2 	ldp	x2, x4, [sp, #472]
+  134650:	a90013e2 	stp	x2, x4, [sp]
+  134654:	b941ebe7 	ldr	w7, [sp, #488]
+  134658:	b940abe3 	ldr	w3, [sp, #168]
+  13465c:	2a1503e6 	mov	w6, w21
+  134660:	b940bbe5 	ldr	w5, [sp, #184]
+  134664:	aa1403e0 	mov	x0, x20
+  134668:	b90013e7 	str	w7, [sp, #16]
+  13466c:	f9404fe1 	ldr	x1, [sp, #152]
+  134670:	f94053e2 	ldr	x2, [sp, #160]
+  134674:	f9405be4 	ldr	x4, [sp, #176]
+  134678:	f940ebe7 	ldr	x7, [sp, #464]
+  13467c:	9413df9b 	bl	62c4e8 <_ZN9CIXStream12LaunchKernelEP7CIXFunc6DIM3_SS2_jPvPK16PrivateConfig_stPK20CUlaunchAttribute_stj>
+  134680:	2a0003f3 	mov	w19, w0
+  134684:	f940ebe0 	ldr	x0, [sp, #464]
+  134688:	b4ffe220 	cbz	x0, 1342cc <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x114>
+  13468c:	f940ebe0 	ldr	x0, [sp, #464]
+  134690:	97fe9f14 	bl	dc2e0 <_ZdlPv@plt>
+  134694:	a9445bf5 	ldp	x21, x22, [sp, #64]
+  134698:	a94563f7 	ldp	x23, x24, [sp, #80]
+  13469c:	a94773fb 	ldp	x27, x28, [sp, #112]
+  1346a0:	17fffef7 	b	13427c <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0xc4>
+  1346a4:	aa0003f3 	mov	x19, x0
+  1346a8:	f940ebe0 	ldr	x0, [sp, #464]
+  1346ac:	b4000040 	cbz	x0, 1346b4 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj+0x4fc>
+  1346b0:	97fe9f0c 	bl	dc2e0 <_ZdlPv@plt>
+  1346b4:	aa1303e0 	mov	x0, x19
+  1346b8:	97fe9f9e 	bl	dc530 <_Unwind_Resume@plt>
+  1346bc:	d503201f 	nop
+
+00000000001346c0 <_Z16ixcuLaunchKernelP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_st>:
+  1346c0:	d10183ff 	sub	sp, sp, #0x60
+  1346c4:	910103e9 	add	x9, sp, #0x40
+  1346c8:	a9037bfd 	stp	x29, x30, [sp, #48]
+  1346cc:	9100c3fd 	add	x29, sp, #0x30
+  1346d0:	f9403fe8 	ldr	x8, [sp, #120]
+  1346d4:	a9047fff 	stp	xzr, xzr, [sp, #64]
+  1346d8:	f100011f 	cmp	x8, #0x0
+  1346dc:	f90013ff 	str	xzr, [sp, #32]
+  1346e0:	9a880128 	csel	x8, x9, x8, eq  // eq = none
+  1346e4:	b9002bff 	str	wzr, [sp, #40]
+  1346e8:	a9462beb 	ldp	x11, x10, [sp, #96]
+  1346ec:	a9002beb 	stp	x11, x10, [sp]
+  1346f0:	f9403be9 	ldr	x9, [sp, #112]
+  1346f4:	a90123e9 	stp	x9, x8, [sp, #16]
+  1346f8:	394113e9 	ldrb	w9, [sp, #68]
+  1346fc:	394123e8 	ldrb	w8, [sp, #72]
+  134700:	121f7929 	and	w9, w9, #0xfffffffe
+  134704:	390103ff 	strb	wzr, [sp, #64]
+  134708:	121f7908 	and	w8, w8, #0xfffffffe
+  13470c:	390113e9 	strb	w9, [sp, #68]
+  134710:	390123e8 	strb	w8, [sp, #72]
+  134714:	a9057fff 	stp	xzr, xzr, [sp, #80]
+  134718:	97fffea8 	bl	1341b8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj>
+  13471c:	a9437bfd 	ldp	x29, x30, [sp, #48]
+  134720:	910183ff 	add	sp, sp, #0x60
+  134724:	d65f03c0 	ret

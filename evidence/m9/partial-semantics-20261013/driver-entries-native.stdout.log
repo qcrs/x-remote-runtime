@@ -1,0 +1,87 @@
+cudaSetDevice(0)=0
+cudaMalloc(&bootstrap,4)=0
+cudaGetDriverEntryPoint("cuMemAlloc",(void **)&alloc,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemFree",(void **)&release,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemGetInfo",(void **)&info,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamCreate",(void **)&create,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamCreateWithPriority",(void **)&create_priority,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamDestroy",(void **)&destroy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamSynchronize",(void **)&sync,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamQuery",(void **)&query,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamGetFlags",(void **)&flags,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamGetPriority",(void **)&priority,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemcpyHtoDAsync",(void **)&htod,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemcpyDtoHAsync",(void **)&dtoh,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemcpyDtoDAsync",(void **)&dtod,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemsetD8",(void **)&fill,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuMemsetD8Async",(void **)&fill_async,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuEventCreate",(void **)&event_create,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuEventDestroy",(void **)&event_destroy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuEventRecord",(void **)&record,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuEventSynchronize",(void **)&event_sync,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuEventQuery",(void **)&event_query,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint("cuStreamWaitEvent",(void **)&wait,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuMemAlloc same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuMemFree same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuMemGetInfo same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuCtxSynchronize same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuStreamCreate same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuStreamCreateWithPriority same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuStreamDestroy same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuEventCreate same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuEventDestroy same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuEventQuery same=1
+cudaGetDriverEntryPoint(independent[i],&legacy,cudaEnableLegacyStream)=0
+cudaGetDriverEntryPoint(independent[i],&ptds,cudaEnablePerThreadDefaultStream)=0
+NON_STREAM_ENTRY name=cuEventSynchronize same=1
+create(&a,CU_STREAM_NON_BLOCKING)=0
+create_priority(&b,CU_STREAM_NON_BLOCKING,-1)=0
+flags(a,&f)=0
+priority(b,&p)=0
+STREAM_PRIORITY=-1
+event_create(&event,CU_EVENT_DISABLE_TIMING)=0
+alloc(&src,32)=0
+alloc(&dst,32)=0
+info(&free_bytes,&total_bytes)=0
+htod(src,host,32,a)=0
+dtod(dst,src,32,a)=0
+dtoh(out,dst,32,a)=0
+record(event,a)=0
+event_sync(event)=0
+event_query(event)=0
+wait(b,event,0)=0
+fill_async(dst,0x42,32,b)=0
+dtoh(out,dst,32,b)=0
+sync(b)=0
+query(b)=0
+fill(src,0x15,32)=0
+dtoh(out,src,32,a)=0
+sync(a)=0
+event_destroy(event)=0
+destroy(a)=0
+destroy(b)=0
+release(src)=0
+release(dst)=0
+cudaFree(bootstrap)=0
+cudaDeviceReset()=0
+PARTIAL_DRIVER_ENTRIES=PASS

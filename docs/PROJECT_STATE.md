@@ -1,5 +1,18 @@
 # Project state
 
+M9 partial semantics completion starts from clean baseline
+`352a3f8360eb824a7a30639dac815caf6dff2e20` on 2026-10-13. All 75 baseline public
+partial APIs have an individual reason classification. Five practical gaps are
+completed: broader Runtime-backed Driver entry queries and non-stream PTDS flags,
+library fatbin/data/file inputs and preserved-binary hints, native enumeration
+output validation, and context-flag protection for graph/exec/transfer owners.
+RC-009 through RC-011 record the three actual Runtime/lifetime defects.
+Remaining full-API boundaries prevent any truthful whole-row upgrade: totals
+remain 107 implemented, 75 partial, 63 blocked, 13 backend unsupported and eight
+out of scope. See [PARTIAL_SEMANTICS_COMPLETION](PARTIAL_SEMANTICS_COMPLETION.md)
+and `evidence/m9/partial-semantics-20261013/` for the audit and targeted native,
+independent public CRX9, static and affected-workload validation.
+
 CUDA Runtime compatibility closure is complete from clean baseline
 `1f9502b05d12f46df21c95cd0aac78a88dd871e1` on 2026-10-13. The 35 previously required
 public APIs now have terminal classifications; all 77 baseline partial APIs have
@@ -34,7 +47,7 @@ Major capabilities and resource ownership are summarized in
 remain in [GRAPH_CAPTURE_MODEL](GRAPH_CAPTURE_MODEL.md); qualification scopes are
 [REMOTE_CORRECTNESS_MATRIX](REMOTE_CORRECTNESS_MATRIX.md) and
 [REAL_WORKLOAD_COMPATIBILITY](REAL_WORKLOAD_COMPATIBILITY.md). Issues RC-001 through
-RC-008 remain recorded in [REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md).
+RC-011 remain recorded in [REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md).
 
 Release evidence: `evidence/m7/release-hardening-20261013/`.
 Earlier milestones and their evidence are preserved in [HISTORY](HISTORY.md).

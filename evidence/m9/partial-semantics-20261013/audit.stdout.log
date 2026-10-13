@@ -1,0 +1,83 @@
+{
+  "BASE_HEAD": "352a3f8360eb824a7a30639dac815caf6dff2e20",
+  "BASELINE_PARTIAL": 75,
+  "FINAL_PARTIAL": 75,
+  "IMPLEMENTATION_GAPS_COMPLETED": [
+    "cudaGetDriverEntryPoint",
+    "cudaLibraryEnumerateKernels",
+    "cudaLibraryLoadData",
+    "cudaLibraryLoadFromFile",
+    "cudaSetDeviceFlags"
+  ],
+  "UPGRADED_TO_IMPLEMENTED": [],
+  "INITIAL_CLASSES": {
+    "RELEASE_SCOPE_LIMIT": 7,
+    "BACKEND_LIMIT": 18,
+    "REMOTE_ARCH_LIMIT": 15,
+    "IMPLEMENTATION_GAP": 5,
+    "INTENTIONAL_BOUNDED_MODEL": 30
+  },
+  "REMAINING_CLASSES": {
+    "RELEASE_SCOPE_LIMIT": 7,
+    "BACKEND_LIMIT": 22,
+    "REMOTE_ARCH_LIMIT": 16,
+    "INTENTIONAL_BOUNDED_MODEL": 30
+  },
+  "PUBLIC_STATUS_COUNTS": {
+    "GROUND_TRUTH_BLOCKED": 63,
+    "BACKEND_UNSUPPORTED": 13,
+    "IMPLEMENTED": 107,
+    "PARTIAL_IMPLEMENTED": 75,
+    "OUT_OF_SCOPE_CURRENT": 8
+  },
+  "PARTIAL_DELTA_BY_FAMILY": {
+    "Device": {
+      "baseline": 2,
+      "final": 2,
+      "delta": 0
+    },
+    "Execution": {
+      "baseline": 3,
+      "final": 3,
+      "delta": 0
+    },
+    "Function": {
+      "baseline": 1,
+      "final": 1,
+      "delta": 0
+    },
+    "Graph": {
+      "baseline": 32,
+      "final": 32,
+      "delta": 0
+    },
+    "Host Memory": {
+      "baseline": 7,
+      "final": 7,
+      "delta": 0
+    },
+    "Memcpy": {
+      "baseline": 4,
+      "final": 4,
+      "delta": 0
+    },
+    "Memory Pool / Async Allocation": {
+      "baseline": 6,
+      "final": 6,
+      "delta": 0
+    },
+    "Other Runtime": {
+      "baseline": 12,
+      "final": 12,
+      "delta": 0
+    },
+    "Stream": {
+      "baseline": 8,
+      "final": 8,
+      "delta": 0
+    }
+  },
+  "VALIDATION": "PASS",
+  "AUDIT": "PASS"
+}
+PARTIAL_SEMANTICS_COMPLETION_AUDIT=PASS

@@ -1,0 +1,380 @@
+{
+  "BASE_HEAD": "352a3f8360eb824a7a30639dac815caf6dff2e20",
+  "PARTIAL_IMPLEMENTED": [
+    {
+      "api": "cudaConfigureCall",
+      "family": "Other Runtime",
+      "notes": "Legacy configuration setup shares the existing TLS compiler configuration stack; paired with __cudaPopCallConfiguration. Obsolete cudaSetupArgument/cudaLaunch entrypoints absent from installed Runtime surface. Evidence: evidence/m4/remaining-core-20261012/"
+    },
+    {
+      "api": "cudaDeviceGetGraphMemAttribute",
+      "family": "Graph",
+      "notes": "Device zero; four uint64 native attributes. CoreX accounts 2 MiB granules and retains used counts until graph destruction. High-water resets accept only zero. Native trim releases destroyed graph reservations. Uploaded unpaired backing can retain a used count after free and graph/exec destruction until trim; the native probe and EOF wire test verify zero after trim. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaFreeHost",
+      "family": "Host Memory",
+      "notes": "Release tracked client staging; synchronize and retire live hidden transfers before freeing/unlocking. Host registrations independent of remote session; no native DMA registration. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaFuncGetAttributes",
+      "family": "Function",
+      "notes": "Native CoreX attributes 0..8, including cacheModeCA and maxDynamicSharedSizeBytes, are queried through the generated KernelID RPC. preferredShmemCarveout remains -1: native query 9 returns 801, so carveout state cannot be observed. Older peers use original seven-field query with documented defaults. Evidence: evidence/m8/compatibility-closure-20261013/function-probe.stdout.log"
+    },
+    {
+      "api": "cudaGetDriverEntryPoint",
+      "family": "Other Runtime",
+      "notes": "Client function pointers for cuMemAlloc/cuMemFree/cuMemcpyHtoD/cuMemcpyDtoH/cuMemcpyDtoD/cuCtxSynchronize only; same implicit RuntimeContext and fake-VA allocations. Default/legacy flags; PTDS and other symbols return NotSupported with null output. No general Driver contexts or native-pointer interoperability. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaGetFuncBySymbol",
+      "family": "Execution",
+      "notes": "evidence/m4/library-expansion-20261012/; returns local Runtime-compatible registered kernel identity token. Compiler host symbols and controlled/library tokens accepted. Tokens are session-owned and invalidated with their module; not native Driver handles or context-independent/multi-device kernels."
+    },
+    {
+      "api": "cudaGetKernel",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; returns local Runtime-compatible registered kernel identity token. Compiler host symbols and controlled/library tokens accepted. Tokens are session-owned and invalidated with their module; not native Driver handles or context-independent/multi-device kernels."
+    },
+    {
+      "api": "cudaGetSymbolAddress",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaGetSymbolSize",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaGraphAddChildGraphNode",
+      "family": "Graph",
+      "notes": "Single child level: empty/kernel/device-copy/memset leaves; packed topology and owner DTO <=4096 bytes. Borrowed graph is read-only and cannot be directly instantiated. Parent cloning/capture-to-parent unsupported. Source mutation/destruction preserves independent exec snapshots. Child exec update rebuilds native saved DAG, preserving other exec params and enable states; requires unlaunched exec or completed live previous stream. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphAddDependencies",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Atomic validation of same-graph ownership, duplicate edges and cycles; bounded 64-edge mutation batch."
+    },
+    {
+      "api": "cudaGraphAddHostNode",
+      "family": "Graph",
+      "notes": "One host sink reachable from every graph node; client fn/userData snapshots never cross CRX9. Existing stream completion/frontier worker invokes client callback outside mutex and gates subsequent Runtime entries. Host successors, independent branches and multiple host nodes rejected at instantiate; async launch and clone/exec snapshots preserved. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphAddKernelNode",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Registered kernels and kernelParams; copied pointer/value arguments; extra buffer ABI unsupported."
+    },
+    {
+      "api": "cudaGraphAddMemAllocNode",
+      "family": "Graph",
+      "notes": "Device-zero pinned non-exportable properties; no access descriptors. Graph-reserved fake VA shares AllocationID registry; requested params preserved. Owning-graph free nodes; unpaired allocations support ordinary/async free and replay. Memory topology/one-instantiation/no-delete/no-clone checked. Retired native exec holds active unpaired allocations until external free/completion. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphAddMemFreeNode",
+      "family": "Graph",
+      "notes": "Device-zero pinned non-exportable properties; no access descriptors. Graph-reserved fake VA shares AllocationID registry; requested params preserved. Owning-graph free nodes; unpaired allocations support ordinary/async free and replay. Memory topology/one-instantiation/no-delete/no-clone checked. Retired native exec holds active unpaired allocations until external free/completion. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphAddMemcpyNode",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Pointer-backed D2D/Default 1D/2D/3D, checked positions/pitches; host/array endpoints unsupported."
+    },
+    {
+      "api": "cudaGraphChildGraphNodeGetGraph",
+      "family": "Graph",
+      "notes": "Single child level: empty/kernel/device-copy/memset leaves; packed topology and owner DTO <=4096 bytes. Borrowed graph is read-only and cannot be directly instantiated. Parent cloning/capture-to-parent unsupported. Source mutation/destruction preserves independent exec snapshots. Child exec update rebuilds native saved DAG, preserving other exec params and enable states; requires unlaunched exec or completed live previous stream. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphClone",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Native session-owned bounded graph objects, immutable executable owner snapshots and generation tombstones. Post-baseline child graph parents cannot be cloned in the current bounded child slice; leaf-only graph clone remains supported. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphDebugDotPrint",
+      "family": "Graph",
+      "notes": "Default flags only; bounded canonical graph nodes/types/edges emitted to client filesystem. Client paths never cross CRX9; verbose/native pointer parameter modes unsupported. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphExecChildGraphNodeSetParams",
+      "family": "Graph",
+      "notes": "Single child level: empty/kernel/device-copy/memset leaves; packed topology and owner DTO <=4096 bytes. Borrowed graph is read-only and cannot be directly instantiated. Parent cloning/capture-to-parent unsupported. Source mutation/destruction preserves independent exec snapshots. Child exec update rebuilds native saved DAG, preserving other exec params and enable states; requires unlaunched exec or completed live previous stream. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphExecHostNodeSetParams",
+      "family": "Graph",
+      "notes": "One host sink reachable from every graph node; client fn/userData snapshots never cross CRX9. Existing stream completion/frontier worker invokes client callback outside mutex and gates subsequent Runtime entries. Host successors, independent branches and multiple host nodes rejected at instantiate; async launch and clone/exec snapshots preserved. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphExecKernelNodeSetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Registered kernels with kernelParams; function identity must remain unchanged; extra unsupported."
+    },
+    {
+      "api": "cudaGraphExecMemcpyNodeSetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Pointer-backed D2D/Default 1D/2D/3D, checked positions/pitches; host/array endpoints unsupported."
+    },
+    {
+      "api": "cudaGraphExecUpdate",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Original live graph and existing node correspondence only; native topology rejection 1000/result 2 normalized to Runtime 910; clone/recapture update unsupported."
+    },
+    {
+      "api": "cudaGraphHostNodeGetParams",
+      "family": "Graph",
+      "notes": "One host sink reachable from every graph node; client fn/userData snapshots never cross CRX9. Existing stream completion/frontier worker invokes client callback outside mutex and gates subsequent Runtime entries. Host successors, independent branches and multiple host nodes rejected at instantiate; async launch and clone/exec snapshots preserved. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphHostNodeSetParams",
+      "family": "Graph",
+      "notes": "One host sink reachable from every graph node; client fn/userData snapshots never cross CRX9. Existing stream completion/frontier worker invokes client callback outside mutex and gates subsequent Runtime entries. Host successors, independent branches and multiple host nodes rejected at instantiate; async launch and clone/exec snapshots preserved. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphInstantiate",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Native instantiation with independently retained params/owner IDs; error-node/log diagnostics are not returned."
+    },
+    {
+      "api": "cudaGraphInstantiateWithFlags",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Zero flags only; nonzero flag modes are rejected without claiming support."
+    },
+    {
+      "api": "cudaGraphKernelNodeGetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Returns owned copied kernelParams; extra buffer ABI unsupported."
+    },
+    {
+      "api": "cudaGraphKernelNodeSetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Registered kernels with kernelParams; extra buffer ABI unsupported."
+    },
+    {
+      "api": "cudaGraphMemAllocNodeGetParams",
+      "family": "Graph",
+      "notes": "Device-zero pinned non-exportable properties; no access descriptors. Graph-reserved fake VA shares AllocationID registry; requested params preserved. Owning-graph free nodes; unpaired allocations support ordinary/async free and replay. Memory topology/one-instantiation/no-delete/no-clone checked. Retired native exec holds active unpaired allocations until external free/completion. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphMemFreeNodeGetParams",
+      "family": "Graph",
+      "notes": "Device-zero pinned non-exportable properties; no access descriptors. Graph-reserved fake VA shares AllocationID registry; requested params preserved. Owning-graph free nodes; unpaired allocations support ordinary/async free and replay. Memory topology/one-instantiation/no-delete/no-clone checked. Retired native exec holds active unpaired allocations until external free/completion. evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaGraphMemcpyNodeGetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Pointer-backed D2D/Default 1D/2D/3D, checked positions/pitches; host/array endpoints unsupported."
+    },
+    {
+      "api": "cudaGraphMemcpyNodeSetParams",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Pointer-backed D2D/Default 1D/2D/3D, checked positions/pitches; host/array endpoints unsupported."
+    },
+    {
+      "api": "cudaGraphRemoveDependencies",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Atomic ownership/existing-edge validation; bounded 64-edge mutation batch."
+    },
+    {
+      "api": "cudaGraphUpload",
+      "family": "Graph",
+      "notes": "Native Driver upload entry resolved and invoked; validates executable owner snapshots; no GPU or callback execution during upload. evidence/m5/graph-expansion-20261013/ Memory upload requires inactive allocations and completed upload/previous-launch streams. CoreX upload activates backing prematurely; native free restores reservation before launch without changing fake identity. No active or in-flight graph memory upload is claimed. Same-graph paired free nodes are rejected before upload because native external backing release is forbidden."
+    },
+    {
+      "api": "cudaHostAlloc",
+      "family": "Host Memory",
+      "notes": "Client OS page locking and ownership tracking for default/portable staging. No client GPU DMA registration; mapped/write-combined/IO/read-only flags unsupported. Existing pinned server staging carries copies. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaHostGetFlags",
+      "family": "Host Memory",
+      "notes": "Query tracked default/portable client staging flags, including interior pointers; no GPU DMA host flags fabricated. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaHostRegister",
+      "family": "Host Memory",
+      "notes": "Client OS page locking and ownership tracking for default/portable staging. No client GPU DMA registration; mapped/write-combined/IO/read-only flags unsupported. Existing pinned server staging carries copies. Evidence: evidence/m4/compat-expansion-20261012/ Closure: unaligned and disjoint shared-page ranges now work; byte overlap rejects duplicate registration. Page ownership uses the existing host registry; last release unlocks, and hidden D2H retires before unregister. Mapped/IO/read-only flags remain unsupported because client staging has no native GPU registration. Evidence: evidence/m8/compatibility-closure-20261013/closure-runtime.stdout.log; closure-remote.stdout.log"
+    },
+    {
+      "api": "cudaHostUnregister",
+      "family": "Host Memory",
+      "notes": "Release tracked client staging; synchronize and retire live hidden transfers before freeing/unlocking. Host registrations independent of remote session; no native DMA registration. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaLaunchHostFunc",
+      "family": "Host Memory",
+      "notes": "Asynchronous client worker waits requested remote stream and drains host-transfer frontier before invoking client function, outside mutex. Subsequent Runtime entries wait until callback finishes; process-wide serialization including unrelated streams is retained. CUDA calls from callbacks are forbidden by CUDA contract. Evidence: evidence/m4/remaining-core-20261012/"
+    },
+    {
+      "api": "cudaLaunchKernelExC",
+      "family": "Execution",
+      "notes": "Registered kernel identities, no launch attributes or Ignore entries; routes through existing launch. Other launch attributes return NotSupported. Evidence: evidence/m4/remaining-core-20261012/"
+    },
+    {
+      "api": "cudaLibraryEnumerateKernels",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaLibraryGetKernel",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaLibraryGetKernelCount",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaLibraryLoadData",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaLibraryLoadFromFile",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaLibraryUnload",
+      "family": "Other Runtime",
+      "notes": "evidence/m4/library-expansion-20261012/; compiled CoreX ELF with metadata, single server context/device, no JIT/library options or PTX/fatbin. Native CUlibrary multi-kernel unload does not return; reuse CUmodule lifetime, ABI normalizer and metadata kernel census; count/enumeration match native probe on representative two-kernel image."
+    },
+    {
+      "api": "cudaMallocHost",
+      "family": "Host Memory",
+      "notes": "Client OS page locking and ownership tracking for default/portable staging. No client GPU DMA registration; mapped/write-combined/IO/read-only flags unsupported. Existing pinned server staging carries copies. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaMemPoolCreate",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "Native device-zero pinned non-exportable pools; installed properties ABI validated fieldwise. IPC handle modes are excluded; security metadata and reserved bytes must be zero. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemPoolGetAccess",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "Native owning-device access query returns ReadWrite. Peer locations excluded. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemPoolGetAttribute",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "All eight native attributes with exact int/u64 output widths. Reuse flags read zero even after native enable; usage/high-water counters report backend allocation granules (2 MiB for a small allocation), not exact CUDA user-byte accounting. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemPoolSetAccess",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "Single owning-device ReadWrite descriptor succeeds. Native None/Read setters falsely succeed without readback change; Runtime rejects them as NotSupported. Empty list returns measured InvalidValue; peer access excluded. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemPoolSetAttribute",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "Release threshold roundtrips and high-water reset to zero work; disabling reuse succeeds. Enabling reuse returns NotSupported because native success leaves readback unchanged. Current counters are read-only; default threshold restored at session close because it survives context recreation. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemPoolTrimTo",
+      "family": "Memory Pool / Async Allocation",
+      "notes": "Functional zero-target reclaim uses measured CoreX zero release-threshold/context-sync path and restores the configured threshold. Native TrimTo alone reports success without reclaiming completed cached blocks; nonzero targets retain native best-effort behavior without a reclaim claim. Live allocations remain valid. Evidence: evidence/m5/memory-pools-20261012/"
+    },
+    {
+      "api": "cudaMemcpyFromSymbol",
+      "family": "Memcpy",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaMemcpyFromSymbolAsync",
+      "family": "Memcpy",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaMemcpyToSymbol",
+      "family": "Memcpy",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaMemcpyToSymbolAsync",
+      "family": "Memcpy",
+      "notes": "evidence/m4/symbol-expansion-20261012/; CoreX compiled metadata-bearing modules and registered non-managed global/constant variables. Existing non-owning allocation/fake-VA records, byte offsets, H2D/D2H/D2D and Default; async uses existing transfers/frontiers. Module unload drains host transfers and invalidates addresses. Symbol names bounded to 127 bytes; no managed registration or name-string lookup."
+    },
+    {
+      "api": "cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags",
+      "family": "Execution",
+      "notes": "evidence/m4/continued-expansion-20261012/; Default flags supported; disable-caching-override returns NotSupported; invalid flag bits return InvalidValue."
+    },
+    {
+      "api": "cudaPointerGetAttributes",
+      "family": "Other Runtime",
+      "notes": "Reconstruct CoreX 4.4 public ABI from live fake-VA and local host registries. Device pointer is client fake VA; host staging has no device alias; unknown local pointers unregistered. Managed/mapped pointers unavailable. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaSetDeviceFlags",
+      "family": "Device",
+      "notes": "Context flags 0..31 supported before session resource creation; unchanged flags accepted with live objects. Changing flags with live objects returns NotSupported: installed Driver has no cuCtxSetFlags for the explicit context. Evidence: evidence/m4/remaining-core-20261012/"
+    },
+    {
+      "api": "cudaSetValidDevices",
+      "family": "Device",
+      "notes": "evidence/m4/library-expansion-20261012/; Single configured device only. ChooseDevice selects logical 0 for all preferences, including oversize requests, matching native one-device behavior. Valid device list is empty/default or [0]; oversized lists and nonzero ordinals rejected."
+    },
+    {
+      "api": "cudaStreamAddCallback",
+      "family": "Stream",
+      "notes": "Client worker shares host-function ordering, invokes exactly once with completion/error status; flags must be zero. Retains process-wide serialization. Evidence: evidence/m4/remaining-core-20261012/"
+    },
+    {
+      "api": "cudaStreamBeginCapture",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Single explicit stream, ThreadLocal owner thread; captures registered kernel, device copy and byte-fill work; host transfers/callbacks, multi-stream/global/relaxed capture rejected; invalidation and native abort cleanup."
+    },
+    {
+      "api": "cudaStreamBeginCaptureToGraph",
+      "family": "Graph",
+      "notes": "Single explicit stream; initiating thread; ThreadLocal; zero edge data; bounded 64-node dependency frontier; evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaStreamCopyAttributes",
+      "family": "Stream",
+      "notes": "Generated object-ID RPC forwards to real CoreX stream copy. Empty-window get/set/copy readback passes; nonempty windows are rejected by CoreX, so non-default propagation is unproven. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaStreamEndCapture",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Single explicit stream, ThreadLocal owner thread; captures registered kernel, device copy and byte-fill work; host transfers/callbacks, multi-stream/global/relaxed capture rejected; invalidation and native abort cleanup."
+    },
+    {
+      "api": "cudaStreamGetAttribute",
+      "family": "Stream",
+      "notes": "Access-policy empty window get/set succeeds in Driver and native Runtime; nonempty 32-byte normal and 4096-byte persisting windows return InvalidValue. Synchronization policy returns 801. Generated DTO preserves IDs/offsets and native errors; no software policy fallback. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaStreamGetCaptureInfo",
+      "family": "Stream",
+      "notes": "evidence/m5/graphs-capture-20261013/; Single explicit stream, ThreadLocal owner thread; captures registered kernel, device copy and byte-fill work; host transfers/callbacks, multi-stream/global/relaxed capture rejected; invalidation and native abort cleanup."
+    },
+    {
+      "api": "cudaStreamGetCaptureInfo_v2",
+      "family": "Stream",
+      "notes": "evidence/m5/graphs-capture-20261013/; Single explicit stream, ThreadLocal owner thread; captures registered kernel, device copy and byte-fill work; host transfers/callbacks, multi-stream/global/relaxed capture rejected; invalidation and native abort cleanup."
+    },
+    {
+      "api": "cudaStreamIsCapturing",
+      "family": "Graph",
+      "notes": "evidence/m5/graphs-capture-20261013/; Single explicit stream, ThreadLocal owner thread; captures registered kernel, device copy and byte-fill work; host transfers/callbacks, multi-stream/global/relaxed capture rejected; invalidation and native abort cleanup."
+    },
+    {
+      "api": "cudaStreamSetAttribute",
+      "family": "Stream",
+      "notes": "Access-policy empty window get/set succeeds in Driver and native Runtime; nonempty 32-byte normal and 4096-byte persisting windows return InvalidValue. Synchronization policy returns 801. Generated DTO preserves IDs/offsets and native errors; no software policy fallback. Evidence: evidence/m4/compat-expansion-20261012/"
+    },
+    {
+      "api": "cudaStreamUpdateCaptureDependencies",
+      "family": "Stream",
+      "notes": "Single explicit stream; initiating thread; ThreadLocal; zero edge data; bounded 64-node dependency frontier; evidence/m5/graph-expansion-20261013/"
+    },
+    {
+      "api": "cudaThreadExchangeStreamCaptureMode",
+      "family": "Stream",
+      "notes": "Client TLS defaults Global and swaps all valid modes independently across threads. Active ThreadLocal capture permits owner cudaMalloc in Relaxed interaction and another thread cudaMalloc; one-shot native relaxed allocation tag preserves server thread semantics. Other unsafe calls remain conservative; Global/Relaxed capture initiation and multistream capture unsupported. evidence/m5/graph-expansion-20261013/"
+    }
+  ]
+}

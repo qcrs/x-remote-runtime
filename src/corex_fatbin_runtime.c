@@ -233,6 +233,26 @@ int corex_library_image_size(const void *image, size_t available, size_t *size_o
     return valid_iluvatar_elf(image, available, size_out) ? 0 : -1;
 }
 
+int corex_library_image(const void *code, size_t available,
+                        const unsigned char **image_out, size_t *size_out)
+{
+    if (!code || !image_out || !size_out) return -1;
+    const unsigned char *bytes = code;
+    size_t size = 0;
+    if (corex_library_image_size(code, available, &size) == 0) {
+        *image_out = bytes; *size_out = size; return 0;
+    }
+    if (available < 24 || rd32(bytes) != FATBIN_MAGIC ||
+        rd32(bytes + 4) != FATBIN_VERSION) return -1;
+    uint64_t total = 0;
+    if (!add_u64(rd64(bytes + 8), 16, &total) || total < 24 ||
+        total > available || total > MAX_FATBIN_BYTES) return -1;
+    size_t offset = 0;
+    if (!extract_one(bytes, (size_t)total, &offset, &size, NULL, 0)) return -1;
+    *image_out = bytes + offset; *size_out = size;
+    return 0;
+}
+
 int corex_image_from_compiler_wrapper(const void *wrapper,
                                       CorexLoadableImage *out,
                                           char *err, size_t err_cap)

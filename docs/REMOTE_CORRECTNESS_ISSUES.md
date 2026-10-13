@@ -130,3 +130,48 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
   CoreX's name table. Unknown values preserve each native fallback. No native
   DSO link dependency or last-error mutation is introduced.
 - Fixing commit: `a3e4fac3f29579f724521d2b7d3057699d40bf59` (see M8 COMMIT.txt).
+
+## RC-009
+
+- Status: FIXED; category: RUNTIME_BUG; subsystem: Driver entry query flags.
+- Observed → expected: cudaGetDriverEntryPoint("cuMemAlloc", ..., PTDS) returns
+  NotSupported → accept this query because memory allocation has no default-stream
+  convention. Native queries return the identical non-stream entry for both flags.
+- Evidence: `evidence/m9/partial-semantics-20261013/baseline-driver-query.stdout.log`,
+  `driver-query-native.stdout.log`, `driver-entries-native.stdout.log` and
+  `partial_driver_entries-remote.stdout.log`.
+- Root cause: one blanket PTDS rejection preceded the entry lookup.
+- Resolution: the entry table distinguishes stream-sensitive functions; the
+  existing legacy/default-stream boundary remains explicit. Eleven non-stream
+  queries and native/remote memory, stream and event effects pass.
+- Fixing commit: M9 implementation commit, recorded in the M9 evidence COMMIT.txt.
+
+## RC-010
+
+- Status: FIXED; category: LIFETIME_BUG; subsystem: context flags and ownership.
+- Observed → expected: changing flags with a live graph succeeds and recreates
+  the native context → reject different flags while any native session owner lives.
+- Evidence: `evidence/m9/partial-semantics-20261013/baseline-context-client.stdout.log`,
+  `partial_context_flags-remote.stdout.log` and `context-transfer-protocol.stdout.log`.
+- Root cause: the resource-free guard omitted Graph, GraphExec and TransferID
+  tables added after the original context-flag implementation.
+- Resolution: include these existing owner tables, including retired native exec
+  entries still marked used. Tests cover graph-only, exec-only and pending-transfer-
+  only owners, unchanged flags, preserved graph launch/data, and changed flags
+  after retirement. No context setter or synthetic flag state is introduced.
+- Fixing commit: M9 implementation commit, recorded in the M9 evidence COMMIT.txt.
+
+## RC-011
+
+- Status: FIXED; category: RUNTIME_BUG; subsystem: library enumeration validation.
+- Observed → expected: a null output at capacity zero succeeds, and at capacity
+  one returns InvalidValue → both native CoreX Runtime and Driver return
+  InvalidResourceHandle (400). Nonnull zero-capacity output succeeds without writes.
+- Evidence: prior `evidence/m4/library-expansion-20261012/integration.stdout.log`;
+  M9 `library-runtime-native.stdout.log`, `library-elf-native.stdout.log`,
+  `library_expansion-remote.stdout.log` and `library_expansion-fatbin-remote.stdout.log`.
+- Root cause: only positive-capacity null outputs were rejected, using an assumed
+  validation error instead of native behavior.
+- Resolution: match measured null-output errors and retain native prefix
+  enumeration, nonnull zero capacity, untouched excess entries and stale owners.
+- Fixing commit: M9 implementation commit, recorded in the M9 evidence COMMIT.txt.

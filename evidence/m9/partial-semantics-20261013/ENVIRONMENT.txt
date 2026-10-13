@@ -1,0 +1,6 @@
+UTC=2026-10-13 12:26:57.038016+00:00
+COREX=/usr/local/corex-4.4.0
+TOPOLOGY=independent client -> localhost TCP -> CRX9/V3 -> server -> CoreX
+HOST=server310p
+PLATFORM=Linux-5.15.0-185-generic-aarch64-with-glibc2.35
+ARCH=aarch64

@@ -6047,11 +6047,11 @@ static cudaError_t library_load_image_locked(cudaLibrary_t *library,const void *
     if(!library || !image || !size) G6E_RETURN(cudaErrorInvalidValue);
     if(size>64u*1024u*1024u-128u) G6E_RETURN(cudaErrorNotSupported);
     if(g_module_handle_next>=G6D_MAX_MODULE_HANDLES) G6E_RETURN(cudaErrorMemoryAllocation);
-    size_t exact=0;
-    if(corex_library_image_size(image,size,&exact)!=0) G6E_RETURN(cudaErrorInvalidValue);
+    size_t exact=0; const unsigned char *normalized=NULL;
+    if(corex_library_image(image,size,&normalized,&exact)!=0) G6E_RETURN(cudaErrorInvalidValue);
     unsigned char *owned=malloc(exact);
     if(!owned) G6E_RETURN(cudaErrorMemoryAllocation);
-    memcpy(owned,image,exact);
+    memcpy(owned,normalized,exact);
     uint64_t module_id=0;
     if(remote_upload_module_bytes(OP_UPLOAD_LIBRARY,"library.cubin",owned,exact,&module_id)!=0) {
         free(owned);G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
@@ -6066,11 +6066,19 @@ static cudaError_t library_load_image_locked(cudaLibrary_t *library,const void *
 }
 
 static cudaError_t library_load_locked(cudaLibrary_t *library,const void *code,
-                                       const char *file,unsigned int jit_count,unsigned int option_count)
+                                       const char *file,unsigned int jit_count,
+                                       const int *options,void **values,unsigned int option_count)
 {
     if(!library || (!code && !file)) G6E_RETURN(cudaErrorInvalidValue);
     *library=NULL;
-    if(jit_count || option_count) G6E_RETURN(cudaErrorNotSupported);
+    if(jit_count) G6E_RETURN(cudaErrorNotSupported);
+    if(option_count && (!options || !values)) G6E_RETURN(cudaErrorInvalidValue);
+    for(unsigned i=0;i<option_count;++i) {
+        /* BinaryIsPreserved is an optional memory-use hint, not permission to
+         * borrow a client address on the server. Keep the existing owned copy. */
+        if(options[i]!=1) G6E_RETURN(cudaErrorNotSupported);
+        if(file) G6E_RETURN(cudaErrorInvalidValue);
+    }
     cudaError_t init=ensure_runtime();if(init!=cudaSuccess)G6E_RETURN(init);
     if(file) {
         size_t size=0;unsigned char *image=read_file_bytes(file,&size);
@@ -6079,9 +6087,9 @@ static cudaError_t library_load_locked(cudaLibrary_t *library,const void *code,
         free(image);return result;
     }
     if(pointer_in_remote_arena(code)) G6E_RETURN(cudaErrorInvalidValue);
-    size_t size=0;
-    if(corex_library_image_size(code,64u*1024u*1024u,&size)!=0) G6E_RETURN(cudaErrorNotSupported);
-    return library_load_image_locked(library,code,size);
+    size_t size=0; const unsigned char *normalized=NULL;
+    if(corex_library_image(code,64u*1024u*1024u,&normalized,&size)!=0) G6E_RETURN(cudaErrorNotSupported);
+    return library_load_image_locked(library,normalized,size);
 }
 
 static cudaError_t library_get_kernel_locked(cudaKernel_t *out,cudaLibrary_t library,const char *name)
@@ -6124,7 +6132,9 @@ static cudaError_t library_count_locked(unsigned int *count,cudaLibrary_t librar
 
 static cudaError_t library_enumerate_locked(cudaKernel_t *kernels,unsigned int capacity,cudaLibrary_t library)
 {
-    if(capacity && !kernels) G6E_RETURN(cudaErrorInvalidValue);
+    /* CoreX Runtime and Driver reject a null output even at capacity zero.
+     * A nonnull zero-capacity array remains a valid no-write query. */
+    if(!kernels) G6E_RETURN(cudaErrorInvalidResourceHandle);
     unsigned int count=0;cudaError_t result=library_count_locked(&count,library);
     if(result!=cudaSuccess) return result;
     if(count>COREX_META_MAX_KERNELS) G6E_RETURN(cudaErrorNotSupported);
@@ -6154,20 +6164,20 @@ static cudaError_t library_unload_locked(cudaLibrary_t library)
 
 cudaError_t cudaLibraryLoadData(cudaLibrary_t *library,const void *code,int *jit_options,void **jit_values,unsigned int jit_count,int *library_options,void **library_values,unsigned int library_count)
 {
-    (void)jit_options;(void)jit_values;(void)library_options;(void)library_values;
+    (void)jit_options;(void)jit_values;
     CorexRuntimeContext *context=corex_runtime_context_get();
     corex_runtime_context_lock(context);
-    cudaError_t result=library_load_locked(library,code,NULL,jit_count,library_count);
+    cudaError_t result=library_load_locked(library,code,NULL,jit_count,library_options,library_values,library_count);
     corex_runtime_context_unlock(context);
     return result;
 }
 
 cudaError_t cudaLibraryLoadFromFile(cudaLibrary_t *library,const char *file,int *jit_options,void **jit_values,unsigned int jit_count,int *library_options,void **library_values,unsigned int library_count)
 {
-    (void)jit_options;(void)jit_values;(void)library_options;(void)library_values;
+    (void)jit_options;(void)jit_values;
     CorexRuntimeContext *context=corex_runtime_context_get();
     corex_runtime_context_lock(context);
-    cudaError_t result=library_load_locked(library,NULL,file,jit_count,library_count);
+    cudaError_t result=library_load_locked(library,NULL,file,jit_count,library_options,library_values,library_count);
     corex_runtime_context_unlock(context);
     return result;
 }

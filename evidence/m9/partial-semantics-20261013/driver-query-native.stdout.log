@@ -1,0 +1,15 @@
+DRIVER_QUERY name=cuMemAlloc flags=0 result=0 present=1
+DRIVER_QUERY name=cuMemAlloc flags=1 result=0 present=1
+DRIVER_QUERY name=cuMemAlloc flags=2 result=0 present=1
+DRIVER_QUERY name=cuMemFree flags=0 result=0 present=1
+DRIVER_QUERY name=cuMemFree flags=1 result=0 present=1
+DRIVER_QUERY name=cuMemFree flags=2 result=0 present=1
+DRIVER_QUERY name=cuMemcpyHtoD flags=0 result=0 present=1
+DRIVER_QUERY name=cuMemcpyHtoD flags=1 result=0 present=1
+DRIVER_QUERY name=cuMemcpyHtoD flags=2 result=0 present=1
+DRIVER_QUERY name=cuCtxSynchronize flags=0 result=0 present=1
+DRIVER_QUERY name=cuCtxSynchronize flags=1 result=0 present=1
+DRIVER_QUERY name=cuCtxSynchronize flags=2 result=0 present=1
+DRIVER_QUERY name=cuStreamCreate flags=0 result=0 present=1
+DRIVER_QUERY name=cuStreamCreate flags=1 result=0 present=1
+DRIVER_QUERY name=cuStreamCreate flags=2 result=0 present=1

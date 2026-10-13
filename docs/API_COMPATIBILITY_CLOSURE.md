@@ -1,5 +1,11 @@
 # CUDA Runtime compatibility closure
 
+This document records the M8 closure snapshot. Subsequent practical semantics
+and ownership repairs are in
+[M9 partial semantics completion](PARTIAL_SEMANTICS_COMPLETION.md); the public
+status counts are unchanged. In particular, M9 adds fatbin library inputs and
+expands the Runtime-backed Driver entry bridge beyond the closure table below.
+
 Baseline: `1f9502b05d12f46df21c95cd0aac78a88dd871e1` (clean, 2026-10-13).
 Scope: the 266 public Runtime declarations in the installed CoreX 4.4 census.
 [The ledger](../compat/cuda-api-ledger.csv) remains authoritative. Closure is an

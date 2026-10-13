@@ -26,6 +26,16 @@ AllocationID plus offset. Native handles and host addresses are never sent as
 usable remote pointers. Global/constant compiler symbols use module-owned
 allocation aliases.
 
+Public library loading normalizes compiled ELF and observed single-image CoreX
+fatbin inputs through the existing extractor and retains an owned metadata image.
+BinaryIsPreserved is an optional copy hint; client addresses remain local. Native
+CUlibrary multi-kernel unload hangs, so libraries retain the measured CUmodule
+seam and session lifetime. Runtime Driver-entry queries expose 26 local adapters
+for memory, streams, events and ordinary registered-kernel launch. Their opaque
+identities use the same registries and CRX9 requests. Non-stream query flags are
+independent of the default-stream convention; stream-sensitive PTDS, general
+Driver contexts/modules and native-handle interoperability remain unavailable.
+
 [RuntimeContext](../include/internal/corex_runtime_context.h) owns one socket,
 request sequence, negotiated capabilities, client registries and lifecycle.
 Its coarse mutex serializes Runtime/RPC state. Last-error, device selection and

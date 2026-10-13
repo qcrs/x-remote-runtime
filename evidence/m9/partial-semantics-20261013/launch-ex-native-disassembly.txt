@@ -1,0 +1,42 @@
+
+/usr/local/corex/lib64/libcuda.so:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000134728 <_Z18ixcuLaunchKernelExPK17CUlaunchConfig_stP7CIXFuncPPvS5_PK16PrivateConfig_st>:
+  134728:	d10183ff 	sub	sp, sp, #0x60
+  13472c:	aa0003e8 	mov	x8, x0
+  134730:	f100009f 	cmp	x4, #0x0
+  134734:	910103e5 	add	x5, sp, #0x40
+  134738:	9a8400a9 	csel	x9, x5, x4, eq  // eq = none
+  13473c:	aa0203ec 	mov	x12, x2
+  134740:	a9037bfd 	stp	x29, x30, [sp, #48]
+  134744:	9100c3fd 	add	x29, sp, #0x30
+  134748:	aa0303eb 	mov	x11, x3
+  13474c:	f940110a 	ldr	x10, [x8, #32]
+  134750:	aa0103e0 	mov	x0, x1
+  134754:	29411103 	ldp	w3, w4, [x8, #8]
+  134758:	a9047fff 	stp	xzr, xzr, [sp, #64]
+  13475c:	b9401907 	ldr	w7, [x8, #24]
+  134760:	29400901 	ldp	w1, w2, [x8]
+  134764:	390103ff 	strb	wzr, [sp, #64]
+  134768:	29421905 	ldp	w5, w6, [x8, #16]
+  13476c:	f90003ea 	str	x10, [sp]
+  134770:	a9057fff 	stp	xzr, xzr, [sp, #80]
+  134774:	f940150a 	ldr	x10, [x8, #40]
+  134778:	f90007ec 	str	x12, [sp, #8]
+  13477c:	b9403108 	ldr	w8, [x8, #48]
+  134780:	a90127eb 	stp	x11, x9, [sp, #16]
+  134784:	394113e9 	ldrb	w9, [sp, #68]
+  134788:	b9002be8 	str	w8, [sp, #40]
+  13478c:	394123e8 	ldrb	w8, [sp, #72]
+  134790:	121f7929 	and	w9, w9, #0xfffffffe
+  134794:	f90013ea 	str	x10, [sp, #32]
+  134798:	121f7908 	and	w8, w8, #0xfffffffe
+  13479c:	390113e9 	strb	w9, [sp, #68]
+  1347a0:	390123e8 	strb	w8, [sp, #72]
+  1347a4:	97fffe85 	bl	1341b8 <_Z23ixcuLaunchKernel_commonP7CIXFuncjjjjjjjP9CIXStreamPPvS4_PK16PrivateConfig_stPK20CUlaunchAttribute_stj>
+  1347a8:	a9437bfd 	ldp	x29, x30, [sp, #48]
+  1347ac:	910183ff 	add	sp, sp, #0x60
+  1347b0:	d65f03c0 	ret

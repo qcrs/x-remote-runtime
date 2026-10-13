@@ -1,0 +1,10 @@
+MODULE_IMAGE_LOAD=0
+MODULE_IMAGE_DATA=42
+MODULE_UNLOAD=0
+LIBRARY_PRESERVED_LOAD=0
+LIBRARY_COUNT result=0 count=2
+LIBRARY_ENUM capacity=0 result=400 first=0 second=0
+LIBRARY_ENUM capacity=1 result=0 first=1 second=0
+LIBRARY_ENUM capacity=3 result=0 first=1 second=1
+LIBRARY_FILE_PRESERVED_LOAD=0
+PARTIAL_LIBRARY_NATIVE=COMPLETE; known native library unload hang excluded

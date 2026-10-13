@@ -36,7 +36,9 @@ int main(void)
     if(release(0)!=CUDA_SUCCESS)return 1;
     if(alloc(NULL,32)!=CUDA_ERROR_INVALID_VALUE)return 1;
     if(cudaGetDriverEntryPoint("cuCtxCreate",&entry,0)!=cudaErrorNotSupported||entry)return 1;
-    if(cudaGetDriverEntryPoint("cuMemAlloc",&entry,cudaEnablePerThreadDefaultStream)!=cudaErrorNotSupported||entry)return 1;
+    CHECK(cudaGetDriverEntryPoint("cuMemAlloc",&entry,cudaEnablePerThreadDefaultStream));
+    if(!entry)return 1;
+    if(cudaGetDriverEntryPoint("cuMemcpyHtoD",&entry,cudaEnablePerThreadDefaultStream)!=cudaErrorNotSupported||entry)return 1;
     if(cudaGetDriverEntryPoint("cuMemAlloc",&entry,3)!=cudaErrorInvalidValue)return 1;
     if(cudaGetDriverEntryPoint(NULL,&entry,0)!=cudaErrorInvalidValue)return 1;
     if(cudaGetDriverEntryPoint("cuMemAlloc",NULL,0)!=cudaErrorInvalidValue)return 1;

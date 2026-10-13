@@ -1,0 +1,174 @@
+G6A_VA_ARENA base=0xffefadbf0000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=10
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=55053 protocol=CRX9 version=3 default_stream=LEGACY
+cudaLibraryLoadFromFile(&library,argv[1],NULL,NULL,0,NULL,NULL,0)=0
+cudaLibraryGetKernelCount(&count,library)=0
+G7E_ABI_ARG kernel_id=1 name=m1s2_lifecycle_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ATTACH generation=0 module_id=1 kernel_id=1 name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&kernel,library,"m1s2_lifecycle_kernel")=0
+G7E_ABI_ARG kernel_id=2 name=library_mixed_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=2 name=library_mixed_kernel arg=1 meta_kind=by_value offset=8 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=2 name=library_mixed_kernel arg=2 meta_kind=by_value offset=12 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=0 module_id=1 kernel_id=2 name=library_mixed_kernel argc=3 kernarg_size=16 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&mixed,library,"library_mixed_kernel")=0
+cudaGetFuncBySymbol(&function,(const void *)kernel)=0
+cudaGetKernel(&identity,(const void *)kernel)=0
+cudaFuncGetAttributes(&attributes,(const void *)function)=0
+cudaLibraryGetKernel(&missing,library,"missing_kernel")=500 expected=500
+cudaLibraryEnumerateKernels(kernels,1,library)=0
+cudaLibraryEnumerateKernels(kernels,3,library)=0
+cudaLibraryEnumerateKernels(kernels,0,library)=0
+cudaLibraryEnumerateKernels(NULL,0,library)=400 expected=400
+cudaLibraryEnumerateKernels(NULL,1,library)=400 expected=400
+G6A_CUDA_MALLOC ptr=0xffefadbf0000 allocation_id=1 bytes=4 span=131072 result=PASS
+cudaMalloc((void **)&ptr,4)=0
+G6A_PTR_RESOLVE ptr=0xffefadbf0000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=4 result=PASS
+cudaMemcpy(ptr,&host,4,cudaMemcpyHostToDevice)=0
+G6C_CUDA_STREAM_CREATE handle=0xffffade0b430 stream_id=1 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+G6A_PTR_RESOLVE ptr=0xffefadbf0000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=1 offset=0
+cudaLaunchKernel((const void *)function,grid,block,args,0,stream)=0
+cudaGetDriverEntryPoint("cuLaunchKernel",(void **)&driver_launch,cudaEnableLegacyStream)=0
+G6A_PTR_RESOLVE ptr=0xffefadbf0000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=1 offset=0
+G6A_PTR_RESOLVE ptr=0xffefadbf0000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=1 offset=0
+G6D_LAUNCH_ARG arg=1 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=2 kind=RAW_VALUE bytes=4
+cudaLaunchKernel((const void *)mixed,grid,block,mixed_args,0,stream)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179698 host_fun=(nil) kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179860 host_fun=(nil) kernel_id=2 module_id=1 name=library_mixed_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffffae177e98 module_id=1 result=PASS tombstone=YES
+cudaLibraryUnload(library)=0
+cudaLaunchKernel((const void *)kernel,grid,block,args,0,stream)=400 expected=400
+cudaLibraryGetKernelCount(&count,library)=400 expected=400
+cudaGetKernel(&identity,(const void *)kernel)=400 expected=400
+cudaGetFuncBySymbol(&function,(const void *)kernel)=400 expected=400
+cudaLibraryUnload(library)=400 expected=400
+G6A_PTR_RESOLVE ptr=0xffefadbf0000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=4 result=PASS
+cudaMemcpy(&host,ptr,4,cudaMemcpyDeviceToHost)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffffade0b430 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+G6A_CUDA_FREE ptr=0xffefadbf0000 allocation_id=1 result=PASS tombstone=YES
+cudaFree(ptr)=0
+LIBRARY_DATA from_data=0 value=49 PASS
+cudaLibraryLoadData(&library,image,NULL,NULL,0,NULL,NULL,0)=0
+cudaLibraryGetKernelCount(&count,library)=0
+G7E_ABI_ARG kernel_id=3 name=m1s2_lifecycle_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ATTACH generation=0 module_id=2 kernel_id=3 name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&kernel,library,"m1s2_lifecycle_kernel")=0
+G7E_ABI_ARG kernel_id=4 name=library_mixed_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=4 name=library_mixed_kernel arg=1 meta_kind=by_value offset=8 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=4 name=library_mixed_kernel arg=2 meta_kind=by_value offset=12 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=0 module_id=2 kernel_id=4 name=library_mixed_kernel argc=3 kernarg_size=16 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&mixed,library,"library_mixed_kernel")=0
+cudaGetFuncBySymbol(&function,(const void *)kernel)=0
+cudaGetKernel(&identity,(const void *)kernel)=0
+cudaFuncGetAttributes(&attributes,(const void *)function)=0
+cudaLibraryGetKernel(&missing,library,"missing_kernel")=500 expected=500
+cudaLibraryEnumerateKernels(kernels,1,library)=0
+cudaLibraryEnumerateKernels(kernels,3,library)=0
+cudaLibraryEnumerateKernels(kernels,0,library)=0
+cudaLibraryEnumerateKernels(NULL,0,library)=400 expected=400
+cudaLibraryEnumerateKernels(NULL,1,library)=400 expected=400
+G6A_CUDA_MALLOC ptr=0xffefadc10000 allocation_id=2 bytes=4 span=131072 result=PASS
+cudaMalloc((void **)&ptr,4)=0
+G6A_PTR_RESOLVE ptr=0xffefadc10000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(ptr,&host,4,cudaMemcpyHostToDevice)=0
+G6C_CUDA_STREAM_CREATE handle=0xffffade0b470 stream_id=2 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+G6A_PTR_RESOLVE ptr=0xffefadc10000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=2 offset=0
+cudaLaunchKernel((const void *)function,grid,block,args,0,stream)=0
+cudaGetDriverEntryPoint("cuLaunchKernel",(void **)&driver_launch,cudaEnableLegacyStream)=0
+G6A_PTR_RESOLVE ptr=0xffefadc10000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=2 offset=0
+G6A_PTR_RESOLVE ptr=0xffefadc10000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=2 offset=0
+G6D_LAUNCH_ARG arg=1 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=2 kind=RAW_VALUE bytes=4
+cudaLaunchKernel((const void *)mixed,grid,block,mixed_args,0,stream)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179a28 host_fun=(nil) kernel_id=3 module_id=2 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179bf0 host_fun=(nil) kernel_id=4 module_id=2 name=library_mixed_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffffae177ec8 module_id=2 result=PASS tombstone=YES
+cudaLibraryUnload(library)=0
+cudaLaunchKernel((const void *)kernel,grid,block,args,0,stream)=400 expected=400
+cudaLibraryGetKernelCount(&count,library)=400 expected=400
+cudaGetKernel(&identity,(const void *)kernel)=400 expected=400
+cudaGetFuncBySymbol(&function,(const void *)kernel)=400 expected=400
+cudaLibraryUnload(library)=400 expected=400
+G6A_PTR_RESOLVE ptr=0xffefadc10000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(&host,ptr,4,cudaMemcpyDeviceToHost)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffffade0b470 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+G6A_CUDA_FREE ptr=0xffefadc10000 allocation_id=2 result=PASS tombstone=YES
+cudaFree(ptr)=0
+LIBRARY_DATA from_data=1 value=49 PASS
+cudaLibraryLoadData(&library,image,NULL,NULL,0,&preserved,&hint,1)=0
+cudaLibraryGetKernelCount(&count,library)=0
+G7E_ABI_ARG kernel_id=5 name=m1s2_lifecycle_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ATTACH generation=0 module_id=3 kernel_id=5 name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&kernel,library,"m1s2_lifecycle_kernel")=0
+G7E_ABI_ARG kernel_id=6 name=library_mixed_kernel arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=6 name=library_mixed_kernel arg=1 meta_kind=by_value offset=8 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=6 name=library_mixed_kernel arg=2 meta_kind=by_value offset=12 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=0 module_id=3 kernel_id=6 name=library_mixed_kernel argc=3 kernarg_size=16 kernarg_align=8 abi=READY result=PASS
+cudaLibraryGetKernel(&mixed,library,"library_mixed_kernel")=0
+cudaGetFuncBySymbol(&function,(const void *)kernel)=0
+cudaGetKernel(&identity,(const void *)kernel)=0
+cudaFuncGetAttributes(&attributes,(const void *)function)=0
+cudaLibraryGetKernel(&missing,library,"missing_kernel")=500 expected=500
+cudaLibraryEnumerateKernels(kernels,1,library)=0
+cudaLibraryEnumerateKernels(kernels,3,library)=0
+cudaLibraryEnumerateKernels(kernels,0,library)=0
+cudaLibraryEnumerateKernels(NULL,0,library)=400 expected=400
+cudaLibraryEnumerateKernels(NULL,1,library)=400 expected=400
+G6A_CUDA_MALLOC ptr=0xffefadc30000 allocation_id=3 bytes=4 span=131072 result=PASS
+cudaMalloc((void **)&ptr,4)=0
+G6A_PTR_RESOLVE ptr=0xffefadc30000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=H2D allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(ptr,&host,4,cudaMemcpyHostToDevice)=0
+G6C_CUDA_STREAM_CREATE handle=0xffffade0b4b0 stream_id=3 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+G6A_PTR_RESOLVE ptr=0xffefadc30000 allocation_id=3 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=3 offset=0
+cudaLaunchKernel((const void *)function,grid,block,args,0,stream)=0
+cudaGetDriverEntryPoint("cuLaunchKernel",(void **)&driver_launch,cudaEnableLegacyStream)=0
+G6A_PTR_RESOLVE ptr=0xffefadc30000 allocation_id=3 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=3 offset=0
+G6A_PTR_RESOLVE ptr=0xffefadc30000 allocation_id=3 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=3 offset=0
+G6D_LAUNCH_ARG arg=1 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=2 kind=RAW_VALUE bytes=4
+cudaLaunchKernel((const void *)mixed,grid,block,mixed_args,0,stream)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179db8 host_fun=(nil) kernel_id=5 module_id=3 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffae179f80 host_fun=(nil) kernel_id=6 module_id=3 name=library_mixed_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffffae177ef8 module_id=3 result=PASS tombstone=YES
+cudaLibraryUnload(library)=0
+cudaLaunchKernel((const void *)kernel,grid,block,args,0,stream)=400 expected=400
+cudaLibraryGetKernelCount(&count,library)=400 expected=400
+cudaGetKernel(&identity,(const void *)kernel)=400 expected=400
+cudaGetFuncBySymbol(&function,(const void *)kernel)=400 expected=400
+cudaLibraryUnload(library)=400 expected=400
+G6A_PTR_RESOLVE ptr=0xffefadc30000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(&host,ptr,4,cudaMemcpyDeviceToHost)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffffade0b4b0 stream_id=3 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+G6A_CUDA_FREE ptr=0xffefadc30000 allocation_id=3 result=PASS tombstone=YES
+cudaFree(ptr)=0
+LIBRARY_DATA from_data=2 value=49 PASS
+cudaLibraryLoadData(&unsupported,image,NULL,NULL,1,NULL,NULL,0)=801 expected=801
+cudaLibraryLoadFromFile(&unsupported,argv[1],NULL,NULL,0,&preserved,&hint,1)=1 expected=1
+cudaLibraryLoadData(&unsupported,image,NULL,NULL,0,NULL,&hint,1)=1 expected=1
+cudaLibraryLoadData(&unsupported,image,NULL,NULL,0,&universal,&hint,1)=801 expected=801
+cudaLibraryLoadFromFile(&unsupported,path,NULL,NULL,0,NULL,NULL,0)=1 expected=1
+cudaLibraryLoadFromFile(&unsupported,path,NULL,NULL,0,NULL,NULL,0)=1 expected=1
+cudaLibraryLoadData(&unsupported,image,NULL,NULL,0,NULL,NULL,0)=0
+LIBRARY_EXPANSION_REMOTE=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

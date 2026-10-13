@@ -20,6 +20,7 @@ static CUresult driver_result(cudaError_t result)
     case cudaErrorInvalidDevice: return CUDA_ERROR_INVALID_DEVICE;
     case cudaErrorInvalidResourceHandle: return CUDA_ERROR_INVALID_HANDLE;
     case cudaErrorNotSupported: return CUDA_ERROR_NOT_SUPPORTED;
+    case cudaErrorNotReady: return CUDA_ERROR_NOT_READY;
     default: return CUDA_ERROR_UNKNOWN;
     }
 }
@@ -52,23 +53,97 @@ static CUresult CUDAAPI entry_context_sync(void)
 {
     return driver_result(cudaDeviceSynchronize());
 }
+static CUresult CUDAAPI entry_mem_info(size_t *free_bytes, size_t *total_bytes)
+{ return driver_result(cudaMemGetInfo(free_bytes, total_bytes)); }
+static CUresult CUDAAPI entry_htod_async(CUdeviceptr dst, const void *src, size_t bytes, CUstream stream)
+{ return driver_result(cudaMemcpyAsync((void *)(uintptr_t)dst,src,bytes,cudaMemcpyHostToDevice,(cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_dtoh_async(void *dst, CUdeviceptr src, size_t bytes, CUstream stream)
+{ return driver_result(cudaMemcpyAsync(dst,(void *)(uintptr_t)src,bytes,cudaMemcpyDeviceToHost,(cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_dtod_async(CUdeviceptr dst, CUdeviceptr src, size_t bytes, CUstream stream)
+{ return driver_result(cudaMemcpyAsync((void *)(uintptr_t)dst,(void *)(uintptr_t)src,bytes,cudaMemcpyDeviceToDevice,(cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_memset(CUdeviceptr dst, unsigned char value, size_t bytes)
+{ return driver_result(cudaMemset((void *)(uintptr_t)dst,value,bytes)); }
+static CUresult CUDAAPI entry_memset_async(CUdeviceptr dst, unsigned char value, size_t bytes, CUstream stream)
+{ return driver_result(cudaMemsetAsync((void *)(uintptr_t)dst,value,bytes,(cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_stream_create(CUstream *out, unsigned flags)
+{ return driver_result(cudaStreamCreateWithFlags((cudaStream_t *)out,flags)); }
+static CUresult CUDAAPI entry_stream_priority_create(CUstream *out, unsigned flags, int priority)
+{ return driver_result(cudaStreamCreateWithPriority((cudaStream_t *)out,flags,priority)); }
+static CUresult CUDAAPI entry_stream_destroy(CUstream stream)
+{ return driver_result(cudaStreamDestroy((cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_stream_sync(CUstream stream)
+{ return driver_result(cudaStreamSynchronize((cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_stream_query(CUstream stream)
+{ return driver_result(cudaStreamQuery((cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_stream_flags(CUstream stream, unsigned *flags)
+{ return driver_result(cudaStreamGetFlags((cudaStream_t)stream,flags)); }
+static CUresult CUDAAPI entry_stream_priority(CUstream stream, int *priority)
+{ return driver_result(cudaStreamGetPriority((cudaStream_t)stream,priority)); }
+static CUresult CUDAAPI entry_stream_wait(CUstream stream, CUevent event, unsigned flags)
+{ return driver_result(cudaStreamWaitEvent((cudaStream_t)stream,(cudaEvent_t)event,flags)); }
+static CUresult CUDAAPI entry_event_create(CUevent *out, unsigned flags)
+{ return driver_result(cudaEventCreateWithFlags((cudaEvent_t *)out,flags)); }
+static CUresult CUDAAPI entry_event_destroy(CUevent event)
+{ return driver_result(cudaEventDestroy((cudaEvent_t)event)); }
+static CUresult CUDAAPI entry_event_record(CUevent event, CUstream stream)
+{ return driver_result(cudaEventRecord((cudaEvent_t)event,(cudaStream_t)stream)); }
+static CUresult CUDAAPI entry_event_sync(CUevent event)
+{ return driver_result(cudaEventSynchronize((cudaEvent_t)event)); }
+static CUresult CUDAAPI entry_event_query(CUevent event)
+{ return driver_result(cudaEventQuery((cudaEvent_t)event)); }
+static CUresult CUDAAPI entry_launch(CUfunction function, unsigned gx, unsigned gy, unsigned gz,
+                                    unsigned bx, unsigned by, unsigned bz, unsigned shared,
+                                    CUstream stream, void **args, void **extra)
+{
+    if(extra) return CUDA_ERROR_NOT_SUPPORTED;
+    dim3 grid={gx,gy,gz}, block={bx,by,bz};
+    return driver_result(cudaLaunchKernel((const void *)function,grid,block,args,shared,(cudaStream_t)stream));
+}
 cudaError_t cudaGetDriverEntryPoint(const char *symbol, void **out,
                                   unsigned long long flags)
 {
     if (!out || !symbol)
         return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
     *out = NULL;
-    if (flags == cudaEnablePerThreadDefaultStream)
-        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
     if (flags > cudaEnablePerThreadDefaultStream)
         return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    /* Query names are ABI base names, as for cuGetProcAddress. Non-stream APIs
+     * are independent of the requested default-stream convention. */
+    static const struct { const char *name; void *entry; int stream_sensitive; } entries[] = {
+        {"cuMemAlloc",(void *)entry_mem_alloc,0},
+        {"cuMemFree",(void *)entry_mem_free,0},
+        {"cuMemGetInfo",(void *)entry_mem_info,0},
+        {"cuMemcpyHtoD",(void *)entry_htod,1},
+        {"cuMemcpyDtoH",(void *)entry_dtoh,1},
+        {"cuMemcpyDtoD",(void *)entry_dtod,1},
+        {"cuMemcpyHtoDAsync",(void *)entry_htod_async,1},
+        {"cuMemcpyDtoHAsync",(void *)entry_dtoh_async,1},
+        {"cuMemcpyDtoDAsync",(void *)entry_dtod_async,1},
+        {"cuMemsetD8",(void *)entry_memset,1},
+        {"cuMemsetD8Async",(void *)entry_memset_async,1},
+        {"cuCtxSynchronize",(void *)entry_context_sync,0},
+        {"cuStreamCreate",(void *)entry_stream_create,0},
+        {"cuStreamCreateWithPriority",(void *)entry_stream_priority_create,0},
+        {"cuStreamDestroy",(void *)entry_stream_destroy,0},
+        {"cuStreamSynchronize",(void *)entry_stream_sync,1},
+        {"cuStreamQuery",(void *)entry_stream_query,1},
+        {"cuStreamGetFlags",(void *)entry_stream_flags,1},
+        {"cuStreamGetPriority",(void *)entry_stream_priority,1},
+        {"cuStreamWaitEvent",(void *)entry_stream_wait,1},
+        {"cuEventCreate",(void *)entry_event_create,0},
+        {"cuEventDestroy",(void *)entry_event_destroy,0},
+        {"cuEventRecord",(void *)entry_event_record,1},
+        {"cuEventSynchronize",(void *)entry_event_sync,0},
+        {"cuEventQuery",(void *)entry_event_query,0},
+        {"cuLaunchKernel",(void *)entry_launch,1},
+    };
     void *entry = NULL;
-    if (!strcmp(symbol, "cuMemAlloc")) entry = (void *)entry_mem_alloc;
-    else if (!strcmp(symbol, "cuMemFree")) entry = (void *)entry_mem_free;
-    else if (!strcmp(symbol, "cuMemcpyHtoD")) entry = (void *)entry_htod;
-    else if (!strcmp(symbol, "cuMemcpyDtoH")) entry = (void *)entry_dtoh;
-    else if (!strcmp(symbol, "cuMemcpyDtoD")) entry = (void *)entry_dtod;
-    else if (!strcmp(symbol, "cuCtxSynchronize")) entry = (void *)entry_context_sync;
+    for(size_t i=0;i<sizeof(entries)/sizeof(entries[0]);++i) {
+        if(strcmp(symbol,entries[i].name)) continue;
+        if(flags==cudaEnablePerThreadDefaultStream && entries[i].stream_sensitive)
+            return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
+        entry=entries[i].entry; break;
+    }
     if (!entry)
         return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorNotSupported);
     int device;
