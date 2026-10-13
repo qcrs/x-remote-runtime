@@ -9,7 +9,13 @@ Eight are IMPLEMENTED and three PARTIAL_IMPLEMENTED. Native probes, independent
 public localhost CRX9 integration, bounded protocol tests, build/ABI/schema,
 lifecycle and session isolation pass. Baseline snapshots and continuing work are
 in `evidence/m5/graph-expansion-20261013/`; this checkpoint does **not** complete
-the goal. Child graph ownership and graph memory node integration are next.
+the goal. A second checkpoint adds three PARTIAL_IMPLEMENTED child graph APIs,
+bringing NEW_SUPPORTED_DELTA to **14**. Borrowed child graphs have independent
+node identities; executable updates rematerialize saved native definitions to
+avoid CoreX silently ignoring composite updates before first launch. The public
+test verifies kernel/copy execution, source destruction, parameter/enable-state
+preservation and repeated quiescent updates. Graph memory nodes and bounded
+client-process host nodes remain active implementation work.
 
 The Native Graph and practical Stream Capture goal is complete on CoreX 4.4 /
 MR-V100, within the measured limits in the ledger: 40 additional public APIs

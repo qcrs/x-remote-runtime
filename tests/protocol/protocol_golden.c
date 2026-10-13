@@ -56,7 +56,8 @@ _Static_assert(OP_SET_LIMIT == 59 && OP_SET_CACHE_CONFIG == 60 &&
 _Static_assert(GRAPH_CREATE==1 && GRAPH_INSTANTIATE==8 && GRAPH_LAUNCH==10 &&
                GRAPH_CLONE==21 && GRAPH_EXEC_UPDATE==23 && GRAPH_CAPTURE_BEGIN==24 &&
                GRAPH_CAPTURE_ADD==25 && GRAPH_CAPTURE_END==26 && GRAPH_CAPTURE_ABORT==27 &&
-               GRAPH_CAPTURE_BEGIN_TO_GRAPH==28 && GRAPH_CAPTURE_DEPENDENCIES==29,
+               GRAPH_CAPTURE_BEGIN_TO_GRAPH==28 && GRAPH_CAPTURE_DEPENDENCIES==29 &&
+               GRAPH_ADD_CHILD==30 && GRAPH_EXEC_SET_CHILD==31,
                "graph command wire assignments changed");
 
 static int test_hello(void)

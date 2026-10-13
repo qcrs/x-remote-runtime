@@ -81,6 +81,19 @@ if os.environ.get("COREX_GRAPH_EXPANSION"):
         first=object_id(command(sock,3,graph=graph,kind=5,data=struct.pack("!I",0)))
         foreign=object_id(command(sock,1))
         foreign_node=object_id(command(sock,3,graph=foreign,kind=5,data=struct.pack("!I",0)))
+        child_parent=object_id(command(sock,1))
+        assert command(sock,30,graph=child_parent,value=foreign,data=b"bad") == (1,b"")
+        assert command(sock,30,graph=child_parent,value=child_parent) == (1,b"")
+        child_result=command(sock,30,graph=child_parent,value=foreign)
+        child_node=object_id(child_result)
+        borrowed=struct.unpack("!Q",child_result[1][16:24])[0]
+        assert command(sock,2,graph=borrowed) == (10,b"")
+        assert command(sock,30,graph=graph,value=child_parent) == (10,b"")
+        child_exec=object_id(command(sock,8,graph=child_parent))
+        assert command(sock,31,node=first,exec_id=child_exec,value=foreign) == (1,b"")
+        assert command(sock,31,node=child_node,exec_id=child_exec,value=foreign,data=b"bad") == (1,b"")
+        assert command(sock,31,node=child_node,exec_id=child_exec,value=foreign)[0] == 0
+        assert command(sock,10,exec_id=child_exec)[0] == 0
         status,data=call(sock,12,17,struct.pack("!I",1));assert status==0
         stream=struct.unpack("!Q",data)[0]
         assert command(sock,28,graph=graph,stream=stream,value=1,data=b"bad") == (1,b"")
@@ -96,4 +109,4 @@ if os.environ.get("COREX_GRAPH_EXPANSION"):
         executable=object_id(command(sock,8,graph=graph))
         assert command(sock,10,exec_id=executable)[0]==0
         assert call(sock,4,18)==(0,b"")
-    print("GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds dependency_ownership supplied_graph_EOF")
+    print("GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds child_dependency_ownership supplied_graph_EOF")

@@ -26,6 +26,11 @@ int main(void) {
         CUgraph got = NULL; OBS(cuGraphChildGraphNodeGetGraph(cn, &got));
         size_t n=0; if (got) OBS(cuGraphGetNodes(got, NULL, &n));
         printf("CHILD_COPY=%d NODES=%zu\n",got != child, n);
+        CUgraphNode copied_fill=NULL;
+        if(got) OBS(cuGraphNodeFindInClone(&copied_fill,fill,got));
+        CUgraphExec borrowed_exec=NULL;
+        if(got) OBS(cuGraphInstantiate(&borrowed_exec,got,NULL,NULL,0));
+        if(borrowed_exec) OBS(cuGraphExecDestroy(borrowed_exec));
         OBS(cuGraphInstantiate(&exec, graph, NULL, NULL, 0));
         if (exec) {
             CUresult (*upload)(CUgraphExec,CUstream)=dlsym(RTLD_DEFAULT,"cuGraphUpload");

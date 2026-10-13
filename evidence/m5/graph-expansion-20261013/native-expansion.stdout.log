@@ -3,6 +3,8 @@ cuGraphAddChildGraphNode(&cn, graph, NULL, 0, child)=0
 cuGraphChildGraphNodeGetGraph(cn, &got)=0
 cuGraphGetNodes(got, NULL, &n)=0
 CHILD_COPY=1 NODES=1
+cuGraphNodeFindInClone(&copied_fill,fill,got)=0
+cuGraphInstantiate(&borrowed_exec,got,NULL,NULL,0)=1
 cuGraphInstantiate(&exec, graph, NULL, NULL, 0)=0
 cuGraphUpload=SYMBOL_ABSENT
 cuGraphMemsetNodeSetParams(fill, &f)=0

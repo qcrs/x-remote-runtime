@@ -189,6 +189,9 @@ COREX_REMOTE_CUDART_1.1 {
         cudaDeviceGetGraphMemAttribute;
         cudaDeviceSetGraphMemAttribute;
         cudaDeviceGraphMemTrim;
+        cudaGraphAddChildGraphNode;
+        cudaGraphChildGraphNodeGetGraph;
+        cudaGraphExecChildGraphNodeSetParams;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

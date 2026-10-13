@@ -497,6 +497,10 @@ cudaError_t cudaGraphExecEventWaitNodeSetEvent(cudaGraphExec_t exec, cudaGraphNo
 cudaError_t cudaStreamBeginCaptureToGraph(cudaStream_t stream, cudaGraph_t graph, const cudaGraphNode_t *deps, const cudaGraphEdgeData *edge_data, size_t count, enum cudaStreamCaptureMode mode);
 cudaError_t cudaStreamUpdateCaptureDependencies(cudaStream_t stream, cudaGraphNode_t *deps, size_t count, unsigned flags);
 
+cudaError_t cudaGraphAddChildGraphNode(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,cudaGraph_t child);
+cudaError_t cudaGraphChildGraphNodeGetGraph(cudaGraphNode_t node,cudaGraph_t *graph);
+cudaError_t cudaGraphExecChildGraphNodeSetParams(cudaGraphExec_t exec,cudaGraphNode_t node,cudaGraph_t child);
+
 #ifdef __cplusplus
 }
 #endif

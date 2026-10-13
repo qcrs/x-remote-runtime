@@ -36,10 +36,13 @@ def run(command, label, env=None):
     print(label + "=PASS", flush=True)
 
 
+validation_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+baseline_file=out / "BASE_HEAD"
+baseline_head=baseline_file.read_text().strip() if baseline_file.exists() else validation_head
 (out / "ENVIRONMENT.txt").write_text(
     f"UTC={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}\n"
     f"HOST={platform.node()}\nPLATFORM={platform.platform()}\nCOREX={corex}\n"
-    f"BASE_HEAD={subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()}\n"
+    f"BASE_HEAD={baseline_head}\nVALIDATION_HEAD={validation_head}\n"
     "TOPOLOGY=independent client -> 127.0.0.1 socket -> CRX9/V3 -> server -> CoreX Driver\n"
 )
 cc = os.environ.get("CC", "gcc")
@@ -51,13 +54,14 @@ if not args.integration_only:
                                ("corex_graph_execution_probe.c", "execution-probe", "cuda")]
     if args.expansion:
         probes=[("corex_graph_expansion_probe.c", "native-expansion", "cuda"),
+                ("corex_child_graph_execution_probe.c", "native-child-execution", "cuda"),
                 ("corex_graph_memory_probe.c", "native-memory", "cuda"),
                 ("corex_graph_expansion_runtime_probe.c", "native-runtime-expansion", "cudart")]
     for source, label, lib in probes:
         binary = work / label
         run(common + [f"-I{corex}/include", root / "tests/probes" / source,
                       f"-L{corex}/lib64", f"-Wl,-rpath,{corex}/lib64", "-l" + lib, "-ldl", "-o", binary], label + "-compile")
-        run([binary] + ([image] if label == "execution-probe" else []), label)
+        run([binary] + ([image] if label in ("execution-probe","native-child-execution") else []), label)
 if args.probes_only:
     print("GRAPH_PROBES=PASS",flush=True)
     raise SystemExit(0)
@@ -99,7 +103,7 @@ with (out / "server.stdout.log").open("w") as stdout, (out / "server.stderr.log"
             environment.write(f"PORT={port}\nSERVER_PID={server.pid}\n")
         run([binary, image], "integration", env)
         if args.expansion:
-            run([expansion_binary], "expansion-integration", env)
+            run([expansion_binary, image], "expansion-integration", env)
         run(["python3", root / "tests/integration/graphs_protocol.py"], "protocol-integration", env)
         if not args.integration_only or args.ownership_checks:
             lifecycle_env=env.copy();lifecycle_env["OUT"]=str(out / "lifecycle")

@@ -195,3 +195,7 @@ cudaStreamUpdateCaptureDependencies
 cudaDeviceGetGraphMemAttribute
 cudaDeviceSetGraphMemAttribute
 cudaDeviceGraphMemTrim
+
+cudaGraphAddChildGraphNode
+cudaGraphChildGraphNodeGetGraph
+cudaGraphExecChildGraphNodeSetParams

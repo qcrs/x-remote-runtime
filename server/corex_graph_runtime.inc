@@ -28,6 +28,16 @@ static void release_graph_node(GraphNodeEntry *n) {
   free(n->params);
   memset(n, 0, sizeof(*n));
 }
+static void release_borrowed_child(ServerSession *s, uint64_t owner) {
+  for (size_t i=0;i<CRX_GRAPH_MAX_GRAPHS;++i) {
+    GraphEntry *g=&s->graphs[i];
+    if (!g->used || g->owner_node_id != owner) continue;
+    for (size_t j=0;j<CRX_GRAPH_MAX_NODE_HANDLES;++j)
+      if (s->graph_nodes[j].used && s->graph_nodes[j].graph_id==g->id)
+        release_graph_node(&s->graph_nodes[j]);
+    memset(g,0,sizeof(*g));
+  }
+}
 static void cleanup_graphs(ServerSession *s) {
   if (s->capture_graph) {
     StreamEntry *stream = find_stream(s, s->capture_stream);
@@ -53,12 +63,13 @@ static void cleanup_graphs(ServerSession *s) {
     if (!e->used)
       continue;
     corex_backend_graph_exec_destroy(e->exec);
+    if(e->definition) corex_backend_graph_destroy(e->definition);
     for (size_t j = 0; j < e->count; ++j)
       release_graph_node(&e->nodes[j]);
     memset(e, 0, sizeof(*e));
   }
   for (size_t i = 0; i < CRX_GRAPH_MAX_GRAPHS; ++i) {
-    if (s->graphs[i].used)
+    if (s->graphs[i].used && !s->graphs[i].owner_node_id)
       corex_backend_graph_destroy(s->graphs[i].graph);
     memset(&s->graphs[i], 0, sizeof(s->graphs[i]));
   }
@@ -118,6 +129,32 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
                                     const unsigned char *p, uint32_t len,
                                     GraphNativeParams *d) {
   memset(d, 0, sizeof(*d));
+  if (kind == CU_GRAPH_NODE_TYPE_GRAPH) {
+    if (len<4 || len>CRX_GRAPH_PARAM_BYTES) return ST_BAD_REQUEST;
+    uint32_t count=corex_protocol_read_u32(p);size_t pos=4;
+    if (count>CRX_GRAPH_MAX_NODES) return ST_BAD_REQUEST;
+    for(size_t i=0;i<count;++i) {
+      if(pos>len || len-pos<8) return ST_BAD_REQUEST;
+      uint32_t leaf_kind=corex_protocol_read_u32(p+pos), bytes=corex_protocol_read_u32(p+pos+4);
+      pos+=8;
+      if(bytes>len-pos || (leaf_kind!=CU_GRAPH_NODE_TYPE_EMPTY &&
+         leaf_kind!=CU_GRAPH_NODE_TYPE_KERNEL && leaf_kind!=CU_GRAPH_NODE_TYPE_MEMCPY &&
+         leaf_kind!=CU_GRAPH_NODE_TYPE_MEMSET)) return ST_NOT_SUPPORTED;
+      GraphNativeParams leaf;
+      uint32_t status=decode_graph_params(s,leaf_kind,p+pos,bytes,&leaf);
+      if(status) return status;
+      if(leaf_kind==CU_GRAPH_NODE_TYPE_KERNEL)
+        release_raw_kernel_args(leaf.kernel.raw,leaf.kernel.argc);
+      pos+=bytes;
+    }
+    if(pos>len || len-pos<4) return ST_BAD_REQUEST;
+    uint32_t edges=corex_protocol_read_u32(p+pos);pos+=4;
+    if(edges>(len-pos)/8 || len-pos!=8*edges) return ST_BAD_REQUEST;
+    for(size_t i=0;i<edges;++i)
+      if(corex_protocol_read_u32(p+pos+8*i)>=count ||
+         corex_protocol_read_u32(p+pos+8*i+4)>=count) return ST_BAD_REQUEST;
+    return ST_OK;
+  }
   if (kind == CU_GRAPH_NODE_TYPE_EVENT_RECORD ||
       kind == CU_GRAPH_NODE_TYPE_WAIT_EVENT) {
     if (len != 8)
@@ -198,6 +235,123 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
 static void release_graph_params(uint32_t kind, GraphNativeParams *p) {
   if (kind == CU_GRAPH_NODE_TYPE_KERNEL)
     release_raw_kernel_args(p->kernel.raw, p->kernel.argc);
+}
+/* The child native graph owns copied leaves. Its canonical packed owner DTO
+ * is copied again into each executable; no source GraphID is retained there. */
+static uint32_t pack_child_snapshot(ServerSession *s, GraphEntry *g,
+    unsigned char *out, uint32_t *length, size_t *count) {
+  size_t pos=4;*count=0;
+  CUgraphNode native[CRX_GRAPH_MAX_NODES];
+  for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i) {
+    GraphNodeEntry *n=&s->graph_nodes[i];
+    if(!n->used || n->graph_id!=g->id) continue;
+    if(n->kind!=CU_GRAPH_NODE_TYPE_EMPTY && n->kind!=CU_GRAPH_NODE_TYPE_KERNEL &&
+       n->kind!=CU_GRAPH_NODE_TYPE_MEMCPY && n->kind!=CU_GRAPH_NODE_TYPE_MEMSET)
+      return ST_NOT_SUPPORTED;
+    if(n->length>CRX_GRAPH_PARAM_BYTES-pos || CRX_GRAPH_PARAM_BYTES-pos-n->length<8)
+      return ST_NOT_SUPPORTED;
+    GraphNativeParams d;
+    uint32_t status=decode_graph_params(s,n->kind,n->params,n->length,&d);
+    if(status) return status;
+    release_graph_params(n->kind,&d);
+    corex_protocol_write_u32(out,&pos,n->kind);
+    corex_protocol_write_u32(out,&pos,n->length);
+    memcpy(out+pos,n->params,n->length);pos+=n->length;
+    native[(*count)++]=n->node;
+  }
+  CUgraphNode from[CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES],to[CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES];
+  size_t edge_count=CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES;
+  CUresult r=corex_backend_graph_edges(g->graph,from,to,&edge_count);
+  if(r) return graph_result(r);
+  if(pos>CRX_GRAPH_PARAM_BYTES-4 || edge_count>(CRX_GRAPH_PARAM_BYTES-pos-4)/8)
+    return ST_NOT_SUPPORTED;
+  corex_protocol_write_u32(out,&pos,(uint32_t)edge_count);
+  for(size_t i=0;i<edge_count;++i) {
+    size_t f=0,t=0;
+    while(f<*count && native[f]!=from[i])++f;
+    while(t<*count && native[t]!=to[i])++t;
+    if(f==*count || t==*count) return ST_INTERNAL;
+    corex_protocol_write_u32(out,&pos,(uint32_t)f);corex_protocol_write_u32(out,&pos,(uint32_t)t);
+  }
+  size_t start=0;corex_protocol_write_u32(out,&start,(uint32_t)*count);
+  *length=(uint32_t)pos;return ST_OK;
+}
+static uint32_t snapshot_graph_edges(CUgraph graph,GraphNodeEntry *nodes,size_t count,
+    unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES]) {
+  CUgraphNode from[CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES],to[CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES];
+  size_t n=CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES;
+  CUresult r=corex_backend_graph_edges(graph,from,to,&n);if(r)return graph_result(r);
+  memset(edges,0,CRX_GRAPH_MAX_NODES*CRX_GRAPH_MAX_NODES);
+  for(size_t i=0;i<n;++i) {
+    size_t f=0,t=0;
+    while(f<count && nodes[f].node!=from[i])++f;
+    while(t<count && nodes[t].node!=to[i])++t;
+    if(f==count || t==count)return ST_INTERNAL;
+    edges[f][t]=1;
+  }
+  return ST_OK;
+}
+static uint32_t materialize_graph_snapshot(ServerSession *,GraphNodeEntry *,size_t,
+    const unsigned char [CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES],CUgraph *,CUgraphNode *);
+static uint32_t add_native_snapshot_node(ServerSession *s,GraphNodeEntry *n,CUgraph graph,
+    const CUgraphNode *deps,size_t count,CUgraphNode *out) {
+  GraphNativeParams d;uint32_t status=decode_graph_params(s,n->kind,n->params,n->length,&d);
+  if(status)return status;
+  CUresult r=CUDA_SUCCESS;
+  switch(n->kind) {
+  case CU_GRAPH_NODE_TYPE_EMPTY:r=corex_backend_graph_add_empty(out,graph,deps,count);break;
+  case CU_GRAPH_NODE_TYPE_MEMSET:r=corex_backend_graph_add_fill(out,graph,deps,count,&d.fill,g_ctx);break;
+  case CU_GRAPH_NODE_TYPE_MEMCPY:r=corex_backend_graph_add_copy(out,graph,deps,count,&d.copy,g_ctx);break;
+  case CU_GRAPH_NODE_TYPE_KERNEL:r=corex_backend_graph_add_kernel(out,graph,deps,count,&d.kernel.native);break;
+  case CU_GRAPH_NODE_TYPE_EVENT_RECORD:r=corex_backend_graph_add_record(out,graph,deps,count,d.event);break;
+  case CU_GRAPH_NODE_TYPE_WAIT_EVENT:r=corex_backend_graph_add_wait(out,graph,deps,count,d.event);break;
+  case CU_GRAPH_NODE_TYPE_GRAPH: {
+    GraphNodeEntry leaves[CRX_GRAPH_MAX_NODES]={0};
+    unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES]={0};
+    size_t leaf_count=corex_protocol_read_u32(n->params),pos=4;
+    for(size_t i=0;i<leaf_count;++i) {
+      leaves[i].kind=corex_protocol_read_u32(n->params+pos);
+      leaves[i].length=corex_protocol_read_u32(n->params+pos+4);pos+=8;
+      leaves[i].params=n->params+pos;pos+=leaves[i].length;
+    }
+    size_t edge_count=corex_protocol_read_u32(n->params+pos);pos+=4;
+    for(size_t i=0;i<edge_count;++i) {
+      uint32_t f=corex_protocol_read_u32(n->params+pos),t=corex_protocol_read_u32(n->params+pos+4);
+      pos+=8;edges[f][t]=1;
+    }
+    CUgraph child=NULL;CUgraphNode native[CRX_GRAPH_MAX_NODES];
+    status=materialize_graph_snapshot(s,leaves,leaf_count,edges,&child,native);
+    if(!status)r=corex_backend_graph_add_child(out,graph,deps,count,child);
+    if(child)corex_backend_graph_destroy(child);
+    break;
+  }
+  default:status=ST_NOT_SUPPORTED;break;
+  }
+  release_graph_params(n->kind,&d);return status ? status : graph_result(r);
+}
+/* Define the saved DAG with native nodes. This is a construction step, never
+ * a software execution scheduler; CoreX still instantiates and runs the DAG. */
+static uint32_t materialize_graph_snapshot(ServerSession *s,GraphNodeEntry *nodes,size_t count,
+    const unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES],CUgraph *out,CUgraphNode *native) {
+  CUgraph graph=NULL;CUresult r=corex_backend_graph_create(&graph,0);
+  if(r)return graph_result(r);
+  unsigned char added[CRX_GRAPH_MAX_NODES]={0};uint32_t status=ST_OK;
+  for(size_t step=0;step<count;++step) {
+    size_t next=count;
+    for(size_t i=0;i<count;++i) {
+      if(added[i])continue;
+      int ready=1;for(size_t j=0;j<count;++j)if(edges[j][i] && !added[j])ready=0;
+      if(ready){next=i;break;}
+    }
+    if(next==count){status=ST_BAD_REQUEST;break;}
+    CUgraphNode deps[CRX_GRAPH_MAX_NODES];size_t deps_count=0;
+    for(size_t i=0;i<count;++i)if(edges[i][next])deps[deps_count++]=native[i];
+    status=add_native_snapshot_node(s,&nodes[next],graph,deps,deps_count,&native[next]);
+    if(status)break;
+    added[next]=1;
+  }
+  if(status){corex_backend_graph_destroy(graph);return status;}
+  *out=graph;return ST_OK;
 }
 static uint64_t native_graph_node_id(ServerSession *s, CUgraphNode native) {
   for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i)
@@ -300,9 +454,114 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
         g && g->id == s->capture_graph))
     return send_response(fd, OP_GRAPH, req_id, ST_NOT_SUPPORTED, NULL, 0);
   switch (q.action) {
+  case GRAPH_ADD_CHILD: {
+    GraphEntry *source=find_graph(s,q.value), *borrowed=NULL;
+    if(!g || !source) {status=ST_NOT_FOUND;break;}
+    if(g==source) {status=ST_BAD_REQUEST;break;}
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
+    if(q.data_length%8 || q.data_length/8>CRX_GRAPH_MAX_NODES) {status=ST_BAD_REQUEST;break;}
+    size_t node_count=0;r=corex_backend_graph_nodes(g->graph,NULL,&node_count);
+    if(r) break;
+    if(node_count>=CRX_GRAPH_MAX_NODES) {status=ST_NO_RESOURCE;break;}
+    CUgraphNode deps[CRX_GRAPH_MAX_NODES];size_t deps_count=q.data_length/8;
+    status=resolve_graph_dependencies(s,g->id,q.data,deps_count,deps);
+    if(status) break;
+    unsigned char snapshot[CRX_GRAPH_PARAM_BYTES];uint32_t length=0;size_t count=0;
+    status=pack_child_snapshot(s,source,snapshot,&length,&count);
+    if(status) break;
+    GraphNodeEntry *slot=NULL;size_t free_nodes=0;
+    for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i) if(!s->graph_nodes[i].used) {
+      ++free_nodes;if(!slot)slot=&s->graph_nodes[i];
+    }
+    for(size_t i=0;i<CRX_GRAPH_MAX_GRAPHS;++i) if(!s->graphs[i].used) {borrowed=&s->graphs[i];break;}
+    if(!borrowed || free_nodes<count+1) {status=ST_NO_RESOURCE;break;}
+    unsigned char *saved=malloc(length);
+    if(!saved) {status=ST_NO_RESOURCE;break;}
+    memcpy(saved,snapshot,length);
+    r=corex_backend_graph_add_child(&slot->node,g->graph,deps,deps_count,source->graph);
+    if(r) {free(saved);break;}
+    slot->id=++s->next_graph_node_id;slot->used=1;slot->graph_id=g->id;
+    slot->kind=CU_GRAPH_NODE_TYPE_GRAPH;slot->params=saved;slot->length=length;
+    r=corex_backend_graph_child(slot->node,&borrowed->graph);
+    if(!r) {
+      borrowed->id=++s->next_graph_id;borrowed->used=1;borrowed->owner_node_id=slot->id;
+      size_t pos=0;corex_protocol_write_u64(out.data,&pos,borrowed->id);
+      for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i) {
+        GraphNodeEntry *src=&s->graph_nodes[i];
+        if(!src->used || src->graph_id!=source->id) continue;
+        GraphNodeEntry *dst=NULL;
+        for(size_t j=0;j<CRX_GRAPH_MAX_NODE_HANDLES;++j) if(!s->graph_nodes[j].used) {dst=&s->graph_nodes[j];break;}
+        unsigned char *params=malloc(src->length ? src->length : 1);
+        if(!params) {status=ST_NO_RESOURCE;break;}
+        CUgraphNode native=NULL;r=corex_backend_graph_find_clone(&native,src->node,borrowed->graph);
+        if(r) {free(params);break;}
+        memcpy(params,src->params,src->length);*dst=*src;dst->params=params;
+        dst->id=++s->next_graph_node_id;dst->graph_id=borrowed->id;
+        dst->original_id=src->id;dst->node=native;
+        corex_protocol_write_u64(out.data,&pos,src->id);corex_protocol_write_u64(out.data,&pos,dst->id);
+      }
+      out.object=slot->id;out.value=(uint32_t)count;out.data_length=(uint32_t)pos;
+    }
+    if(r || status) {
+      corex_backend_graph_destroy_node(slot->node);
+      release_borrowed_child(s,slot->id);release_graph_node(slot);memset(borrowed,0,sizeof(*borrowed));
+    }
+    break;
+  }
+  case GRAPH_EXEC_SET_CHILD: {
+    GraphEntry *source=find_graph(s,q.value);
+    GraphNodeEntry *target=e && n ? exec_graph_node(e,n->id) : NULL;
+    if(!source || !e || !n) {status=ST_NOT_FOUND;break;}
+    if(q.data_length) {status=ST_BAD_REQUEST;break;}
+    if(!target || target->kind!=CU_GRAPH_NODE_TYPE_GRAPH) {status=ST_BAD_REQUEST;break;}
+    unsigned char snapshot[CRX_GRAPH_PARAM_BYTES];uint32_t length=0;size_t count=0;
+    status=pack_child_snapshot(s,source,snapshot,&length,&count);
+    if(status) break;
+    unsigned char *saved=malloc(length);if(!saved) {status=ST_NO_RESOURCE;break;}
+    memcpy(saved,snapshot,length);
+    /* CoreX ignores composite child updates before first launch. Rebuild
+     * the saved native definition without executing it. A quiescent previous
+     * launch is required so replacing the native exec preserves serialization. */
+    if(e->launched) {
+      CUstream stream=0;
+      if(resolve_stream_id(s,e->last_stream,&stream)) {free(saved);status=ST_NOT_SUPPORTED;break;}
+      r=corex_backend_stream_query(stream);
+      if(r==CUDA_ERROR_NOT_READY) {r=CUDA_SUCCESS;free(saved);status=ST_NOT_SUPPORTED;break;}
+      if(r) {free(saved);break;}
+    }
+    GraphNodeEntry candidate[CRX_GRAPH_MAX_NODES];
+    memcpy(candidate,e->nodes,e->count*sizeof(*candidate));
+    size_t index=(size_t)(target-e->nodes);
+    candidate[index].params=saved;candidate[index].length=length;
+    CUgraph definition=NULL;CUgraphNode native[CRX_GRAPH_MAX_NODES];CUgraphExec replacement=NULL;
+    status=materialize_graph_snapshot(s,candidate,e->count,e->edges,&definition,native);
+    if(!status) r=corex_backend_graph_instantiate(&replacement,definition);
+    if(!status && !r) for(size_t i=0;i<e->count;++i) {
+      if(!candidate[i].enabled && (candidate[i].kind==CU_GRAPH_NODE_TYPE_KERNEL ||
+         candidate[i].kind==CU_GRAPH_NODE_TYPE_MEMCPY || candidate[i].kind==CU_GRAPH_NODE_TYPE_MEMSET)) {
+        r=corex_backend_graph_set_enabled(replacement,native[i],0);if(r)break;
+      }
+    }
+    if(!status && !r) r=corex_backend_graph_exec_destroy(e->exec);
+    if(status || r) {
+      if(replacement)corex_backend_graph_exec_destroy(replacement);
+      if(definition)corex_backend_graph_destroy(definition);
+      free(saved);break;
+    }
+    if(e->definition)corex_backend_graph_destroy(e->definition);
+    e->exec=replacement;e->definition=definition;e->launched=0;
+    free(target->params);target->params=saved;target->length=length;
+    for(size_t i=0;i<e->count;++i)e->nodes[i].node=native[i];
+    break;
+  }
   case GRAPH_CAPTURE_BEGIN_TO_GRAPH: {
     StreamEntry *stream=find_stream(s,q.stream);
     if (!g || !stream) {status=ST_NOT_FOUND;break;}
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
+    for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
+      if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==g->id &&
+         s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_GRAPH) status=ST_NOT_SUPPORTED;
+    if(status) break;
     if (q.value != CU_STREAM_CAPTURE_MODE_THREAD_LOCAL) {status=ST_NOT_SUPPORTED;break;}
     if (q.data_length%8 || q.data_length/8 > CRX_GRAPH_MAX_NODES) {status=ST_BAD_REQUEST;break;}
     size_t count=q.data_length/8;
@@ -371,6 +630,10 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       else if (s->graph_nodes[i].graph_id == g->id)
         ++needed;
     }
+    for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
+      if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==g->id &&
+         s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_GRAPH) status=ST_NOT_SUPPORTED;
+    if(status) break;
     for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i) {
       GraphNodeEntry *src = &s->graph_nodes[i];
       if (!src->used || src->graph_id != g->id)
@@ -482,6 +745,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       release_graph_params(v->kind, &d);
       GraphNodeEntry *dst = &snapshots[count++];
       *dst = *v;
+      GraphNodeEntry *old=exec_graph_node(e,v->id);
+      dst->enabled=old ? old->enabled : 1;
       dst->params = malloc(v->length ? v->length : 1);
       if (!dst->params) {
         status = ST_NO_RESOURCE;
@@ -491,6 +756,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     }
     CUgraphNode error = NULL;
     CUgraphExecUpdateResult result = CU_GRAPH_EXEC_UPDATE_ERROR;
+    unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES];
+    if(!status)status=snapshot_graph_edges(g->graph,snapshots,count,edges);
     if (!status)
       r = corex_backend_graph_exec_update(e->exec, g->graph, &error, &result);
     printf("GRAPH_EXEC_UPDATE rc=%d result=%d\n", (int)r, (int)result);
@@ -499,6 +766,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
         release_graph_node(&e->nodes[i]);
       memcpy(e->nodes, snapshots, count * sizeof(*snapshots));
       e->count = count;
+      memcpy(e->edges,edges,sizeof(e->edges));
     } else
       for (size_t i = 0; i < count; ++i)
         release_graph_node(&snapshots[i]);
@@ -713,12 +981,15 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     r = corex_backend_graph_destroy(g->graph);
     if (r)
       break;
     for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i)
-      if (s->graph_nodes[i].used && s->graph_nodes[i].graph_id == g->id)
+      if (s->graph_nodes[i].used && s->graph_nodes[i].graph_id == g->id) {
+        release_borrowed_child(s,s->graph_nodes[i].id);
         release_graph_node(&s->graph_nodes[i]);
+      }
     memset(g, 0, sizeof(*g));
     break;
   case GRAPH_ADD_NODE: {
@@ -726,6 +997,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     size_t count = 0;
     r = corex_backend_graph_nodes(g->graph, NULL, &count);
     if (r)
@@ -764,52 +1036,13 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_BAD_REQUEST;
       break;
     }
-    GraphNativeParams d;
-    status = decode_graph_params(s, q.kind, p, plen, &d);
-    if (status)
-      break;
-    unsigned char *saved = malloc(plen ? plen : 1);
-    if (!saved) {
-      release_graph_params(q.kind, &d);
-      status = ST_NO_RESOURCE;
-      break;
-    }
-    memcpy(saved, p, plen);
-    switch (q.kind) {
-    case CU_GRAPH_NODE_TYPE_EMPTY:
-      r = corex_backend_graph_add_empty(&slot->node, g->graph, native_deps,
-                                        deps);
-      break;
-    case CU_GRAPH_NODE_TYPE_MEMCPY:
-      r = corex_backend_graph_add_copy(&slot->node, g->graph, native_deps, deps,
-                                       &d.copy, g_ctx);
-      break;
-    case CU_GRAPH_NODE_TYPE_MEMSET:
-      r = corex_backend_graph_add_fill(&slot->node, g->graph, native_deps, deps,
-                                       &d.fill, g_ctx);
-      break;
-    case CU_GRAPH_NODE_TYPE_KERNEL:
-      r = corex_backend_graph_add_kernel(&slot->node, g->graph, native_deps,
-                                         deps, &d.kernel.native);
-      break;
-    case CU_GRAPH_NODE_TYPE_EVENT_RECORD:
-      r = corex_backend_graph_add_record(&slot->node, g->graph, native_deps,
-                                         deps, d.event);
-      break;
-    case CU_GRAPH_NODE_TYPE_WAIT_EVENT:
-      r = corex_backend_graph_add_wait(&slot->node, g->graph, native_deps, deps,
-                                       d.event);
-      break;
-    default:
-      r = CUDA_ERROR_NOT_SUPPORTED;
-      break;
-    }
-    release_graph_params(q.kind, &d);
-    if (r) {
-      free(saved);
-      memset(slot, 0, sizeof(*slot));
-      break;
-    }
+    unsigned char *saved=malloc(plen ? plen : 1);
+    if(!saved) {status=ST_NO_RESOURCE;break;}
+    memcpy(saved,p,plen);
+    GraphNodeEntry params={.kind=q.kind,.length=plen,.params=saved};
+    status=q.kind==CU_GRAPH_NODE_TYPE_GRAPH ? ST_NOT_SUPPORTED :
+      add_native_snapshot_node(s,&params,g->graph,native_deps,deps,&slot->node);
+    if(status) {free(saved);memset(slot,0,sizeof(*slot));break;}
     slot->used = 1;
     slot->id = ++s->next_graph_node_id;
     slot->graph_id = g->id;
@@ -829,6 +1062,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    GraphEntry *owner=find_graph(s,n->graph_id);
+    if(q.action==GRAPH_SET_NODE && owner && owner->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     GraphNodeEntry *target =
         q.action == GRAPH_SET_NODE ? n : exec_graph_node(e, n->id);
     if (!target) {
@@ -859,22 +1094,22 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     }
     memcpy(saved, q.data, q.data_length);
     if (q.kind == CU_GRAPH_NODE_TYPE_MEMCPY)
-      r = e ? corex_backend_graph_exec_set_copy(e->exec, n->node, &d.copy,
+      r = e ? corex_backend_graph_exec_set_copy(e->exec, target->node, &d.copy,
                                                 g_ctx)
             : corex_backend_graph_set_copy(n->node, &d.copy);
     else if (q.kind == CU_GRAPH_NODE_TYPE_MEMSET)
-      r = e ? corex_backend_graph_exec_set_fill(e->exec, n->node, &d.fill,
+      r = e ? corex_backend_graph_exec_set_fill(e->exec, target->node, &d.fill,
                                                 g_ctx)
             : corex_backend_graph_set_fill(n->node, &d.fill);
     else if (q.kind == CU_GRAPH_NODE_TYPE_KERNEL)
-      r = e ? corex_backend_graph_exec_set_kernel(e->exec, n->node,
+      r = e ? corex_backend_graph_exec_set_kernel(e->exec, target->node,
                                                   &d.kernel.native)
             : corex_backend_graph_set_kernel(n->node, &d.kernel.native);
     else if (q.kind == CU_GRAPH_NODE_TYPE_EVENT_RECORD)
-      r = e ? corex_backend_graph_exec_set_record(e->exec, n->node, d.event)
+      r = e ? corex_backend_graph_exec_set_record(e->exec, target->node, d.event)
             : corex_backend_graph_set_record(n->node, d.event);
     else if (q.kind == CU_GRAPH_NODE_TYPE_WAIT_EVENT)
-      r = e ? corex_backend_graph_exec_set_wait(e->exec, n->node, d.event)
+      r = e ? corex_backend_graph_exec_set_wait(e->exec, target->node, d.event)
             : corex_backend_graph_set_wait(n->node, d.event);
     else
       r = CUDA_ERROR_NOT_SUPPORTED;
@@ -905,15 +1140,19 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    if(find_graph(s,n->graph_id)->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     r = corex_backend_graph_destroy_node(n->node);
-    if (!r)
+    if (!r) {
+      release_borrowed_child(s,n->id);
       release_graph_node(n);
+    }
     break;
   case GRAPH_INSTANTIATE: {
     if (!g) {
       status = ST_NOT_FOUND;
       break;
     }
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     if (q.value) {
       status = ST_NOT_SUPPORTED;
       break;
@@ -940,6 +1179,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       release_graph_params(src->kind, &d);
       GraphNodeEntry *dst = &slot->nodes[slot->count++];
       *dst = *src;
+      dst->enabled=1;
       dst->params = malloc(src->length ? src->length : 1);
       if (!dst->params) {
         status = ST_NO_RESOURCE;
@@ -947,6 +1187,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       }
       memcpy(dst->params, src->params, src->length);
     }
+    if(!status)status=snapshot_graph_edges(g->graph,slot->nodes,slot->count,slot->edges);
     if (!status)
       r = corex_backend_graph_instantiate(&slot->exec, g->graph);
     if (status || r) {
@@ -968,6 +1209,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     r = corex_backend_graph_exec_destroy(e->exec);
     if (r)
       break;
+    if(e->definition)corex_backend_graph_destroy(e->definition);
     for (size_t i = 0; i < e->count; ++i)
       release_graph_node(&e->nodes[i]);
     memset(e, 0, sizeof(*e));
@@ -998,6 +1240,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     }
     if (!status)
       r = corex_backend_graph_launch(e->exec, stream);
+    if(!status && !r) {e->last_stream=q.stream;e->launched=1;}
     break;
   }
   case GRAPH_GET_NODES:
@@ -1069,6 +1312,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     if (q.data_length % 16 || q.data_length / 16 > CRX_GRAPH_MAX_NODES) {
       status = ST_BAD_REQUEST;
       break;
@@ -1102,12 +1346,13 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     break;
   }
   case GRAPH_SET_ENABLED:
-  case GRAPH_GET_ENABLED:
+  case GRAPH_GET_ENABLED: {
     if (!e || !n) {
       status = ST_NOT_FOUND;
       break;
     }
-    if (!exec_graph_node(e, n->id) ||
+    GraphNodeEntry *target=exec_graph_node(e,n->id);
+    if (!target ||
         (n->kind != CU_GRAPH_NODE_TYPE_KERNEL &&
          n->kind != CU_GRAPH_NODE_TYPE_MEMCPY &&
          n->kind != CU_GRAPH_NODE_TYPE_MEMSET) ||
@@ -1116,10 +1361,12 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       break;
     }
     if (q.action == GRAPH_SET_ENABLED)
-      r = corex_backend_graph_set_enabled(e->exec, n->node, (unsigned)q.value);
+      r = corex_backend_graph_set_enabled(e->exec, target->node, (unsigned)q.value);
     else
-      r = corex_backend_graph_get_enabled(e->exec, n->node, &out.value);
+      r = corex_backend_graph_get_enabled(e->exec, target->node, &out.value);
+    if(!r && q.action==GRAPH_SET_ENABLED)target->enabled=(unsigned)q.value;
     break;
+  }
   default:
     status = ST_BAD_REQUEST;
     break;

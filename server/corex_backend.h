@@ -156,6 +156,8 @@ CUresult corex_backend_capture_dependencies(CUstream stream, CUgraphNode *deps, 
 CUresult corex_backend_graph_mem_get(CUdevice device, CUgraphMem_attribute attr, uint64_t *value);
 CUresult corex_backend_graph_mem_set(CUdevice device, CUgraphMem_attribute attr, uint64_t value);
 CUresult corex_backend_graph_mem_trim(CUdevice device);
+CUresult corex_backend_graph_add_child(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUgraph child);
+CUresult corex_backend_graph_child(CUgraphNode node, CUgraph *graph);
 CUresult corex_backend_capture_end(CUstream stream, CUgraph *graph);
 CUresult corex_backend_capture_info(CUstream stream, CUstreamCaptureStatus *status, cuuint64_t *id, CUgraph *graph, const CUgraphNode **deps, size_t *count);
 

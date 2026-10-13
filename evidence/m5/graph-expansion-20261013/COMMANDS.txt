@@ -19,3 +19,59 @@ OUT=evidence/m5/graph-expansion-20261013 ./scripts/test-handler-registry.sh
 python3 scripts/verify-api-contracts.py .
 python3 scripts/verify-evidence-links.py .
 git diff --check
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=35275 dist/bin/runtime_server # independent PID=2349815
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=54725 dist/bin/runtime_server # independent PID=2351031
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=55749 dist/bin/runtime_server # independent PID=2352184
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=41697 dist/bin/runtime_server # independent PID=2354543
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=56985 dist/bin/runtime_server # independent PID=2359779
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+python3 /home/lvtong/corex-remote-runtime/tests/integration/graphs_protocol.py
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+/home/lvtong/corex-remote-runtime/scripts/run-server-session-isolation.sh
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-abi.o
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -DCOREX_GRAPH_INTERNAL_ABI -I/home/lvtong/corex-remote-runtime/include/internal -c /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -o /home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-abi.o
+COREX_REMOTE_PORT=50699 dist/bin/runtime_server # independent PID=2361673
+/home/lvtong/corex-remote-runtime/build/graphs/graph-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+/home/lvtong/corex-remote-runtime/build/graphs/graph-expansion-app /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+python3 /home/lvtong/corex-remote-runtime/tests/integration/graphs_protocol.py
+/home/lvtong/corex-remote-runtime/scripts/run-lifecycle-integration.sh
+/home/lvtong/corex-remote-runtime/scripts/run-server-session-isolation.sh
+
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -I/usr/local/corex-4.4.0/include tests/probes/corex_child_graph_execution_probe.c -L/usr/local/corex-4.4.0/lib64 -Wl,-rpath,/usr/local/corex-4.4.0/lib64 -lcuda -o /tmp/corex_child_graph_execution_probe
+/tmp/corex_child_graph_execution_probe build/session_lifecycle.cubin
+./scripts/build.sh
+OUT=evidence/m5/graph-expansion-20261013 ./scripts/test-handler-registry.sh
+python3 scripts/verify-api-contracts.py .
+python3 scripts/verify-evidence-links.py .
+git diff --check

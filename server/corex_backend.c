@@ -249,6 +249,10 @@ CUresult corex_backend_graph_mem_set(CUdevice device, CUgraphMem_attribute attr,
 { return cuDeviceSetGraphMemAttribute(device, attr, &value); }
 CUresult corex_backend_graph_mem_trim(CUdevice device)
 { return cuDeviceGraphMemTrim(device); }
+CUresult corex_backend_graph_add_child(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUgraph child)
+{ return cuGraphAddChildGraphNode(node, graph, deps, count, child); }
+CUresult corex_backend_graph_child(CUgraphNode node, CUgraph *graph)
+{ return cuGraphChildGraphNodeGetGraph(node, graph); }
 CUresult corex_backend_graph_set_wait(CUgraphNode node, CUevent event)
 { return cuGraphEventWaitNodeSetEvent(node, event); }
 CUresult corex_backend_graph_exec_set_record(CUgraphExec exec, CUgraphNode node, CUevent event)

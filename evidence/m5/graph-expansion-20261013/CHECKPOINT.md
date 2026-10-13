@@ -2,15 +2,18 @@
 
 BASE_HEAD: `0383270696516c003743e4784f3c5795168052f6`. The saved BASE_LEDGER matches the rows at that commit.
 BASE_SUPPORTED=40. Previously supported APIs contribute zero to this expansion.
-NEW_SUPPORTED_DELTA=11 (8 IMPLEMENTED, 3 PARTIAL_IMPLEMENTED).
+NEW_SUPPORTED_DELTA=14 (8 IMPLEMENTED, 6 PARTIAL_IMPLEMENTED).
 
 - cudaDeviceGetGraphMemAttribute — PARTIAL_IMPLEMENTED
 - cudaDeviceGraphMemTrim — IMPLEMENTED
 - cudaDeviceSetGraphMemAttribute — IMPLEMENTED
+- cudaGraphAddChildGraphNode — PARTIAL_IMPLEMENTED
+- cudaGraphChildGraphNodeGetGraph — PARTIAL_IMPLEMENTED
 - cudaGraphEventRecordNodeGetEvent — IMPLEMENTED
 - cudaGraphEventRecordNodeSetEvent — IMPLEMENTED
 - cudaGraphEventWaitNodeGetEvent — IMPLEMENTED
 - cudaGraphEventWaitNodeSetEvent — IMPLEMENTED
+- cudaGraphExecChildGraphNodeSetParams — PARTIAL_IMPLEMENTED
 - cudaGraphExecEventRecordNodeSetEvent — IMPLEMENTED
 - cudaGraphExecEventWaitNodeSetEvent — IMPLEMENTED
 - cudaStreamBeginCaptureToGraph — PARTIAL_IMPLEMENTED
@@ -32,10 +35,16 @@ baseline comparison and must be recomputed at final closeout.
 
 ## Native findings and next implementation
 
-- Child add/query/exec update: success, independent child graph copy and exec
-  snapshot measured, update survives source destruction. Next: register borrowed
-  child identities in the existing graph/node tables and preserve independent
-  executable resource snapshots. Bound nested ownership if necessary.
+- Child add/query/exec update: implemented with bounded read-only borrowed
+  child identities and native executable rematerialization from canonical params,
+  topology and enabled states. Native composite exec setters ignore changes
+  before first launch even with a fresh clone or repeated setters. A native
+  rebuilt definition executes the current value on its first launch. The public
+  test verifies first-launch update, repeated quiescent update, other exec params
+  and disabled state preservation, source/parent destruction and stale modules.
+  Native direct instantiation of an embedded child returns InvalidValue; remote
+  direct instantiation is explicitly unsupported. Existing leaf graph cloning
+  remains supported; parent graphs with children now classify GraphClone partial.
 - Graph memory nodes: real alloc/fill/copy/free repeated launch data passes.
   Allocation query rounds requested 32 bytes up to 2 MiB. Canonical requested
   parameters should be retained. Native graph allocation has its own pool:
@@ -57,14 +66,11 @@ baseline comparison and must be recomputed at final closeout.
 - Dot query/output: native DebugDotPrint succeeds; client filesystem output should
   reconstruct bounded graph data rather than send a client path to the server.
 
-Pending public implementation/classification (17):
-- cudaGraphAddChildGraphNode
+Pending public implementation/classification (14):
 - cudaGraphAddHostNode
 - cudaGraphAddMemAllocNode
 - cudaGraphAddMemFreeNode
-- cudaGraphChildGraphNodeGetGraph
 - cudaGraphDebugDotPrint
-- cudaGraphExecChildGraphNodeSetParams
 - cudaGraphExecHostNodeSetParams
 - cudaGraphHostNodeGetParams
 - cudaGraphHostNodeSetParams

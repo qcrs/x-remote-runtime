@@ -6,7 +6,8 @@ graphs, nodes and executable graphs. The authoritative API classifications and
 per-API limits are in `compat/cuda-api-ledger.csv`. This batch adds 40 supported
 public APIs: 22 IMPLEMENTED and 18 PARTIAL_IMPLEMENTED. Those 40 APIs are the
 baseline for the subsequent expansion at `0383270`; the active expansion's
-first checkpoint adds 11 APIs and is not goal completion.
+first checkpoint adds 11 APIs, and the child checkpoint brings the delta to 14.
+The expansion remains active.
 
 ## Objects and execution
 
@@ -75,6 +76,40 @@ Client tombstone budgets are 128 graph tokens, 128 exec tokens and 4096 node
 tokens for the process lifetime, including resets. Node parameter DTOs are
 bounded at 4096 bytes. Exhaustion is explicit. No resource slot can turn an old
 client token into a new live object.
+
+## Child graphs
+
+Child nodes use real native CoreX child graphs and the existing graph/node
+registries. The embedded graph receives borrowed GraphID/NodeID identities and
+copied client parameter storage. Parent node destruction tombstones those
+identities and releases their server metadata; native ownership stays with the
+parent node. Session cleanup never independently destroys borrowed native
+graphs. The current slice permits one child level with empty, registered kernel,
+device-copy and memset leaves; the complete parameter/topology owner DTO must
+fit 4096 bytes. Borrowed graphs permit inspection and leaf-only cloning, with
+mutation, direct destruction and direct instantiation unsupported. Parent graphs
+containing child nodes cannot yet be cloned or used with BeginCaptureToGraph.
+
+Each executable retains canonical node parameters, resource IDs, edge topology
+and enable states independently. Native CoreX reports successful composite
+child exec updates before first launch but ignores the new parameters; a fresh
+clone or two consecutive setters do not fix that cold-exec behavior. The remote
+setter therefore builds a native graph definition from the saved executable
+snapshot with the new child, instantiates it and replaces the native exec under
+the same GraphExecID. CoreX executes the resulting DAG. The existing exec entry
+owns the new native definition and node correspondence; ordinary exec setters
+and enable controls use that correspondence. Other executable parameters and
+source graph mutations remain independent. No extra scheduler or registry is
+introduced, and no warm-up launch executes unwanted work.
+
+Replacement is allowed before first launch or after the previous launch's live
+stream queries complete. In-flight or unresolvable previous streams return
+NotSupported without replacing the old exec. This bound preserves serial launch
+ordering when the underlying native exec changes. Client frontiers survive the
+replacement. Repeated updates, disabled node restoration, other exec parameter
+updates, source/parent destruction and stale module rejection pass through the
+independent public CRX9 test. Lifecycle and EOF tests exercise private definition
+and borrowed child cleanup.
 
 ## Capture
 

@@ -5,6 +5,7 @@
 struct corexCudaGraphHandle {
     uint64_t id, generation;
     int live;
+    uint64_t owner_node_id;
 };
 struct corexCudaGraphExecHandle {
     uint64_t id, generation;
@@ -28,6 +29,7 @@ struct corexCudaGraphNodeHandle {
     size_t arg_storage_bytes;
     cudaEvent_t event;
     uint64_t original_id;
+    cudaGraph_t child_graph;
 };
 typedef struct {
     struct corexCudaGraphHandle graphs[CRX_GRAPH_MAX_GRAPHS];

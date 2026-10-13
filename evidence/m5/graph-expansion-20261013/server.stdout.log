@@ -3,7 +3,7 @@ GPU=Iluvatar MR-V100
 startup_modules=0
 startup_kernels=0
 protocol=CRX9 version=3 default_stream=LEGACY
-listen=127.0.0.1:57679
+listen=127.0.0.1:50699
 SERVER_READY
 SESSION_START
 SESSION_IDS next_allocation_id=1 next_stream_id=1
@@ -161,37 +161,94 @@ SESSION_IDS next_allocation_id=1 next_stream_id=1
 ALLOC request=8 allocation_id=1 size=32
 CREATE_STREAM request=9 stream_id=1 flags=1
 CREATE_STREAM request=10 stream_id=2 flags=1
-CREATE_EVENT request=11 event_id=1 flags=2
-CREATE_EVENT request=12 event_id=2 flags=2
-CREATE_EVENT request=13 event_id=3 flags=2
-H2D_ASYNC_SUBMIT request=27 transfer_id=1 allocation_id=1 offset=0 stream_id=2 bytes=32 staging=PINNED
-D2H_ASYNC_SUBMIT request=28 transfer_id=2 allocation_id=1 offset=0 stream_id=2 bytes=32 staging=PINNED
-EVENT_RECORD request=29 event_id=3 stream_id=2 result=PASS
-EVENT_SYNC request=31 event_id=3 result=PASS
-TRANSFER_WAIT request=32 transfer_id=1 kind=H2D bytes=32 result=PASS retire=YES
-TRANSFER_WAIT request=33 transfer_id=2 kind=D2H bytes=32 result=PASS retire=YES
-D2H request=34 allocation_id=1 offset=0 bytes=32
-EVENT_RECORD request=35 event_id=1 stream_id=2 result=PASS
-STREAM_SYNC request=37 stream_id=1 result=PASS
+ALLOC request=11 allocation_id=2 size=4
+ALLOC request=12 allocation_id=3 size=4
+UPLOAD_METADATA version=1.0 kernel_count=1
+UPLOAD_MODULE request=13 module_id=1 name=session_lifecycle.cubin size=2704 magic=7f454c46
+GET_KERNEL_METADATA name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8
+GET_KERNEL request=14 module_id=1 kernel_id=1 name=m1s2_lifecycle_kernel
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+MEMSET request=31 allocation_id=3 offset=0 value=0 bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+STREAM_SYNC request=35 stream_id=1 result=PASS
+D2H request=36 allocation_id=2 offset=0 bytes=4
+D2H request=37 allocation_id=3 offset=0 bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+STREAM_SYNC request=40 stream_id=1 result=PASS
+D2H request=41 allocation_id=3 offset=0 bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+STREAM_SYNC request=46 stream_id=1 result=PASS
+D2H request=47 allocation_id=2 offset=0 bytes=4
+D2H request=48 allocation_id=3 offset=0 bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+STREAM_SYNC request=51 stream_id=1 result=PASS
+D2H request=52 allocation_id=2 offset=0 bytes=4
+D2H request=53 allocation_id=3 offset=0 bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+STREAM_SYNC request=57 stream_id=1 result=PASS
+D2H request=58 allocation_id=2 offset=0 bytes=4
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel
+UNLOAD_MODULE request=59 module_id=1 name=session_lifecycle.cubin
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=63 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=64 allocation_id=3
+CREATE_EVENT request=65 event_id=1 flags=2
+CREATE_EVENT request=66 event_id=2 flags=2
+CREATE_EVENT request=67 event_id=3 flags=2
+H2D_ASYNC_SUBMIT request=81 transfer_id=1 allocation_id=1 offset=0 stream_id=2 bytes=32 staging=PINNED
+D2H_ASYNC_SUBMIT request=82 transfer_id=2 allocation_id=1 offset=0 stream_id=2 bytes=32 staging=PINNED
+EVENT_RECORD request=83 event_id=3 stream_id=2 result=PASS
+EVENT_SYNC request=85 event_id=3 result=PASS
+TRANSFER_WAIT request=86 transfer_id=1 kind=H2D bytes=32 result=PASS retire=YES
+TRANSFER_WAIT request=87 transfer_id=2 kind=D2H bytes=32 result=PASS retire=YES
+D2H request=88 allocation_id=1 offset=0 bytes=32
+EVENT_RECORD request=89 event_id=1 stream_id=2 result=PASS
+STREAM_SYNC request=91 stream_id=1 result=PASS
 LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=2 scope=CONTEXT rc=0 result=PASS
-DESTROY_EVENT request=39 event_id=2 result=PASS
-STREAM_SYNC request=41 stream_id=1 result=PASS
-EVENT_SYNC request=43 event_id=1 result=PASS
+DESTROY_EVENT request=93 event_id=2 result=PASS
+STREAM_SYNC request=95 stream_id=1 result=PASS
+EVENT_SYNC request=97 event_id=1 result=PASS
 LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=1 scope=CONTEXT rc=0 result=PASS
-DESTROY_EVENT request=44 event_id=1 result=PASS
-EVENT_SYNC request=45 event_id=3 result=PASS
+DESTROY_EVENT request=98 event_id=1 result=PASS
+EVENT_SYNC request=99 event_id=3 result=PASS
 LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=3 scope=CONTEXT rc=0 result=PASS
-DESTROY_EVENT request=46 event_id=3 result=PASS
-STREAM_SYNC request=60 stream_id=1 result=PASS
-D2H request=61 allocation_id=1 offset=0 bytes=32
-STREAM_SYNC request=75 stream_id=1 result=PASS
+DESTROY_EVENT request=100 event_id=3 result=PASS
+STREAM_SYNC request=114 stream_id=1 result=PASS
+D2H request=115 allocation_id=1 offset=0 bytes=32
+STREAM_SYNC request=129 stream_id=1 result=PASS
 LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
-DESTROY_STREAM request=76 stream_id=1 result=PASS
-STREAM_SYNC request=77 stream_id=2 result=PASS
+DESTROY_STREAM request=130 stream_id=1 result=PASS
+STREAM_SYNC request=131 stream_id=2 result=PASS
 LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=2 scope=STREAM rc=0 result=PASS
-DESTROY_STREAM request=78 stream_id=2 result=PASS
+DESTROY_STREAM request=132 stream_id=2 result=PASS
 LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
-FREE request=79 allocation_id=1
+FREE request=133 allocation_id=1
 SESSION_CLOSE
 cleanup_sync rc=0
 SESSION_CLEANUP_EMPTY=YES
