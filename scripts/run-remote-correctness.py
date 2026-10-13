@@ -23,6 +23,8 @@ parser.add_argument('--topology-only', action='store_true')
 args = parser.parse_args()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault('COREX_RC_ORIGINAL_UID', str(os.getuid()))
+os.environ.setdefault('COREX_RC_HOST_NETNS', os.readlink('/proc/self/ns/net'))
 if os.geteuid() != 0:
     os.execvp('unshare', ['unshare', '-Urn', sys.executable, str(Path(__file__).resolve()),
                          '--inside-rootless', *sys.argv[1:]])
@@ -111,12 +113,12 @@ try:
         'COREX=4.4.0\nGPU=MR-V100 (confirmed by server log)\n'
         f'VALIDATION_HEAD={subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()}\n'
         f'SERVER_NETNS={server_ns}\nCLIENT_NETNS={client_ns}\nCLIENT_KEEPER_PID={keeper.pid}\n'
+        f'INITIAL_HOST_NETNS={env["COREX_RC_HOST_NETNS"]}\nORIGINAL_UID={env["COREX_RC_ORIGINAL_UID"]}\n'
         f'SERVER_NAMESPACE_MODE={"rootless user-owned network namespace" if args.inside_rootless else "initial host namespace"}\n'
         'TOPOLOGY=same-host emulation; independent client/server processes; isolated client netns '
         '198.18.0.2 -> veth/TCP 198.18.0.1:50991 -> server -> real CoreX Driver -> MR-V100\n'
         'No physical two-host, performance or cross-architecture claim. No device/mount namespace.\n'
-        'Initial uid=1002; CAP_NET_ADMIN absent; sudo -n true: password required. Rootless mode '
-        'keeps devices/filesystem on host and leaves initial host network unchanged.\n')
+        'Rootless mode keeps devices/filesystem on host and leaves initial host network unchanged.\n')
     run(['ip', '-details', 'address', 'show', 'rc-server'], 'topology-server')
     run(['ip', '-details', 'address', 'show', 'rc-client'], 'topology-client', client=True)
     run(['ip', 'route', 'get', '198.18.0.1'], 'topology-route', client=True)
