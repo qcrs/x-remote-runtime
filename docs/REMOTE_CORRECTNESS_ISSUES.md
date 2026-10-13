@@ -102,9 +102,10 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Workload: aggregate twelve-application qualification.
 - Observed → expected: final ad-hoc audit counts 13 PASS lines and asserts 12 →
   check the twelve named applications, excluding the dynamic-binding PASS metadata.
-- Evidence: `evidence/m6/real-workloads-20261013/rc007-audit-before.{stdout,stderr}.log`.
+- Evidence: `evidence/m6/real-workloads-20261013/rc007-audit-before.stderr.log`
+  and the corresponding stdout log.
 - Root cause: aggregate string counting included DYNAMIC_BINDINGS=PASS; no
   workload execution or Runtime defect. All twelve application results already pass.
 - Resolution: named-result audit passed for all twelve applications plus bindings;
   application rerun unnecessary because only the post-run assertion changes.
-- Fixing commit: final audit correction commit (hash in workload FINALIZATION.txt).
+- Fixing commit: `914ef7842eabb5080171dfd94afff41f69cb05c9`.
