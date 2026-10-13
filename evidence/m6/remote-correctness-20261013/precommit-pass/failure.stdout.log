@@ -1,0 +1,70 @@
+create-stream=0 expected=0
+create-event=0 expected=0
+default-pool=0 expected=0
+async-allocation=0 expected=0
+fill=0 expected=0
+create-graph=0 expected=0
+instantiate=0 expected=0
+module=0 expected=0
+pending-host-transfer=0 expected=0
+dead-session-observed=999 expected=999
+fresh-generation=0 expected=0
+stale-AllocationID=17 expected=17
+stale-StreamID=400 expected=400
+stale-EventID=400 expected=400
+stale-PoolID=400 expected=400
+stale-GraphID=400 expected=400
+stale-GraphExecID=400 expected=400
+create-stream=0 expected=0
+create-event=0 expected=0
+default-pool=0 expected=0
+async-allocation=0 expected=0
+fill=0 expected=0
+create-graph=0 expected=0
+instantiate=0 expected=0
+module=0 expected=0
+pending-host-transfer=0 expected=0
+reset-with-pending-transfer=0 expected=0
+stale-AllocationID=17 expected=17
+stale-StreamID=400 expected=400
+stale-EventID=400 expected=400
+stale-PoolID=400 expected=400
+stale-GraphID=400 expected=400
+stale-GraphExecID=400 expected=400
+fresh-after-reset=0 expected=0
+fresh-malloc=0 expected=0
+fresh-H2D=0 expected=0
+fresh-D2H=0 expected=0
+fresh-free=0 expected=0
+REMOTE_FAILURE_RESET=PASS all_six_ID_families pending_D2H fresh_generation
+G6A_VA_ARENA base=0xffefbe220000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffbe2853a0 stream_id=1 result=PASS
+G6C_CUDA_EVENT_CREATE handle=0xffffbe2953a0 event_id=1 result=PASS
+G6A_CUDA_MALLOC ptr=0xffefbe220000 allocation_id=1 bytes=64 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe220000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=1 offset=0 value=87 bytes=64 stream_id=1 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe220000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=1 stream_id=1 stream_slot=0 seq=3 allocation_id=1 offset=0 bytes=64 host_dst=0xffffbe64ddb0 hidden=YES
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=2 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffbe2853e0 stream_id=1 result=PASS
+G6C_CUDA_EVENT_CREATE handle=0xffffbe2953d0 event_id=1 result=PASS
+G6A_CUDA_MALLOC ptr=0xffefbe240000 allocation_id=1 bytes=64 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe240000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMSET_ASYNC allocation_id=1 offset=0 value=87 bytes=64 stream_id=1 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe240000 allocation_id=1 offset=0 bytes=64
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=1 stream_id=1 stream_slot=1 seq=3 allocation_id=1 offset=0 bytes=64 host_dst=0xffffbe64de30 hidden=YES
+G6C_TRANSFER_DRAIN transfer_id=1 kind=D2H origin_stream_slot=1 seq=3 bytes=64 host_visible=YES retire=YES
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=2 state=DISCONNECTED result=PASS
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=3 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6A_CUDA_MALLOC ptr=0xffefbe260000 allocation_id=1 bytes=4 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe260000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=4 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefbe260000 allocation_id=1 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=4 result=PASS
+G6A_CUDA_FREE ptr=0xffefbe260000 allocation_id=1 result=PASS tombstone=YES
+M1_S2_RUNTIME_SHUTDOWN generation=3 state=DISCONNECTED result=PASS

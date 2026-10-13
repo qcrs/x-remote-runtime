@@ -1,0 +1,12 @@
+ip link add rc-server type veth peer name rc-client
+ip link set rc-client netns 2431951
+ip address add 198.18.0.1/30 dev rc-server
+ip link set rc-server up
+nsenter --net=/proc/2431951/ns/net -- ip address add 198.18.0.2/30 dev rc-client
+nsenter --net=/proc/2431951/ns/net -- ip link set rc-client up
+nsenter --net=/proc/2431951/ns/net -- ip link set lo up
+ip -details address show rc-server
+nsenter --net=/proc/2431951/ns/net -- ip -details address show rc-client
+nsenter --net=/proc/2431951/ns/net -- ip route get 198.18.0.1
+COREX_REMOTE_BIND=198.18.0.1 COREX_REMOTE_PORT=50991 dist/bin/runtime_server # PID=2431965
+nsenter --net=/proc/2431951/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_protocol.py

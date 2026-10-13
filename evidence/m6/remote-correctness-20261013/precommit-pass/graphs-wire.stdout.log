@@ -1,0 +1,3 @@
+GRAPHS_PROTOCOL=PASS bounded_commands stale_IDs graph_exec_ownership capture_EOF session_isolation
+GRAPH_USED_AFTER_EOF_BEFORE_TRIM=2097152
+GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds child_dependency_ownership supplied_graph_EOF

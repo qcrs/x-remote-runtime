@@ -1,0 +1,2 @@
+PROTOCOL_ERROR magic=0x43525839 version=99
+PROTOCOL_ERROR payload_too_large=67108865

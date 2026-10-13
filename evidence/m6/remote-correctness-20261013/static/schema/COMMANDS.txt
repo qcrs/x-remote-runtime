@@ -1,0 +1,4 @@
+python3 scripts/generate-api-schema.py (twice)
+python3 scripts/verify-api-contracts.py
+python3 scripts/report-api-coverage.py
+python3 scripts/verify-evidence-links.py

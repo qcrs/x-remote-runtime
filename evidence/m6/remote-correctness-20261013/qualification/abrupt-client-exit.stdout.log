@@ -1,0 +1,10 @@
+create-stream=0 expected=0
+create-event=0 expected=0
+default-pool=0 expected=0
+async-allocation=0 expected=0
+fill=0 expected=0
+create-graph=0 expected=0
+instantiate=0 expected=0
+module=0 expected=0
+pending-host-transfer=0 expected=0
+CLIENT_ABRUPT_EXIT_WITH_LIVE_RESOURCES=PASS

@@ -1,0 +1,23 @@
+git status --short # initial empty
+git rev-parse HEAD # BASE_HEAD
+cat AGENTS.md docs/PROJECT_STATE.md docs/EVIDENCE_POLICY.md docs/GRAPH_CAPTURE_MODEL.md compat/cuda-api-ledger.csv
+uname -a
+id
+capsh --print
+sudo -n true # password required; rootless topology selected
+cat /usr/local/corex/release-corex.txt
+python3 scripts/run-remote-correctness.py --topology-only --out evidence/m6/remote-correctness-20261013/rc001-baseline # pre-rebuild listener refusal
+./scripts/build.sh
+OUT=evidence/m6/remote-correctness-20261013/static/schema ./scripts/test-api-schema.sh
+OUT=evidence/m6/remote-correctness-20261013/static/registry ./scripts/test-handler-registry.sh
+OUT=evidence/m6/remote-correctness-20261013/static/backend ./scripts/test-backend-seam.sh
+python3 scripts/run-remote-correctness.py --out evidence/m6/remote-correctness-20261013/qualification
+# Exact setup, compile, client/server commands and restart PIDs: qualification/COMMANDS.txt
+# Earlier failed assertion runs: rc004-before/COMMANDS.txt, rc004-status-before/COMMANDS.txt
+# First full precommit pass: precommit-pass/COMMANDS.txt
+python3 scripts/run-remote-correctness.py --topology-only --out evidence/m6/remote-correctness-20261013/repeat-topology
+python3 scripts/verify-evidence-links.py .
+git diff --check
+sha256sum -c evidence/m6/remote-correctness-20261013/MANIFEST.sha256
+git diff cbcbc2636c5d186a0b1c0e0238c9e79c5e36117d -- src server include tests scripts schema packaging compat
+git status --short # final clean

@@ -1,5 +1,42 @@
 # Project State
 
+Same-architecture remote correctness qualification passed on 2026-10-13 at
+implementation `cbcbc2636c5d186a0b1c0e0238c9e79c5e36117d`, from clean baseline
+`6538a582fa4ff2266d00c5b59af20316238ff018`. Independent aarch64 public-library
+clients in an isolated network namespace used `198.18.0.2` → veth/TCP →
+`198.18.0.1:50991` → independent aarch64 runtime_server → real CoreX 4.4 /
+MR-V100. Host network privileges were unavailable, so the server also ran in a
+rootless user-owned network namespace with unchanged host device/filesystem
+access. This is same-host remote emulation, not physical two-host validation;
+initial-host server namespace mode is available in the runner but was not tested.
+
+The representative core, pointer memory, staging, pool/async allocation,
+Graph/Capture and graph-memory families passed, including exact data/padding,
+cross-stream dependencies, module/symbol lifetimes, abrupt-client EOF cleanup,
+real server termination/reconnect, all six stale identity families, reset,
+pending D2H retirement/invalidation, and bounded malformed requests. A separate
+fresh topology run repeated negotiation, EOF isolation and protocol checks.
+Build/ABI/exports, golden protocol, schema determinism/contracts, handler
+uniqueness and backend seam checks passed. No new data, ordering or resource
+lifetime defect was found in these scenarios. RC-001 (loopback-only listener),
+RC-002 (hardcoded wire-test endpoints) and RC-004 (new test assumptions) are
+fixed; RC-003 records the accepted topology privilege limitation. Historical
+multithread/reconnect/lifecycle suites were not repeated: the targeted namespace
+failure checks cover this qualification without changing shared ownership logic.
+
+Client and Server are built for the same CPU architecture and compatible host
+ABI. Cross-ISA host compatibility, x86_64-to-aarch64 compiler ABI translation
+and cross-architecture compiler registration are outside current scope. CRX9
+fixed-width network-order DTOs and session IDs remain unchanged; native
+pointers/handles do not cross the transport. No performance measurements were
+performed. The compatibility ledger and Graph model remain authoritative for
+existing capability limits.
+
+The compact [matrix](REMOTE_CORRECTNESS_MATRIX.md),
+[issue register](REMOTE_CORRECTNESS_ISSUES.md) and
+`evidence/m6/remote-correctness-20261013/GOAL_AUDIT.md` document the qualification.
+The reproducible runner is `scripts/run-remote-correctness.py`.
+
 The Graph/Capture expansion from
 `0383270696516c003743e4784f3c5795168052f6` adds **25 NEW supported public APIs**
 (8 IMPLEMENTED, 17 PARTIAL_IMPLEMENTED). The 40 APIs supported at that HEAD are
@@ -32,7 +69,7 @@ current requirements and evidence-version audit is in
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
 | Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
 | Goal baseline | `154dde1` |
-| Last validated slice | Graph/Capture expansion, native memory nodes and client host tails; 2026-10-13 |
+| Last validated slice | Same-architecture namespace/veth remote correctness; 2026-10-13 |
 | Scope boundary | IPC, Peer/Multi-device and External Interop excluded |
 | Graph/Capture compatibility | 40 baseline + 25 newly supported APIs; three user-object APIs blocked by remote destructor lifecycle |
 

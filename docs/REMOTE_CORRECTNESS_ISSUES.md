@@ -22,8 +22,7 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Resolution: `COREX_REMOTE_BIND` accepts a numeric IPv4 address; invalid values
   fail explicitly; loopback remains the default. `rc001-baseline/` records the
   refused veth connection; final namespace runs verify the configurable listener.
-- Fixing commit: implementation commit adding `scripts/run-remote-correctness.py`
-  (exact hash recorded in the final evidence audit).
+- Fixing commit: `dc28edb` (full hash in the final evidence audit).
 
 ## RC-002
 
@@ -35,8 +34,7 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Root cause: these tests assumed their local historical orchestrators.
 - Resolution: use the existing endpoint override with the loopback default;
   final namespace logs cover all five affected wire clients.
-- Fixing commit: implementation commit adding `scripts/run-remote-correctness.py`
-  (exact hash recorded in the final evidence audit).
+- Fixing commit: `dc28edb` (full hash in the final evidence audit).
 
 ## RC-003
 
@@ -66,5 +64,4 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
   is mapped by the public client to NotSupported.
 - Resolution: compare existing Driver version opcode 35 and assert deterministic
   legacy setter status 3; the public context-family test checks NotSupported.
-- Fixing commit: implementation commit adding `scripts/run-remote-correctness.py`
-  (exact hash recorded in the final evidence audit).
+- Fixing commit: `dc28edb` (full hash in the final evidence audit).

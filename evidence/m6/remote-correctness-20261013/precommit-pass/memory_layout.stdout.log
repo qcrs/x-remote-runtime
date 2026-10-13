@@ -1,0 +1,136 @@
+MEMORY_LAYOUT_PUBLIC_ABI=CoreX_4.4
+G6A_VA_ARENA base=0xffefaedc0000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffaefd53a0 stream_id=1 result=PASS
+REMOTE_2D_PITCH=37
+G6A_PTR_RESOLVE ptr=0xffefaedc0000 allocation_id=1 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaede0000 allocation_id=2 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaede0000 allocation_id=2 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=185 result=PASS
+REMOTE_2D_H2D=PASS
+G6A_PTR_RESOLVE ptr=0xffefaedc0000 allocation_id=1 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaede0000 allocation_id=2 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=185 result=PASS
+REMOTE_2D_D2H=PASS
+G6A_PTR_RESOLVE ptr=0xffefaedc0000 allocation_id=1 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=1 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaede0000 allocation_id=2 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaede0000 allocation_id=2 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=185 result=PASS
+REMOTE_2D_D2D=PASS
+G6A_CUDA_FREE ptr=0xffefaede0000 allocation_id=2 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefaedc0000 allocation_id=1 result=PASS tombstone=YES
+REMOTE_2D_PITCH=37
+G6A_PTR_RESOLVE ptr=0xffefaee00000 allocation_id=3 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=3 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee20000 allocation_id=4 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=4 offset=0 bytes=185 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=1 kind=H2D origin_stream_slot=0 seq=1 bytes=185 host_visible=N/A retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee20000 allocation_id=4 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=4 offset=0 bytes=185 result=PASS
+REMOTE_2D_ASYNC_H2D=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee00000 allocation_id=3 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=3 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee20000 allocation_id=4 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=4 offset=0 bytes=185 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=2 kind=D2H origin_stream_slot=0 seq=2 bytes=185 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+REMOTE_2D_ASYNC_D2H=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee00000 allocation_id=3 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=3 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee20000 allocation_id=4 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=4 offset=0 bytes=185 result=PASS
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee20000 allocation_id=4 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=4 offset=0 bytes=185 result=PASS
+REMOTE_2D_ASYNC_D2D=PASS
+G6A_CUDA_FREE ptr=0xffefaee20000 allocation_id=4 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefaee00000 allocation_id=3 result=PASS tombstone=YES
+REMOTE_2D_PITCH=37
+G6A_PTR_RESOLVE ptr=0xffefaee40000 allocation_id=5 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=5 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee60000 allocation_id=6 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=6 offset=0 bytes=185 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=3 kind=H2D origin_stream_slot=1024 seq=1 bytes=185 host_visible=N/A retire=YES
+G6E_CUDA_STREAM_SYNC handle=NULL stream_id=0 mode=LEGACY_CONTEXT_BARRIER host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee60000 allocation_id=6 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=6 offset=0 bytes=185 result=PASS
+REMOTE_2D_ASYNC_DEFAULT_H2D=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee40000 allocation_id=5 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=5 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee60000 allocation_id=6 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=6 offset=0 bytes=185 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=4 kind=D2H origin_stream_slot=1024 seq=2 bytes=185 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=NULL stream_id=0 mode=LEGACY_CONTEXT_BARRIER host_visible=YES result=PASS
+REMOTE_2D_ASYNC_DEFAULT_D2H=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee40000 allocation_id=5 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=5 offset=0 bytes=185 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee60000 allocation_id=6 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=H2D allocation_id=6 offset=0 bytes=185 result=PASS
+G6E_CUDA_STREAM_SYNC handle=NULL stream_id=0 mode=LEGACY_CONTEXT_BARRIER host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee60000 allocation_id=6 offset=0 bytes=185
+G6A_CUDA_MEMCPY kind=D2H allocation_id=6 offset=0 bytes=185 result=PASS
+REMOTE_2D_ASYNC_DEFAULT_D2D=PASS
+G6A_CUDA_FREE ptr=0xffefaee60000 allocation_id=6 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefaee40000 allocation_id=5 result=PASS tombstone=YES
+G6A_CUDA_MALLOC ptr=0xffefaee80000 allocation_id=7 bytes=675 span=131072 result=PASS
+G6A_CUDA_MALLOC ptr=0xffefaeea0000 allocation_id=8 bytes=675 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee80003 allocation_id=7 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=7 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeea0003 allocation_id=8 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=8 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeea0003 allocation_id=8 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=D2H allocation_id=8 offset=3 bytes=672 result=PASS
+REMOTE_3D_H2D=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee80003 allocation_id=7 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=7 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeea0003 allocation_id=8 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=8 offset=3 bytes=672 result=PASS
+REMOTE_3D_D2H=PASS
+G6A_PTR_RESOLVE ptr=0xffefaee80003 allocation_id=7 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=7 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeea0003 allocation_id=8 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=8 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeea0003 allocation_id=8 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=D2H allocation_id=8 offset=3 bytes=672 result=PASS
+REMOTE_3D_D2D=PASS
+G6A_CUDA_FREE ptr=0xffefaeea0000 allocation_id=8 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefaee80000 allocation_id=7 result=PASS tombstone=YES
+G6A_CUDA_MALLOC ptr=0xffefaeec0000 allocation_id=9 bytes=675 span=131072 result=PASS
+G6A_CUDA_MALLOC ptr=0xffefaeee0000 allocation_id=10 bytes=675 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeec0003 allocation_id=9 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=9 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeee0003 allocation_id=10 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=10 offset=3 bytes=672 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=5 kind=H2D origin_stream_slot=0 seq=4 bytes=255 host_visible=N/A retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeee0003 allocation_id=10 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=D2H allocation_id=10 offset=3 bytes=672 result=PASS
+REMOTE_3D_ASYNC_H2D=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeec0003 allocation_id=9 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=9 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeee0003 allocation_id=10 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=10 offset=3 bytes=672 result=PASS
+G6C_TRANSFER_DRAIN transfer_id=6 kind=D2H origin_stream_slot=0 seq=5 bytes=255 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+REMOTE_3D_ASYNC_D2H=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeec0003 allocation_id=9 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=9 offset=3 bytes=672 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeee0003 allocation_id=10 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=H2D allocation_id=10 offset=3 bytes=672 result=PASS
+G6E_CUDA_STREAM_SYNC handle=0xffffaefd53a0 stream_id=1 host_visible=YES result=PASS
+G6A_PTR_RESOLVE ptr=0xffefaeee0003 allocation_id=10 offset=3 bytes=672
+G6A_CUDA_MEMCPY kind=D2H allocation_id=10 offset=3 bytes=672 result=PASS
+REMOTE_3D_ASYNC_D2D=PASS
+G6A_CUDA_FREE ptr=0xffefaeee0000 allocation_id=10 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffefaeec0000 allocation_id=9 result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffffaefd53a0 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+REMOTE_3D_ASYNC_SEMANTICS=OPCODE_56_BACKEND_STREAM_TRANSFER_RETIREMENT
+MEMORY_LAYOUT_INTEGRATION=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

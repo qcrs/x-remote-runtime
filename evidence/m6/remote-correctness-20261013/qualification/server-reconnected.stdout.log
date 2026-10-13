@@ -1,0 +1,101 @@
+===== CoreX Remote Runtime Server =====
+GPU=Iluvatar MR-V100
+startup_modules=0
+startup_kernels=0
+protocol=CRX9 version=3 default_stream=LEGACY
+listen=198.18.0.1:50991
+SERVER_READY
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+CREATE_STREAM request=13 stream_id=1 flags=0
+CREATE_EVENT request=14 event_id=1 flags=0
+ALLOC_ASYNC allocation_id=1 pool_id=1 stream_id=1 bytes=64
+MEMSET_ASYNC request=17 allocation_id=1 offset=0 value=87 bytes=64
+UPLOAD_METADATA version=1.0 kernel_count=1
+UPLOAD_MODULE request=20 module_id=1 name=library.cubin size=2704 magic=7f454c46
+D2H_ASYNC_SUBMIT request=21 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=64 staging=PINNED
+SYNC request=22
+TRANSFER_WAIT request=23 transfer_id=1 kind=D2H bytes=64 result=PASS retire=YES
+SESSION_CLOSE
+cleanup stream_id=1 sync_rc=0
+cleanup event_id=1 destroy_rc=0
+cleanup stream_id=1 destroy_rc=0
+cleanup_sync rc=0
+cleanup allocation_id=1
+cleanup module_id=1 name=library.cubin
+cleanup default_pool_id=1 restore_rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+ALLOC request=26 allocation_id=1 size=4
+H2D request=27 allocation_id=1 offset=0 bytes=4
+D2H request=28 allocation_id=1 offset=0 bytes=4
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=29 allocation_id=1
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+ALLOC request=6 allocation_id=1 size=64
+CREATE_STREAM request=7 stream_id=1 flags=0
+CREATE_EVENT request=8 event_id=1 flags=0
+UPLOAD_METADATA version=1.0 kernel_count=1
+UPLOAD_MODULE request=10 module_id=1 name=remote-eof.cubin size=2704 magic=7f454c46
+cleanup stream_id=1 sync_rc=0
+cleanup event_id=1 destroy_rc=0
+cleanup stream_id=1 destroy_rc=0
+cleanup_sync rc=0
+cleanup allocation_id=1
+cleanup module_id=1 name=remote-eof.cubin
+cleanup pool_id=1 destroy_rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+SYNC request=2
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0

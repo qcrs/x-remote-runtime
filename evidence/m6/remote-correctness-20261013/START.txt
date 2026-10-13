@@ -1,0 +1,4 @@
+BASE_HEAD=6538a582fa4ff2266d00c5b59af20316238ff018
+INITIAL_GIT_STATUS_SHORT=empty
+Objective read from /home/lvtong/.codex/attachments/4dec1a33-6fa0-45ac-b492-3337d5e58e97/goal-objective.md
+Required repository rules/state/evidence/graph-model/ledger and transport/runners inspected before adding infrastructure.

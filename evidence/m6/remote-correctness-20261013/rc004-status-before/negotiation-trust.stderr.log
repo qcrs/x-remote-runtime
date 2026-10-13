@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_protocol.py", line 41, in <module>
+    assert call(sock, 59, request, struct.pack('!IQ', 0, 1024)) == (10, b'')
+AssertionError

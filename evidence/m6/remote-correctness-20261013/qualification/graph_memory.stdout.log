@@ -1,0 +1,106 @@
+G6A_VA_ARENA base=0xffefa7460000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffa76753a0 stream_id=1 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+G6C_CUDA_STREAM_CREATE handle=0xffffa76753e0 stream_id=2 result=PASS
+cudaStreamCreateWithFlags(&other,cudaStreamNonBlocking)=0
+G6D_MODULE_LOAD handle=0xffffa79e1e08 module_id=1 path=/home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin result=PASS
+corexRemoteModuleLoad(argv[1],&module)=0
+G6D_KERNEL_REGISTER token=0xffffa79e3608 kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel argc=1 abi=READY origin=CONTROLLED result=PASS
+corexRemoteRegisterKernel(module,"m1s2_lifecycle_kernel",&desc,1,&func)=0
+G6A_CUDA_MALLOC ptr=0xffefa7460000 allocation_id=1 bytes=32 span=131072 result=PASS
+cudaMallocAsync(&output,32,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+cudaGraphCreate(&graph,0)=0
+G6A_CUDA_MALLOC ptr=0xffefa7480000 allocation_id=2 bytes=32 span=131072 result=PASS
+cudaGraphAddMemAllocNode(&alloc,graph,NULL,0,&p)=0
+cudaGraphMemAllocNodeGetParams(alloc,&got)=0
+cudaMemset(p.dptr,0,4)=801 want=801
+cudaFreeAsync(p.dptr,stream)=801 want=801
+G6A_PTR_RESOLVE ptr=0xffefa7480000 allocation_id=2 offset=0 bytes=32
+cudaGraphAddMemsetNode(&fill,graph,&alloc,1,&f)=0
+G6A_PTR_RESOLVE ptr=0xffefa7480000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=2 offset=0
+cudaGraphAddKernelNode(&kernel,graph,&fill,1,&k)=0
+cudaGraphAddMemcpyNode(&copy,graph,&kernel,1,&cp)=0
+cudaGraphAddMemFreeNode(&fre,graph,&copy,1,p.dptr)=0
+cudaGraphMemFreeNodeGetParams(fre,&free_ptr)=0
+cudaGraphAddMemFreeNode(&extra,graph,&copy,1,p.dptr)=1 want=1
+cudaGraphDestroyNode(fill)=1 want=1
+cudaGraphRemoveDependencies(graph,&alloc,&fill,1)=1 want=1
+cudaGraphClone(&clone,graph)=801 want=801
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=0
+cudaGraphUpload(exec,stream)=801 want=801
+cudaGraphInstantiate(&duplicate,graph,NULL,NULL,0)=801 want=801
+cudaGraphDestroy(graph)=0
+cudaGraphLaunch(exec,launch ? other : stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(launch ? other : stream)=0
+G6A_PTR_RESOLVE ptr=0xffefa7460000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+cudaMemcpy(values,output,32,cudaMemcpyDeviceToHost)=0
+cudaGraphLaunch(exec,launch ? other : stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753e0 stream_id=2 host_visible=YES result=PASS
+cudaStreamSynchronize(launch ? other : stream)=0
+G6A_PTR_RESOLVE ptr=0xffefa7460000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+cudaMemcpy(values,output,32,cudaMemcpyDeviceToHost)=0
+cudaGraphExecDestroy(exec)=0
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+cudaDeviceSynchronize()=0
+cudaMemcpy(values,p.dptr,4,cudaMemcpyDeviceToHost)=17 want=17
+cudaDeviceGraphMemTrim(0)=0
+GRAPH_ALLOC_KERNEL_COPY_FREE_SNAPSHOT_REPLAY=PASS
+cudaGraphCreate(&graph,0)=0
+G6A_CUDA_MALLOC ptr=0xffefa74a0000 allocation_id=3 bytes=32 span=131072 result=PASS
+cudaGraphAddMemAllocNode(&alloc,graph,NULL,0,&p)=0
+G6A_PTR_RESOLVE ptr=0xffefa74a0000 allocation_id=3 offset=0 bytes=32
+cudaGraphAddMemsetNode(&fill,graph,&alloc,1,&f)=0
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=0
+cudaGraphLaunch(exec,stream)=0
+cudaGraphLaunch(exec,stream)=1 want=1
+G6A_PTR_RESOLVE ptr=0xffefa74a0000 allocation_id=3 offset=0 bytes=32
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=1 stream_id=1 stream_slot=0 seq=4 allocation_id=3 offset=0 bytes=32 host_dst=0xffffc0c75818 hidden=YES
+cudaMemcpyAsync(values,p.dptr,32,cudaMemcpyDeviceToHost,stream)=0
+cudaFreeAsync(p.dptr,stream)=0
+cudaMemset(p.dptr,0,4)=801 want=801
+G6C_TRANSFER_DRAIN transfer_id=1 kind=D2H origin_stream_slot=0 seq=4 bytes=32 host_visible=YES retire=YES
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+cudaGraphLaunch(exec,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+cudaGraphDestroy(graph)=0
+cudaGraphExecDestroy(exec)=0
+G6A_PTR_RESOLVE ptr=0xffefa74a0000 allocation_id=3 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=32 result=PASS
+cudaMemcpy(values,p.dptr,32,cudaMemcpyDeviceToHost)=0
+cudaFreeAsync(p.dptr,other)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753e0 stream_id=2 host_visible=YES result=PASS
+cudaStreamSynchronize(other)=0
+cudaDeviceGraphMemTrim(0)=0
+cudaMemcpy(values,p.dptr,4,cudaMemcpyDeviceToHost)=17 want=17
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+cudaDeviceSynchronize()=0
+GRAPH_UNPAIRED_ASYNC_FREE_REPLAY_RETIRED_OWNER=PASS
+cudaGraphCreate(&graph,0)=0
+G6A_CUDA_MALLOC ptr=0xffefa74c0000 allocation_id=4 bytes=32 span=131072 result=PASS
+cudaGraphAddMemAllocNode(&alloc,graph,NULL,0,&p)=0
+G6A_PTR_RESOLVE ptr=0xffefa74c0000 allocation_id=4 offset=0 bytes=32
+cudaGraphAddMemsetNode(&fill,graph,NULL,0,&f)=0
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=1 want=1
+cudaGraphDestroy(graph)=0
+cudaFreeAsync(output,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa76753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffffa79e3608 host_fun=(nil) kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffffa79e1e08 module_id=1 result=PASS tombstone=YES
+corexRemoteModuleUnload(module)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffffa76753a0 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffffa76753e0 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(other)=0
+GRAPH_MEMORY_PUBLIC_FAMILY=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

@@ -1,0 +1,52 @@
+ip link add rc-server type veth peer name rc-client
+ip link set rc-client netns 2434339
+ip address add 198.18.0.1/30 dev rc-server
+ip link set rc-server up
+nsenter --net=/proc/2434339/ns/net -- ip address add 198.18.0.2/30 dev rc-client
+nsenter --net=/proc/2434339/ns/net -- ip link set rc-client up
+nsenter --net=/proc/2434339/ns/net -- ip link set lo up
+ip -details address show rc-server
+nsenter --net=/proc/2434339/ns/net -- ip -details address show rc-client
+nsenter --net=/proc/2434339/ns/net -- ip route get 198.18.0.1
+env COREX_REMOTE_BIND=invalid-address /home/lvtong/corex-remote-runtime/dist/bin/runtime_server
+COREX_REMOTE_BIND=198.18.0.1 COREX_REMOTE_PORT=50991 dist/bin/runtime_server # PID=2434355
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_protocol.py
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/compat_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/compat_expansion
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/compat_expansion
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/memory_layout.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_layout
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_layout
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/memory_3d.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_3d
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_3d
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/execution_fill.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/execution_fill
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/execution_fill /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/memory_pools.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_pools
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/memory_pools /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graphs.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/graphs
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/graphs /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_expansion.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_expansion
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_expansion /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_memory.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_memory
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_memory /home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_host.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_host
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_host
+gcc -O2 -Wall -Wextra -Werror -std=gnu11 -Wno-deprecated-declarations -I/usr/local/corex-4.4.0/include /home/lvtong/corex-remote-runtime/tests/integration/graph_controls.c -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_controls
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/graph_controls /home/lvtong/corex-remote-runtime/evidence/m6/remote-correctness-20261013/qualification/client-graph.dot
+gcc -c /home/lvtong/corex-remote-runtime/tests/integration/symbol_registration_capture.c -o /home/lvtong/corex-remote-runtime/build/remote-correctness/capture.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/integration/symbol_expansion.cu -o /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols.o
+g++ /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols.o /home/lvtong/corex-remote-runtime/build/remote-correctness/capture.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -ldl -o /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols leave-module-live
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 --cuda-device-only -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward /home/lvtong/corex-remote-runtime/tests/probes/corex_symbol_kernel.cu -o /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols.cubin
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/symbol_expansion_protocol.py /home/lvtong/corex-remote-runtime/build/remote-correctness/symbols.cubin
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/dist/bin/device_identity_app
+nsenter --net=/proc/2434339/ns/net -- /home/lvtong/corex-remote-runtime/dist/bin/device_config_app
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/compat_expansion_protocol.py
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/memory_3d_protocol.py
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/execution_fill_protocol.py
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/memory_pools_protocol.py
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/graphs_protocol.py
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_failure.py --exit-live
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_protocol.py
+nsenter --net=/proc/2434339/ns/net -- /usr/bin/python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_failure.py 6
+COREX_REMOTE_BIND=198.18.0.1 COREX_REMOTE_PORT=50991 dist/bin/runtime_server # PID=2435120
+nsenter --net=/proc/2434339/ns/net -- python3 /home/lvtong/corex-remote-runtime/tests/integration/remote_correctness_protocol.py

@@ -1,0 +1,235 @@
+G6A_VA_ARENA base=0xffef8e690000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+cudaDeviceGetGraphMemAttribute(0,cudaGraphMemAttrUsedMemCurrent,&attribute.value)=0
+cudaDeviceSetGraphMemAttribute(0,cudaGraphMemAttrUsedMemHigh,&zero)=0
+cudaDeviceSetGraphMemAttribute(0,cudaGraphMemAttrReservedMemHigh,&zero)=0
+cudaDeviceGetGraphMemAttribute(0,cudaGraphMemAttrUsedMemHigh,&attribute.value)=0
+cudaDeviceGetGraphMemAttribute(0,cudaGraphMemAttrReservedMemHigh,&attribute.value)=0
+cudaDeviceGraphMemTrim(0)=0
+cudaDeviceGetGraphMemAttribute(1,cudaGraphMemAttrUsedMemCurrent,&attribute.value)=101 want=101
+cudaDeviceGetGraphMemAttribute(0,(enum cudaGraphMemAttributeType)4,&attribute.value)=1 want=1
+cudaDeviceGetGraphMemAttribute(0,cudaGraphMemAttrUsedMemCurrent,NULL)=1 want=1
+cudaDeviceSetGraphMemAttribute(0,cudaGraphMemAttrUsedMemCurrent,&zero)=1 want=1
+cudaDeviceSetGraphMemAttribute(0,cudaGraphMemAttrUsedMemHigh,&one)=1 want=1
+GRAPH_MEMORY_CONTROL_DTO=PASS
+G6A_CUDA_MALLOC ptr=0xffef8e690000 allocation_id=1 bytes=32 span=131072 result=PASS
+cudaMalloc(&ptr,32)=0
+G6C_CUDA_STREAM_CREATE handle=0xffff8e8a53a0 stream_id=1 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+G6C_CUDA_STREAM_CREATE handle=0xffff8e8a53e0 stream_id=2 result=PASS
+cudaStreamCreateWithFlags(&other,cudaStreamNonBlocking)=0
+G6A_CUDA_MALLOC ptr=0xffef8e6b0000 allocation_id=2 bytes=4 span=131072 result=PASS
+cudaMalloc(&output,4)=0
+G6A_CUDA_MALLOC ptr=0xffef8e6d0000 allocation_id=3 bytes=4 span=131072 result=PASS
+cudaMalloc(&marker,4)=0
+G6D_MODULE_LOAD handle=0xffff8ec11e08 module_id=1 path=/home/lvtong/corex-remote-runtime/build/session_lifecycle.cubin result=PASS
+corexRemoteModuleLoad(image,&module)=0
+G6D_KERNEL_REGISTER token=0xffff8ec13608 kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel argc=1 abi=READY origin=CONTROLLED result=PASS
+corexRemoteRegisterKernel(module,"m1s2_lifecycle_kernel",&desc,1,&func)=0
+cudaGraphCreate(&source,0)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=4
+cudaGraphAddMemsetNode(&fill,source,NULL,0,&f)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=1 offset=0
+cudaGraphAddKernelNode(&kernel,source,&fill,1,&k)=0
+cudaGraphAddMemcpyNode(&copy,source,&kernel,1,&cp)=0
+cudaGraphCreate(&parent,0)=0
+cudaGraphAddEmptyNode(&root,parent,NULL,0)=0
+cudaGraphAddChildGraphNode(&child,parent,&root,1,source)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+cudaGraphAddMemsetNode(&marker_node,parent,&child,1,&mark)=0
+cudaGraphChildGraphNodeGetGraph(child,&borrowed)=0
+cudaGraphGetNodes(borrowed,NULL,&count)=0
+cudaGraphNodeFindInClone(&mapped,fill,borrowed)=0
+cudaGraphMemsetNodeGetParams(mapped,&got)=0
+cudaGraphMemsetNodeSetParams(mapped,&f)=801 want=801
+cudaGraphDestroy(borrowed)=801 want=801
+cudaGraphClone(&clone,parent)=801 want=801
+cudaGraphAddChildGraphNode(&mapped,source,NULL,0,parent)=801 want=801
+cudaGraphInstantiate(&original,parent,NULL,NULL,0)=0
+cudaGraphInstantiate(&updated,parent,NULL,NULL,0)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+cudaGraphExecMemsetNodeSetParams(updated,marker_node,&mark)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+cudaGraphMemsetNodeSetParams(marker_node,&mark)=0
+cudaGraphNodeSetEnabled(updated,marker_node,0)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMSET allocation_id=3 offset=0 value=0 bytes=4 result=PASS
+cudaMemset(marker,0,4)=0
+cudaGraphInstantiate(&subexec,borrowed,NULL,NULL,0)=801 want=801
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=4
+cudaGraphMemsetNodeSetParams(fill,&f)=0
+cudaGraphExecChildGraphNodeSetParams(updated,child,source)=0
+cudaGraphLaunch(updated,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6b0000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(&before_destroy,output,4,cudaMemcpyDeviceToHost)=0
+CHILD_UPDATED_BEFORE_SOURCE_DESTROY=21
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(&mark_value,marker,4,cudaMemcpyDeviceToHost)=0
+cudaGraphNodeSetEnabled(updated,marker_node,1)=0
+cudaGraphLaunch(updated,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(&mark_value,marker,4,cudaMemcpyDeviceToHost)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+cudaGraphExecMemsetNodeSetParams(updated,marker_node,&mark)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=4
+cudaGraphMemsetNodeSetParams(fill,&f)=0
+cudaGraphExecChildGraphNodeSetParams(updated,child,source)=0
+cudaGraphLaunch(original,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6b0000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(&value,output,4,cudaMemcpyDeviceToHost)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(&mark_value,marker,4,cudaMemcpyDeviceToHost)=0
+cudaGraphDestroy(source)=0
+cudaGraphLaunch(updated,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6b0000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(&value,output,4,cudaMemcpyDeviceToHost)=0
+CHILD_UPDATED_AFTER_SOURCE_DESTROY=31
+G6A_PTR_RESOLVE ptr=0xffef8e6d0000 allocation_id=3 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=3 offset=0 bytes=4 result=PASS
+cudaMemcpy(&mark_value,marker,4,cudaMemcpyDeviceToHost)=0
+cudaGraphDestroyNode(child)=0
+cudaGraphGetNodes(borrowed,NULL,&count)=400 want=400
+cudaGraphDestroy(parent)=0
+cudaGraphLaunch(original,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e6b0000 allocation_id=2 offset=0 bytes=4
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=4 result=PASS
+cudaMemcpy(&value,output,4,cudaMemcpyDeviceToHost)=0
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffff8ec13608 host_fun=(nil) kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel origin=CONTROLLED
+G6D_MODULE_UNLOAD handle=0xffff8ec11e08 module_id=1 result=PASS tombstone=YES
+corexRemoteModuleUnload(module)=0
+cudaGraphLaunch(updated,stream)=400 want=400
+cudaGraphExecDestroy(original)=0
+cudaGraphExecDestroy(updated)=0
+G6A_CUDA_FREE ptr=0xffef8e6b0000 allocation_id=2 result=PASS tombstone=YES
+cudaFree(output)=0
+G6A_CUDA_FREE ptr=0xffef8e6d0000 allocation_id=3 result=PASS tombstone=YES
+cudaFree(marker)=0
+CHILD_KERNEL_COPY_OWNERSHIP_EXEC_SNAPSHOTS=PASS
+cudaEventCreateWithFlags(&a,cudaEventDisableTiming)=0
+cudaEventCreateWithFlags(&b,cudaEventDisableTiming)=0
+cudaEventCreateWithFlags(&c,cudaEventDisableTiming)=0
+cudaGraphCreate(&graph,0)=0
+cudaGraphAddEventWaitNode(&wait,graph,NULL,0,a)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+cudaGraphAddMemsetNode(&fill,graph,&wait,1,&p)=0
+cudaGraphAddEventRecordNode(&record,graph,&fill,1,a)=0
+cudaGraphEventRecordNodeGetEvent(record,&got)=0
+cudaGraphEventWaitNodeGetEvent(wait,&got)=0
+cudaGraphInstantiate(&old,graph,NULL,NULL,0)=0
+cudaGraphEventRecordNodeSetEvent(record,b)=0
+cudaGraphEventWaitNodeSetEvent(wait,b)=0
+cudaGraphEventRecordNodeGetEvent(record,&got)=0
+cudaGraphEventWaitNodeGetEvent(wait,&got)=0
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=0
+cudaGraphExecEventRecordNodeSetEvent(exec,record,c)=0
+cudaGraphExecEventWaitNodeSetEvent(exec,wait,c)=0
+cudaGraphEventRecordNodeGetEvent(record,&got)=0
+cudaGraphEventWaitNodeGetEvent(record,&got)=1 want=1
+cudaGraphEventRecordNodeGetEvent(record,NULL)=1 want=1
+cudaGraphEventRecordNodeSetEvent(fill,c)=1 want=1
+cudaGraphCreate(&foreign,0)=0
+cudaGraphAddEventRecordNode(&foreign_record,foreign,NULL,0,c)=0
+cudaGraphExecEventRecordNodeSetEvent(exec,foreign_record,c)=1 want=1
+cudaGraphDestroy(foreign)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+G6E_CUDA_MEMCPY_ASYNC kind=H2D transfer_id=1 stream_id=2 stream_slot=1 seq=1 allocation_id=1 offset=0 bytes=32 hidden=YES
+cudaMemcpyAsync(ptr,source,32,cudaMemcpyHostToDevice,other)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=2 stream_id=2 stream_slot=1 seq=2 allocation_id=1 offset=0 bytes=32 host_dst=0xffffe72c6da8 hidden=YES
+cudaMemcpyAsync(host,ptr,32,cudaMemcpyDeviceToHost,other)=0
+G6E_CUDA_EVENT_RECORD event_handle=0xffff8e8b5400 event_id=3 stream_handle=0xffff8e8a53e0 stream_id=2 frontier_snapshot=YES result=PASS
+cudaEventRecord(c,other)=0
+cudaGraphLaunch(exec,stream)=0
+G6C_TRANSFER_DRAIN transfer_id=1 kind=H2D origin_stream_slot=1 seq=1 bytes=32 host_visible=N/A retire=YES
+G6C_TRANSFER_DRAIN transfer_id=2 kind=D2H origin_stream_slot=1 seq=2 bytes=32 host_visible=YES retire=YES
+G6E_CUDA_EVENT_SYNC handle=0xffff8e8b5400 event_id=3 host_visible=YES result=PASS
+cudaEventSynchronize(c)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+cudaMemcpy(host,ptr,32,cudaMemcpyDeviceToHost)=0
+G6E_CUDA_EVENT_RECORD event_handle=0xffff8e8b53a0 event_id=1 stream_handle=0xffff8e8a53e0 stream_id=2 frontier_snapshot=YES result=PASS
+cudaEventRecord(a,other)=0
+cudaGraphLaunch(old,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+cudaGraphDestroy(graph)=0
+G6C_CUDA_EVENT_DESTROY handle=0xffff8e8b53d0 event_id=2 covered_transfers_drained=N/A result=PASS tombstone=YES
+cudaEventDestroy(b)=0
+cudaGraphLaunch(exec,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+cudaGraphExecDestroy(old)=0
+G6C_CUDA_EVENT_DESTROY handle=0xffff8e8b53a0 event_id=1 covered_transfers_drained=YES result=PASS tombstone=YES
+cudaEventDestroy(a)=0
+G6C_CUDA_EVENT_DESTROY handle=0xffff8e8b5400 event_id=3 covered_transfers_drained=YES result=PASS tombstone=YES
+cudaEventDestroy(c)=0
+cudaGraphLaunch(exec,stream)=400 want=400
+cudaGraphExecDestroy(exec)=0
+EVENT_MUTATION_SNAPSHOTS_FRONTIERS=PASS
+cudaGraphCreate(&graph,0)=0
+cudaGraphAddEmptyNode(&left,graph,NULL,0)=0
+cudaGraphAddEmptyNode(&right,graph,NULL,0)=0
+cudaStreamBeginCaptureToGraph(stream,graph,roots,edges,2,cudaStreamCaptureModeThreadLocal)=801 want=801
+cudaStreamBeginCaptureToGraph(stream,graph,roots,edges,2,cudaStreamCaptureModeThreadLocal)=0
+cudaStreamGetCaptureInfo_v2(stream,&status,NULL,&returned,&deps,&count)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+cudaMemsetAsync(ptr,0x52,32,stream)=0
+cudaStreamGetCaptureInfo_v2(stream,&status,NULL,NULL,&deps,&count)=0
+cudaGraphAddEmptyNode(&branch,graph,&first,1)=0
+cudaStreamUpdateCaptureDependencies(stream,&branch,1,cudaStreamAddCaptureDependencies)=0
+cudaStreamGetCaptureInfo_v2(stream,&status,NULL,NULL,&deps,&count)=0
+cudaStreamUpdateCaptureDependencies(stream,&branch,1,2)=1 want=1
+cudaStreamUpdateCaptureDependencies(stream,&branch,1,cudaStreamSetCaptureDependencies)=0
+cudaStreamGetCaptureInfo_v2(stream,&status,NULL,NULL,&deps,&count)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+cudaMemsetAsync(ptr,0x63,32,stream)=0
+cudaStreamEndCapture(stream,&returned)=0
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=0
+cudaGraphLaunch(exec,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffff8e8a53a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+cudaMemcpy(host,ptr,32,cudaMemcpyDeviceToHost)=0
+cudaGraphExecDestroy(exec)=0
+cudaGraphDestroy(graph)=0
+cudaStreamBeginCapture(stream,cudaStreamCaptureModeThreadLocal)=0
+G6A_PTR_RESOLVE ptr=0xffef8e690000 allocation_id=1 offset=0 bytes=32
+cudaMemsetAsync(ptr,0x74,32,stream)=0
+cudaStreamUpdateCaptureDependencies(stream,NULL,0,cudaStreamSetCaptureDependencies)=0
+cudaStreamGetCaptureInfo_v2(stream,&status,NULL,NULL,&deps,&count)=0
+cudaStreamEndCapture(stream,&graph)=0
+cudaGraphDestroy(graph)=0
+cudaGraphCreate(&graph,0)=0
+cudaGraphAddEmptyNode(&left,graph,NULL,0)=0
+cudaStreamBeginCaptureToGraph(stream,graph,&left,NULL,1,cudaStreamCaptureModeThreadLocal)=0
+cudaMemcpy(host,ptr,32,cudaMemcpyDeviceToHost)=900 want=900
+cudaStreamEndCapture(stream,&returned)=901 want=901
+cudaGraphGetNodes(graph,NULL,&count)=0
+cudaGraphDestroy(graph)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffff8e8a53a0 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+G6C_CUDA_STREAM_DESTROY handle=0xffff8e8a53e0 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(other)=0
+G6A_CUDA_FREE ptr=0xffef8e690000 allocation_id=1 result=PASS tombstone=YES
+cudaFree(ptr)=0
+CAPTURE_TO_GRAPH_DEPENDENCY_UPDATES=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

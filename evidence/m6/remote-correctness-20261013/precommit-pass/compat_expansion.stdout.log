@@ -1,0 +1,33 @@
+G6A_VA_ARENA base=0xffef8ef1d000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6A_CUDA_MALLOC ptr=0xffef8ef1d000 allocation_id=1 bytes=4096 span=131072 result=PASS
+G6C_CUDA_STREAM_CREATE handle=0xffff8f1353a0 stream_id=1 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef8ef1d000 allocation_id=1 offset=0 bytes=4096
+G6E_CUDA_MEMCPY_ASYNC kind=H2D transfer_id=1 stream_id=1 stream_slot=0 seq=1 allocation_id=1 offset=0 bytes=4096 hidden=YES
+G6A_PTR_RESOLVE ptr=0xffef8ef1d000 allocation_id=1 offset=0 bytes=4096
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=2 stream_id=1 stream_slot=0 seq=2 allocation_id=1 offset=0 bytes=4096 host_dst=0xffff8f515000 hidden=YES
+G6C_TRANSFER_DRAIN transfer_id=1 kind=H2D origin_stream_slot=0 seq=1 bytes=4096 host_visible=N/A retire=YES
+G6C_TRANSFER_DRAIN transfer_id=2 kind=D2H origin_stream_slot=0 seq=2 bytes=4096 host_visible=YES retire=YES
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef8ef1d00b allocation_id=1 offset=11 bytes=1
+G6A_CUDA_FREE ptr=0xffef8ef1d000 allocation_id=1 result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffff8f1353a0 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+G6A_CUDA_MALLOC ptr=0xffef8ef3d000 allocation_id=2 bytes=32 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef8ef3d000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=H2D allocation_id=2 offset=0 bytes=32 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef8ef3d000 allocation_id=2 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=2 offset=0 bytes=32 result=PASS
+G6A_CUDA_FREE ptr=0xffef8ef3d000 allocation_id=2 result=PASS tombstone=YES
+HOST_MEMORY_STAGING_POINTERS_AND_NEGATIVES=PASS
+G6C_CUDA_STREAM_CREATE handle=0xffff8f1353e0 stream_id=2 result=PASS
+G6C_CUDA_STREAM_CREATE handle=0xffff8f135420 stream_id=3 result=PASS
+G6A_CUDA_MALLOC ptr=0xffef8ef5d000 allocation_id=3 bytes=4096 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffef8ef5d000 allocation_id=3 offset=0 bytes=32
+G6A_CUDA_FREE ptr=0xffef8ef5d000 allocation_id=3 result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffff8f1353e0 stream_id=2 hidden_transfers_drained=YES result=PASS tombstone=YES
+G6C_CUDA_STREAM_DESTROY handle=0xffff8f135420 stream_id=3 hidden_transfers_drained=YES result=PASS tombstone=YES
+DEVICE_CONTROL_AND_STREAM_COPY=PASS
+CHANNEL_DESC_AND_ERROR_NAMES=PASS
+REMOTE_COMPAT_EXPANSION=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS
