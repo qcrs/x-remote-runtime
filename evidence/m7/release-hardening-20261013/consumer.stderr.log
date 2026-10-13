@@ -1,0 +1,199 @@
+   2481802:	binding file linux-vdso.so.1 [0] to linux-vdso.so.1 [0]: normal symbol `__kernel_clock_gettime' [LINUX_2.6.39]
+   2481802:	binding file linux-vdso.so.1 [0] to linux-vdso.so.1 [0]: normal symbol `__kernel_gettimeofday' [LINUX_2.6.39]
+   2481802:	binding file linux-vdso.so.1 [0] to linux-vdso.so.1 [0]: normal symbol `__kernel_clock_getres' [LINUX_2.6.39]
+   2481802:	find library=libcorex_remote_cudart.so.1 [0]; searching
+   2481802:	 search path=/usr/local/corex-4.4.0/lib/tls/aarch64/atomics:/usr/local/corex-4.4.0/lib/tls/aarch64:/usr/local/corex-4.4.0/lib/tls/atomics:/usr/local/corex-4.4.0/lib/tls:/usr/local/corex-4.4.0/lib/aarch64/atomics:/usr/local/corex-4.4.0/lib/aarch64:/usr/local/corex-4.4.0/lib/atomics:/usr/local/corex-4.4.0/lib:tls/aarch64/atomics:tls/aarch64:tls/atomics:tls:aarch64/atomics:aarch64:atomics:		(LD_LIBRARY_PATH)
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/tls/aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/tls/aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/tls/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/tls/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/libcorex_remote_cudart.so.1
+   2481802:	  trying file=tls/aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=tls/aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=tls/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=tls/libcorex_remote_cudart.so.1
+   2481802:	  trying file=aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=libcorex_remote_cudart.so.1
+   2481802:	 search path=/tmp/corex-release-20261013/relocated/lib/tls/aarch64/atomics:/tmp/corex-release-20261013/relocated/lib/tls/aarch64:/tmp/corex-release-20261013/relocated/lib/tls/atomics:/tmp/corex-release-20261013/relocated/lib/tls:/tmp/corex-release-20261013/relocated/lib/aarch64/atomics:/tmp/corex-release-20261013/relocated/lib/aarch64:/tmp/corex-release-20261013/relocated/lib/atomics:/tmp/corex-release-20261013/relocated/lib		(RUNPATH from file /tmp/corex-release-20261013/consumer/app)
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/tls/aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/tls/aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/tls/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/tls/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/aarch64/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/aarch64/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/atomics/libcorex_remote_cudart.so.1
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1
+   2481802:	
+   2481802:	find library=libc.so.6 [0]; searching
+   2481802:	 search path=/usr/local/corex-4.4.0/lib:tls/aarch64/atomics:tls/aarch64:tls/atomics:tls:aarch64/atomics:aarch64:atomics:		(LD_LIBRARY_PATH)
+   2481802:	  trying file=/usr/local/corex-4.4.0/lib/libc.so.6
+   2481802:	  trying file=tls/aarch64/atomics/libc.so.6
+   2481802:	  trying file=tls/aarch64/libc.so.6
+   2481802:	  trying file=tls/atomics/libc.so.6
+   2481802:	  trying file=tls/libc.so.6
+   2481802:	  trying file=aarch64/atomics/libc.so.6
+   2481802:	  trying file=aarch64/libc.so.6
+   2481802:	  trying file=atomics/libc.so.6
+   2481802:	  trying file=libc.so.6
+   2481802:	 search path=/tmp/corex-release-20261013/relocated/lib		(RUNPATH from file /tmp/corex-release-20261013/consumer/app)
+   2481802:	  trying file=/tmp/corex-release-20261013/relocated/lib/libc.so.6
+   2481802:	 search cache=/etc/ld.so.cache
+   2481802:	  trying file=/lib/aarch64-linux-gnu/libc.so.6
+   2481802:	
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_res' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `obstack_alloc_failed_handler' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `svc_fdset' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `_dl_argv' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__libc_single_threaded' [GLIBC_2.32]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `svc_pollfd' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `free' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `re_syntax_options' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__key_encryptsession_pk_LOCAL' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `stdout' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `opterr' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `getdate_err' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__curbrk' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `program_invocation_name' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__fpu_control' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__pointer_chk_guard' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__libc_enable_secure' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stderr_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stderr_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__rcmd_errstr' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `error_print_progname' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `stderr' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `obstack_exit_failure' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__stack_chk_guard' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `_rtld_global_ro' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `argp_program_version' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__check_rhosts_file' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `optind' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stdin_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stdin_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `program_invocation_short_name' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `error_message_count' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `optopt' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `rpc_createerr' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_nl_msg_cat_cntr' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__daylight' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_nl_domain_bindings' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `argp_program_bug_address' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_funlockfile' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `svc_max_pollfd' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `loc2' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__libc_dlerror_result' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `stdin' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__key_decryptsession_pk_LOCAL' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `loc1' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__timezone' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__libc_stack_end' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stdout_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_IO_2_1_stdout_' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__tzname' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `error_one_per_line' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `svcauthdes_stats' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_res_hconf' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `_rtld_global' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `_rtld_global' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__progname' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `h_errlist' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__environ' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `argp_err_exit_status' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__progname_full' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `argp_program_version_hook' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `optarg' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `malloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_finalize' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `stderr' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__stack_chk_guard' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_finalize' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaDeviceSynchronize' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaRegisterFatBinaryEnd' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__libc_start_main' [GLIBC_2.34]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaPushCallConfiguration' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaGetDeviceCount' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaMemGetInfo' [COREX_REMOTE_CUDART_1.1]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_finalize' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_atexit' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaMemcpy' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaRegisterFunction' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `memset' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaUnregisterFatBinary' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaGetDeviceProperties' [COREX_REMOTE_CUDART_1.1]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaRegisterFatBinary' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `abort' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `__cudaPopCallConfiguration' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `strcmp' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaPeekAtLastError' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaLaunchKernel' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaMalloc' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `printf' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]: normal symbol `cudaFree' [COREX_REMOTE_CUDART_1.0]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `calloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `free' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `malloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/consumer/app [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `realloc' [GLIBC_2.17]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__stack_chk_guard' [GLIBC_2.17]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__rseq_offset' [GLIBC_2.35]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__rseq_size' [GLIBC_2.35]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_dl_catch_exception' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_dl_signal_exception' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__tls_get_addr' [GLIBC_2.17]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_dl_signal_error' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/ld-linux-aarch64.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `_dl_catch_error' [GLIBC_PRIVATE]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `__tunable_get_val' [GLIBC_PRIVATE]
+   2481802:	
+   2481802:	calling init: /lib/ld-linux-aarch64.so.1
+   2481802:	
+   2481802:	
+   2481802:	calling init: /lib/aarch64-linux-gnu/libc.so.6
+   2481802:	
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__getauxval' [GLIBC_2.17]
+   2481802:	
+   2481802:	calling init: /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1
+   2481802:	
+   2481802:	
+   2481802:	initialize program: /tmp/corex-release-20261013/consumer/app
+   2481802:	
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `pthread_mutex_lock' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__printf_chk' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `malloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `memset' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `dl_iterate_phdr' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `snprintf' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `memcpy' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `strcmp' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__snprintf_chk' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `mmap' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `calloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `socket' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `getenv' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__errno_location' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `strtol' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `inet_pton' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `connect' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `send' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `recv' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `malloc' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `free' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_atexit' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `strlen' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `pthread_mutex_unlock' [GLIBC_2.17]
+   2481802:	binding file /lib/aarch64-linux-gnu/libc.so.6 [0] to /lib/ld-linux-aarch64.so.1 [0]: normal symbol `_dl_audit_preinit' [GLIBC_PRIVATE]
+   2481802:	
+   2481802:	transferring control: /tmp/corex-release-20261013/consumer/app
+   2481802:	
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `puts' [GLIBC_2.17]
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `close' [GLIBC_2.17]
+   2481802:	
+   2481802:	calling fini: /tmp/corex-release-20261013/consumer/app [0]
+   2481802:	
+   2481802:	
+   2481802:	calling fini: /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0]
+   2481802:	
+   2481802:	binding file /tmp/corex-release-20261013/relocated/lib/libcorex_remote_cudart.so.1 [0] to /lib/aarch64-linux-gnu/libc.so.6 [0]: normal symbol `__cxa_finalize' [GLIBC_2.17]

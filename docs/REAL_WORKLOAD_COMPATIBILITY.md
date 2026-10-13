@@ -1,5 +1,7 @@
 # Real-workload compatibility
 
+Current release commands and rerun evidence: [RELEASE_READINESS](RELEASE_READINESS.md).
+
 Baseline: `2e8528ffc29452c8783934d837e572b58095732e` (clean).
 Result: **FULL PASS**, twelve applications, qualified at implementation
 `e225f3f311875b06016ea5ab0278eb36ef10696d`; evidence: `evidence/m6/real-workloads-20261013/`.

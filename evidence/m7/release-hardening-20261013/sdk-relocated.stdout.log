@@ -1,0 +1,44 @@
+
+Dynamic section at offset 0x2cd88 contains 30 entries:
+  Tag        Type                         Name/Value
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-aarch64.so.1]
+ 0x000000000000000e (SONAME)             Library soname: [libcorex_remote_cudart.so.1]
+ 0x000000000000000c (INIT)               0x3eb8
+ 0x000000000000000d (FINI)               0x237b0
+ 0x0000000000000019 (INIT_ARRAY)         0x3cd38
+ 0x000000000000001b (INIT_ARRAYSZ)       8 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x3cd40
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x228
+ 0x0000000000000005 (STRTAB)             0x2020
+ 0x0000000000000006 (SYMTAB)             0x850
+ 0x000000000000000a (STRSZ)              5099 (bytes)
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x3cfe8
+ 0x0000000000000002 (PLTRELSZ)           1608 (bytes)
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000017 (JMPREL)             0x3870
+ 0x000000006ffffef6 (TLSDESC_PLT)        0x4300
+ 0x000000006ffffef7 (TLSDESC_GOT)        0x3cfe0
+ 0x0000000000000007 (RELA)               0x36d8
+ 0x0000000000000008 (RELASZ)             408 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffffc (VERDEF)             0x3608
+ 0x000000006ffffffd (VERDEFNUM)          4
+ 0x000000006ffffffe (VERNEED)            0x3688
+ 0x000000006fffffff (VERNEEDNUM)         2
+ 0x000000006ffffff0 (VERSYM)             0x340c
+ 0x000000006ffffff9 (RELACOUNT)          11
+ 0x0000000000000000 (NULL)               0x0
+	linux-vdso.so.1 (0x0000ffff93548000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffff92f40000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffff9350f000)
+--cflags=-I/tmp/corex-release-20261013/relocated/lib/pkgconfig/../../include
+--libs=-L/tmp/corex-release-20261013/relocated/lib/pkgconfig/../../lib -lcorex_remote_cudart
+SDK_PKGCONFIG_MODE=TOOL
+SDK_SONAME_SYMLINKS=PASS
+SDK_EXPORT_VERSIONS=PASS
+SDK_PUBLIC_HEADER=PASS (standard CUDA headers supplied by CoreX SDK)
+SDK_CLIENT_NATIVE_DEPENDENCIES=ABSENT
+SDK_VALIDATION=PASS

@@ -1,0 +1,1 @@
+First run: all three consumers produced exact data and remote bindings. Harness terminated server immediately after last client exit, before asynchronous EOF cleanup flushed. Aggregate three-reset assertion failed. Fix: wait for three SESSION_CONTEXT_RESET rc=0 lines before termination; no Runtime change.

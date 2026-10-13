@@ -5,13 +5,20 @@ import sys
 from pathlib import Path
 
 EVIDENCE_RE = re.compile(r"(?<![A-Za-z0-9_])evidence/[A-Za-z0-9._/-]+")
+LOCAL_LINK_RE = re.compile(r"\]\(([^\s)]+)\)")
 
 
 def main():
     root = Path(sys.argv[1]) if len(sys.argv) == 2 else Path(__file__).resolve().parents[1]
     errors = []
-    for doc in sorted((root / "docs").rglob("*.md")):
+    for doc in [root / "README.md", *sorted((root / "docs").rglob("*.md"))]:
         text = doc.read_text()
+        for link in LOCAL_LINK_RE.findall(text):
+            if link.startswith(("https:", "http:", "#", "mailto:")):
+                continue
+            target = link.split("#", 1)[0]
+            if target and not (doc.parent / target).exists():
+                errors.append(f"{doc}: missing documentation link {link}")
         for raw in EVIDENCE_RE.findall(text):
             path = raw.rstrip(".,;:`)")
             if "XXXXXX" in path or "PLACEHOLDER" in path:

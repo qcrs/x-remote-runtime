@@ -14,6 +14,6 @@ if [[ ! -x "$SERVER" ]]; then
 fi
 
 mkdir -p "$(dirname "$LOG")"
-echo "Starting CoreX Remote Runtime Server on 127.0.0.1:$PORT"
+echo "Starting CoreX Remote Runtime Server on ${COREX_REMOTE_BIND:-127.0.0.1}:$PORT"
 echo "Log: $LOG"
 COREX_REMOTE_PORT="$PORT" stdbuf -oL "$SERVER" 2>&1 | tee -a "$LOG"

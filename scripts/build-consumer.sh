@@ -10,8 +10,9 @@ ROOT="$(cd "$HERE/.." && pwd)"
 PREFIX="${PREFIX:-$ROOT/sdk-install}"
 WORK="${WORK:-$ROOT/clean-consumer}"
 
-rm -rf "$WORK"
 mkdir -p "$WORK"
+WORK="$(cd "$WORK" && pwd)"
+PREFIX="$(cd "$PREFIX" && pwd)"
 
 cp "$ROOT/tests/integration/external_consumer.cu" "$WORK/main.cu"
 
@@ -60,10 +61,12 @@ EXTRA=()
 
 (
     cd "$WORK"
+    read -r -a SDK_CFLAGS < <(cat "$WORK/pkg-cflags.txt")
 
     "$CXX" -x ivcore \
         --cuda-path="$COREX" \
         -I"$COREX/include" \
+        "${SDK_CFLAGS[@]}" \
         "${EXTRA[@]}" \
         -c main.cu \
         -o main.o
@@ -80,7 +83,7 @@ EXTRA=()
 readelf -dW "$WORK/app" >"$WORK/app-readelf-dynamic.txt"
 nm -uC "$WORK/app" >"$WORK/app-undefined.txt" || true
 
-if grep -qi 'libcudart' "$WORK/app-readelf-dynamic.txt"; then
+if grep -Eqi 'libcudart|libcuda[.]so' "$WORK/app-readelf-dynamic.txt"; then
     echo "G8D_CONSUMER_LIBCUDART_DEPENDENCY=FAIL"
     exit 1
 fi

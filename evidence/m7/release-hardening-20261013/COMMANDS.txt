@@ -1,0 +1,45 @@
+git status --short
+git rev-parse HEAD
+COREX=/usr/local/corex-4.4.0 PREFIX=/tmp/corex-release-20261013/installed ./scripts/build-sdk.sh
+OUT=evidence/m7/release-hardening-20261013/static ./scripts/qualify-static.sh
+PREFIX=/tmp/corex-release-20261013/installed ./scripts/package-sdk.sh
+python3 scripts/verify-sdk.py /tmp/corex-release-20261013/installed
+python3 scripts/run-remote-correctness.py --out evidence/m7/release-hardening-20261013/correctness
+python3 scripts/build-workloads.py --out evidence/m7/release-hardening-20261013/workload-build
+python3 scripts/run-remote-correctness.py --workloads all --out evidence/m7/release-hardening-20261013/workloads
+
+# Package relocation / optional tool validation (no host package installation)
+cd /tmp/corex-release-20261013/tools
+apt-get download pkg-config
+dpkg-deb -x pkg-config_0.29.2-1ubuntu3_arm64.deb pkg-config
+# Back in the repository; tool PATH scoped to individual verification/build commands
+PATH=/tmp/corex-release-20261013/tools/pkg-config/usr/bin:$PATH python3 scripts/verify-sdk.py /tmp/corex-release-20261013/installed
+mkdir -p /tmp/corex-release-20261013/relocated
+tar -xzf dist/corex-remote-sdk-1.1.0-aarch64.tar.gz -C /tmp/corex-release-20261013/relocated
+PATH=/tmp/corex-release-20261013/tools/pkg-config/usr/bin:$PATH python3 scripts/verify-sdk.py /tmp/corex-release-20261013/relocated
+PREFIX=/tmp/corex-release-20261013/relocated WORK=/tmp/corex-release-20261013/consumer bash -x scripts/build-consumer.sh
+PATH=/tmp/corex-release-20261013/tools/pkg-config/usr/bin:$PATH PREFIX=/tmp/corex-release-20261013/relocated WORK=/tmp/corex-release-20261013/consumer-pkgconfig bash -x scripts/build-consumer.sh
+# Python external isolation harness moved build/, dist/, installed/ to hidden-* under /tmp,
+# built consumer-isolated with the same helper in /tmp, ran the extracted server
+# and all three consumers, checked loader bindings and three empty/reset sessions,
+# stopped owned server and restored all paths in finally. See consumer-isolation.txt.
+COREX_REMOTE_BIND=127.0.0.1 COREX_REMOTE_PORT=51013 /tmp/corex-release-20261013/relocated/bin/corex-remote-runtime-server
+# Each app ran with cwd=/tmp/corex-release-20261013 and the original paths unavailable:
+COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=51013 LD_DEBUG=libs,bindings /tmp/corex-release-20261013/consumer/app
+COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=51013 LD_DEBUG=libs,bindings /tmp/corex-release-20261013/consumer-pkgconfig/app
+COREX_REMOTE_HOST=127.0.0.1 COREX_REMOTE_PORT=51013 LD_DEBUG=libs,bindings /tmp/corex-release-20261013/consumer-isolated/app
+# Final clean build and artifact identity verification
+COREX=/usr/local/corex-4.4.0 PREFIX=/tmp/corex-release-20261013/final-installed ./scripts/build-sdk.sh
+PATH=/tmp/corex-release-20261013/tools/pkg-config/usr/bin:$PATH python3 scripts/verify-sdk.py /tmp/corex-release-20261013/final-installed
+PREFIX=/tmp/corex-release-20261013/final-installed ./scripts/package-sdk.sh
+python3 scripts/verify-evidence-links.py .
+python3 scripts/report-api-coverage.py
+git diff --check -- . ':!evidence'
+# All src/server/include/schema/tests/ledger files are unchanged from BASE_HEAD;
+# final server/DSO SHA-256 equals the already executed extracted SDK.
+sha256sum -c evidence/m7/release-hardening-20261013/MANIFEST.sha256
+sha256sum -c evidence/m7/release-hardening-20261013/EVIDENCE.sha256
+git add README.md dev/local-remote docs packaging/ABI-SURFACE-v1.1.txt scripts/build-consumer.sh scripts/install-sdk.sh scripts/verify-evidence-links.py scripts/package-sdk.sh scripts/qualify-static.sh scripts/verify-sdk.py evidence/m7/release-hardening-20261013
+git commit -m 'Harden engineering prototype release workflows and SDK qualification'
+git status --porcelain
+git rev-parse HEAD

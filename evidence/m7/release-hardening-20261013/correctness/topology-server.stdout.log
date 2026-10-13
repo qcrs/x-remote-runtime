@@ -1,0 +1,7 @@
+3: rc-server@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether b2:89:db:25:00:ef brd ff:ff:ff:ff:ff:ff link-netnsid 0 promiscuity 0 minmtu 68 maxmtu 65535 
+    veth numtxqueues 64 numrxqueues 64 gso_max_size 65536 gso_max_segs 65535 
+    inet 198.18.0.1/30 scope global rc-server
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b089:dbff:fe25:ef/64 scope link tentative 
+       valid_lft forever preferred_lft forever

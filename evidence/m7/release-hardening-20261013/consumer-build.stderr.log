@@ -1,0 +1,62 @@
++ set -euo pipefail
++ COREX=/usr/local/corex-4.4.0
++ CXX=/usr/local/corex-4.4.0/bin/clang++
++ GXX=g++
++++ dirname scripts/build-consumer.sh
+++ cd scripts
+++ pwd
++ HERE=/home/lvtong/corex-remote-runtime/scripts
+++ cd /home/lvtong/corex-remote-runtime/scripts/..
+++ pwd
++ ROOT=/home/lvtong/corex-remote-runtime
++ PREFIX=/tmp/corex-release-20261013/relocated
++ WORK=/tmp/corex-release-20261013/consumer
++ mkdir -p /tmp/corex-release-20261013/consumer
+++ cd /tmp/corex-release-20261013/consumer
+++ pwd
++ WORK=/tmp/corex-release-20261013/consumer
+++ cd /tmp/corex-release-20261013/relocated
+++ pwd
++ PREFIX=/tmp/corex-release-20261013/relocated
++ cp /home/lvtong/corex-remote-runtime/tests/integration/external_consumer.cu /tmp/corex-release-20261013/consumer/main.cu
++ PC_FILE=/tmp/corex-release-20261013/relocated/lib/pkgconfig/corex-remote-cudart.pc
++ [[ ! -f /tmp/corex-release-20261013/relocated/lib/pkgconfig/corex-remote-cudart.pc ]]
++ grep -q '^Name: corex-remote-cudart$' /tmp/corex-release-20261013/relocated/lib/pkgconfig/corex-remote-cudart.pc
++ grep -q '^Version: 1.1.0$' /tmp/corex-release-20261013/relocated/lib/pkgconfig/corex-remote-cudart.pc
++ grep -q '^Libs: .* -lcorex_remote_cudart$' /tmp/corex-release-20261013/relocated/lib/pkgconfig/corex-remote-cudart.pc
++ command -v pkg-config
++ printf '%s\n' 1.1.0
++ printf -- '-I%s/include\n' /tmp/corex-release-20261013/relocated
++ printf -- '-L%s/lib -lcorex_remote_cudart\n' /tmp/corex-release-20261013/relocated
++ G8D_PKGCONFIG_MODE=FALLBACK
++ echo G8D_PKGCONFIG_METADATA=PASS
++ echo G8D_PKGCONFIG_MODE=FALLBACK
+++ g++ -dumpfullversion -dumpversion
+++ cut -d. -f1
++ GCC_MAJOR=11
++ EXTRA=()
++ [[ -d /usr/include/c++/11 ]]
++ EXTRA+=(-isystem "/usr/include/c++/$GCC_MAJOR")
++ [[ -d /usr/include/aarch64-linux-gnu/c++/11 ]]
++ EXTRA+=(-isystem "/usr/include/aarch64-linux-gnu/c++/$GCC_MAJOR")
++ [[ -d /usr/include/c++/11/backward ]]
++ EXTRA+=(-isystem "/usr/include/c++/$GCC_MAJOR/backward")
++ cd /tmp/corex-release-20261013/consumer
++ read -r -a SDK_CFLAGS
+++ cat /tmp/corex-release-20261013/consumer/pkg-cflags.txt
++ /usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -I/tmp/corex-release-20261013/relocated/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c main.cu -o main.o
++ read -r -a SDK_LIBS
+++ cat /tmp/corex-release-20261013/consumer/pkg-libs.txt
++ g++ main.o -L/tmp/corex-release-20261013/relocated/lib -lcorex_remote_cudart -Wl,-rpath,/tmp/corex-release-20261013/relocated/lib -o app
++ readelf -dW /tmp/corex-release-20261013/consumer/app
++ nm -uC /tmp/corex-release-20261013/consumer/app
++ grep -Eqi 'libcudart|libcuda[.]so' /tmp/corex-release-20261013/consumer/app-readelf-dynamic.txt
++ grep -q 'NEEDED.*libcorex_remote_cudart.so.1' /tmp/corex-release-20261013/consumer/app-readelf-dynamic.txt
++ INTERNAL_PATTERN='(^|/)(corex_remote_cuda(_g8c)?|corex_metadata([.]c|[.]h|[.]o)?|g7c_corex_fatbin_runtime|corex_fatbin_runtime|corex_launch_config(_g8c)?|corex_device_info(_g8c)?|corex_device_api(_g8c)?|runtime_server(_g8c)?[.]c)(/|$)'
++ grep -Eq '(^|/)(corex_remote_cuda(_g8c)?|corex_metadata([.]c|[.]h|[.]o)?|g7c_corex_fatbin_runtime|corex_fatbin_runtime|corex_launch_config(_g8c)?|corex_device_info(_g8c)?|corex_device_api(_g8c)?|runtime_server(_g8c)?[.]c)(/|$)' /tmp/corex-release-20261013/consumer/pkg-cflags.txt /tmp/corex-release-20261013/consumer/pkg-libs.txt /tmp/corex-release-20261013/relocated/share/corex-remote-cudart/install-files.txt
++ echo G8D_CONSUMER_LIBCUDART_DEPENDENCY=ABSENT
++ echo G8D_CONSUMER_REMOTE_RUNTIME_DEPENDENCY=PASS
++ echo G8D_INTERNAL_SOURCE_LEAK=ABSENT
++ echo G8D_PKGCONFIG_METADATA=PASS
++ echo G8D_PKGCONFIG_MODE=FALLBACK
++ echo G8D_CONSUMER_BUILD=PASS

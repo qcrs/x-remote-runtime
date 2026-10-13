@@ -1,0 +1,2 @@
+REGISTER_VAR name=runtime_symbol_probe module=1 bytes=4 result=0
+REGISTER_VAR name=runtime_constant_probe module=1 bytes=8 result=0

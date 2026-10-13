@@ -26,5 +26,6 @@ protocol-boundary checks without the full capability matrix.
 Reuse existing capability-family public clients and wire helpers; add only remote
 orchestrator and missing failure assertions. No broad historical suite without a
 shared-subsystem change or a finding that justifies it. The issue register is
-[REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md). Evidence belongs in
-`evidence/m6/remote-correctness-20261013/`; final audit maps each row to logs.
+[REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md). The original qualification evidence is in
+`evidence/m6/remote-correctness-20261013/`; current release commands and rerun
+evidence are indexed in [RELEASE_READINESS](RELEASE_READINESS.md).

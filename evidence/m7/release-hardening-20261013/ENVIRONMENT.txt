@@ -1,0 +1,16 @@
+BASE_HEAD=97907fe70a09fed21f1a8d28d52cb92acdb8fd0c
+INITIAL_WORKTREE=CLEAN
+UTC=2026-10-13T09:55:35Z
+Linux-5.15.0-185-generic-aarch64-with-glibc2.35
+uid=1002(lvtong) gid=1002(lvtong) groups=1002(lvtong),27(sudo),1005(datashare)
+clang version 18.1.8 (4.4.0 862f87fe94c5eaa2928bda965ed6abb85a25eb7c)
+Target: aarch64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /usr/local/corex-4.4.0/bin
+gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+Copyright (C) 2021 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+DEPLOYMENT=aarch64 -> CRX9/TCP -> aarch64 -> CoreX 4.4 / MR-V100

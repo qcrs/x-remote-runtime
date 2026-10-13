@@ -1,0 +1,41 @@
+G6A_VA_ARENA base=0xffefa2560000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G6C_CUDA_STREAM_CREATE handle=0xffffa27753a0 stream_id=1 result=PASS
+cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking)=0
+cudaThreadExchangeStreamCaptureMode(&mode)=0
+cudaThreadExchangeStreamCaptureMode(NULL)=1 want=1
+cudaThreadExchangeStreamCaptureMode(&invalid)=1 want=1
+cudaStreamBeginCapture(stream,cudaStreamCaptureModeThreadLocal)=0
+G6A_CUDA_MALLOC ptr=0xffefa2560000 allocation_id=1 bytes=32 span=131072 result=PASS
+cudaMalloc(&ptr,32)=0
+G6A_PTR_RESOLVE ptr=0xffefa2560000 allocation_id=1 offset=0 bytes=32
+cudaMemsetAsync(ptr,0x39,32,stream)=0
+G6A_CUDA_MALLOC ptr=0xffefa2580000 allocation_id=2 bytes=32 span=131072 result=PASS
+cudaStreamIsCapturing(stream,&status)=0
+cudaStreamEndCapture(stream,&graph)=0
+cudaThreadExchangeStreamCaptureMode(&mode)=0
+cudaGraphDebugDotPrint(graph,argv[1],0)=0
+cudaGraphDebugDotPrint(graph,argv[1],1)=801 want=801
+cudaGraphDebugDotPrint(graph,"/no-such-corex-directory/graph.dot",0)=304 want=304
+cudaGraphInstantiate(&exec,graph,NULL,NULL,0)=0
+cudaGraphUpload(exec,stream)=0
+cudaGraphLaunch(exec,stream)=0
+G6E_CUDA_STREAM_SYNC handle=0xffffa27753a0 stream_id=1 host_visible=YES result=PASS
+cudaStreamSynchronize(stream)=0
+G6A_PTR_RESOLVE ptr=0xffefa2560000 allocation_id=1 offset=0 bytes=32
+G6A_CUDA_MEMCPY kind=D2H allocation_id=1 offset=0 bytes=32 result=PASS
+cudaMemcpy(host,ptr,32,cudaMemcpyDeviceToHost)=0
+cudaGraphExecDestroy(exec)=0
+cudaGraphDestroy(graph)=0
+G6A_CUDA_FREE ptr=0xffefa2560000 allocation_id=1 result=PASS tombstone=YES
+cudaFree(ptr)=0
+G6A_CUDA_FREE ptr=0xffefa2580000 allocation_id=2 result=PASS tombstone=YES
+cudaFree(d.ptr)=0
+cudaStreamBeginCapture(stream,cudaStreamCaptureModeThreadLocal)=0
+cudaMalloc(&ptr,32)=900 want=900
+cudaStreamEndCapture(stream,&graph)=901 want=901
+G6C_CUDA_STREAM_DESTROY handle=0xffffa27753a0 stream_id=1 hidden_transfers_drained=YES result=PASS tombstone=YES
+cudaStreamDestroy(stream)=0
+GRAPH_CONTROLS_TLS_CAPTURE_ALLOCATION_UPLOAD_CLIENT_DOT=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

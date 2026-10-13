@@ -5,29 +5,32 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 PREFIX="${PREFIX:-$ROOT/sdk-install}"
 
-if [[ ! -f "$ROOT/dist/lib/libcorex_remote_cudart.so.1.1.0" ]]; then
+if [[ ! -f "$ROOT/dist/lib/libcorex_remote_cudart.so.1.1.0" || ! -x "$ROOT/dist/bin/runtime_server" ]]; then
     echo "G8D_INSTALL=FAIL reason=BUILD_FIRST"
     exit 1
 fi
 
-rm -rf "$PREFIX"
 mkdir -p \
     "$PREFIX/bin" \
     "$PREFIX/include" \
     "$PREFIX/lib/pkgconfig" \
     "$PREFIX/share/corex-remote-cudart"
+PREFIX="$(cd "$PREFIX" && pwd)"
 
 cp -a "$ROOT/dist/lib/libcorex_remote_cudart.so.1.1.0" "$PREFIX/lib/"
-ln -s "libcorex_remote_cudart.so.1.1.0" "$PREFIX/lib/libcorex_remote_cudart.so.1"
-ln -s "libcorex_remote_cudart.so.1" "$PREFIX/lib/libcorex_remote_cudart.so"
+ln -sfn "libcorex_remote_cudart.so.1.1.0" "$PREFIX/lib/libcorex_remote_cudart.so.1"
+ln -sfn "libcorex_remote_cudart.so.1" "$PREFIX/lib/libcorex_remote_cudart.so"
 
 cp -a "$ROOT/dist/bin/runtime_server" "$PREFIX/bin/corex-remote-runtime-server"
 cp -a "$ROOT/include/corex_remote_cudart_ext.h" "$PREFIX/include/"
 cp -a "$ROOT/packaging/ABI-SURFACE-v1.1.txt" \
    "$PREFIX/share/corex-remote-cudart/"
+cp -a "$ROOT/packaging/corex_remote_cudart.map" \
+   "$ROOT/packaging/EXPECTED-EXPORTED-FUNCTIONS.txt" \
+   "$PREFIX/share/corex-remote-cudart/"
 
 cat >"$PREFIX/lib/pkgconfig/corex-remote-cudart.pc" <<EOF
-prefix=$PREFIX
+prefix=\${pcfiledir}/../..
 exec_prefix=\${prefix}
 libdir=\${prefix}/lib
 includedir=\${prefix}/include

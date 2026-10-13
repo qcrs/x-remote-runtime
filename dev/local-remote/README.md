@@ -25,8 +25,8 @@ cd /home/lvtong/corex-remote-runtime
 ```
 
 The default endpoint is `127.0.0.1:50051`. `COREX_REMOTE_HOST` selects the
-client endpoint and `COREX_REMOTE_PORT` selects the TCP port. The server is
-intentionally bound to loopback for this local mode.
+client endpoint and `COREX_REMOTE_PORT` selects the TCP port. The server defaults to loopback; `COREX_REMOTE_BIND` can select a numeric IPv4
+listen address. The installed-server release path is documented in [README](../../README.md).
 
 This can exercise Client/Server separation, RPC, Runtime semantics,
 concurrency, CUDA API behavior already present in the baseline, and error
