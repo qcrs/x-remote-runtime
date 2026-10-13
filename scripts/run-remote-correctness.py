@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--out', type=Path, required=True)
 parser.add_argument('--inside-rootless', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--topology-only', action='store_true')
+parser.add_argument('--workloads', nargs='+', help='Run built public CUDA workloads instead of API tests')
 args = parser.parse_args()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -50,6 +51,7 @@ def run(command, label, client=False, timeout=90, expected=0):
     with (out / (label + '.stdout.log')).open('w') as stdout, (out / (label + '.stderr.log')).open('w') as stderr:
         result = subprocess.run(command, cwd=ROOT, env=env, stdout=stdout, stderr=stderr, timeout=timeout)
     if result.returncode != expected:
+        print(label + '=FAIL', flush=True)
         raise RuntimeError(f'{label} failed ({result.returncode}); see {out}')
     print(label + '=PASS', flush=True)
 
@@ -128,10 +130,22 @@ try:
     start_server('server')
     with (out / 'ENVIRONMENT.txt').open('a') as record:
         record.write(f'SERVER_PID={server.pid}\n')
-    run(['python3', ROOT / 'tests/integration/remote_correctness_protocol.py'], 'negotiation-trust', client=True)
-    if args.topology_only:
+    if args.workloads:
+        names = sorted(p.stem for p in (ROOT / 'tests/workloads').glob('*.cu')) if args.workloads == ['all'] else args.workloads
+        for name in names:
+            if not name.replace('_', '').isalnum():
+                raise ValueError('invalid workload name')
+            command = [ROOT / 'build/workloads' / name]
+            if name == 'numerical_pipeline':
+                command = ['env', 'LD_DEBUG=libs,bindings', *command]
+            run(command, name, client=True)
+            assert name + '=PASS' in (out / (name + '.stdout.log')).read_text()
+        print('REAL_WORKLOADS=PASS', flush=True)
+    elif args.topology_only:
+        run(['python3', ROOT / 'tests/integration/remote_correctness_protocol.py'], 'negotiation-trust', client=True)
         print('REMOTE_TOPOLOGY=PASS', flush=True)
     else:
+        run(['python3', ROOT / 'tests/integration/remote_correctness_protocol.py'], 'negotiation-trust', client=True)
         corex = Path(env.get('COREX', '/usr/local/corex-4.4.0'))
         common = ['gcc', '-O2', '-Wall', '-Wextra', '-Werror', '-std=gnu11', '-Wno-deprecated-declarations',
                   f'-I{corex}/include']
@@ -197,6 +211,10 @@ try:
         print('failure=PASS', flush=True)
         run(['python3', ROOT / 'tests/integration/remote_correctness_protocol.py'], 'post-failure-trust', client=True)
         print('REMOTE_CORRECTNESS=PASS', flush=True)
+except Exception:
+    if args.workloads:
+        print('REAL_WORKLOADS=FAIL', flush=True)
+    raise
 finally:
     stop_server()
     for log in logs:

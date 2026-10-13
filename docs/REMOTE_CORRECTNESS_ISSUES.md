@@ -1,5 +1,8 @@
 # Remote correctness issues
 
+Real-workload qualification baseline: `2e8528ffc29452c8783934d837e572b58095732e`.
+New evidence root: `evidence/m6/real-workloads-20261013/`.
+
 Qualification baseline: `6538a582fa4ff2266d00c5b59af20316238ff018`.
 Evidence root: `evidence/m6/remote-correctness-20261013/`.
 
@@ -65,3 +68,28 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Resolution: compare existing Driver version opcode 35 and assert deterministic
   legacy setter status 3; the public context-family test checks NotSupported.
 - Fixing commit: `dc28edb` (full hash in the final evidence audit).
+
+## RC-005
+
+- Status: FIXED; category: TEST_INFRA_BUG; subsystem: workload assertion helper.
+- Workload: numerical_pipeline (first normal compiler build).
+- Observed → expected: compile rejects event helper because CUDA macro local
+  `e` shadows the event variable inside its initializer → public API gets event pointer.
+- Evidence: `real-workloads-20261013/compiler-first/numerical_pipeline-compile.stderr.log`.
+- Root cause: common workload macro identifier collision; no Runtime defect.
+- Resolution: use a distinct macro-local error name; rebuild and execute normal
+  compiler launch path through namespace/veth before closing.
+- Fixing commit: workload implementation commit (full hash in the final workload audit).
+
+## RC-006
+
+- Status: FIXED; category: TEST_INFRA_BUG; subsystem: graph-memory workload error check.
+- Workload: graph_memory.
+- Observed → expected: four graph allocation/kernel/copy/free replays produce
+  correct data, but the application rejects the expected stale-pointer last-error
+  value → verify and clear cudaErrorInvalidDevicePointer after the negative call.
+- Evidence: `real-workloads-20261013/run-initial/graph_memory.stderr.log` and stdout.
+- Root cause: workload incorrectly wrapped cudaGetLastError in a success-only macro;
+  no Runtime or graph lifetime defect.
+- Resolution: assert the expected last-error value and rerun graph memory and mixed app.
+- Fixing commit: workload implementation commit (full hash in the final workload audit).
