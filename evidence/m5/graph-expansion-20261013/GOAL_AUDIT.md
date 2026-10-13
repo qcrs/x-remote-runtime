@@ -1,7 +1,9 @@
 # Graph/Capture expansion requirement audit
 
-Audit status: VALIDATION PASSED. Implementation commit and final clean-tree
-inspection are the remaining closeout gates.
+Audit status: PASS. Completion condition 1 is satisfied. Implementation is
+committed and its validated source hashes match the committed blobs. The
+post-implementation worktree is clean; final evidence bookkeeping is committed
+and checked clean at closeout.
 
 BASE_HEAD = `0383270696516c003743e4784f3c5795168052f6`. Frozen BASE_LEDGER matches the corresponding rows at
 that exact commit. BASE_SUPPORTED=40. Existing support contributes zero.
@@ -43,7 +45,7 @@ three GROUND_TRUTH_BLOCKED user-object APIs. Graphics Interop is excluded.
 | --- | --- |
 | Freeze exact starting HEAD and API rows before implementation | BASE_HEAD, BASE_LEDGER.csv, BASELINE.txt, BASELINE_COMPARISON.txt; exact row parity checked against git show |
 | Baseline support counts as zero | Delta compares status sets; all 40 baseline supported names excluded |
-| New implementation, rather than audit/revalidation | Commits 89cda0e/8fc5feb plus current allocation, host, upload and control source changes |
+| New implementation, rather than audit/revalidation | Implementation commits 89cda0e, 8fc5feb and 010320dd20625d0f344f042da0916c4cb1d046da; actual allocation, host, upload and control source changes |
 | >=18 newly supported APIs and major groups explored | 25 delta rows; grouped probes and implementations listed below |
 | Child graphs and independent executable updates | Native cold setter defect/rebuilt first launch; public expansion kernel/copy/enable-state snapshots |
 | Event query and mutation | Six new APIs; independent graph/exec EventID and frontier snapshots |
@@ -64,7 +66,7 @@ three GROUND_TRUTH_BLOCKED user-object APIs. Graphics Interop is excluded.
 | One evidence set, no binaries/generated trees copied | This directory contains records/logs/hashes only; generated sources remain canonical |
 | Ledger authoritative and investigated rows terminal | 25 support statuses + three blocked; no eligible required rows remain |
 | Current documentation and high-level README | GRAPH_CAPTURE_MODEL/PROJECT_STATE/README describe actual additions and limits |
-| Commit implementation and clean final worktree | PENDING final implementation commit and post-commit status inspection |
+| Commit implementation and clean final worktree | COMMIT_VERIFICATION.txt: implementation 010320dd20625d0f344f042da0916c4cb1d046da, committed source/hash parity PASS, post-implementation worktree CLEAN; final evidence commit and status checked at closeout |
 
 ## Measured limits and truthful boundaries
 
@@ -134,3 +136,7 @@ query/update/mode APIs also occur in Stream; family name alone is not the scope.
 BASELINE_COMPARISON.txt verifies every frozen row against BASE_HEAD, counts only
 previously unsupported-to-supported status transitions, verifies all 28 initially
 required rows terminal, and verifies the excluded Graphics rows unchanged.
+
+Implementation closeout commit: `010320dd20625d0f344f042da0916c4cb1d046da`.
+The final evidence commit only records the already validated and committed
+implementation result. It contributes zero APIs to the delta.

@@ -237,3 +237,6 @@ OUT=evidence/m5/graph-expansion-20261013 scripts/test-handler-registry.sh
 python3 scripts/report-api-coverage.py
 # Frozen baseline scope and comparison algorithm: see GOAL_AUDIT.md / BASELINE_COMPARISON.txt.
 git diff --check
+sha256sum -c evidence/m5/graph-expansion-20261013/MANIFEST.sha256
+git status --porcelain
+git rev-parse HEAD
