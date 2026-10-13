@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <cuda.h>
 #include "corex_backend.h"
+#include "corex_graph_objects.h"
 #include "corex_api_schema.h"
 #include "corex_metadata.h"
 #include "corex_protocol.h"
@@ -136,6 +137,11 @@ typedef struct {
     EventEntry events[MAX_EVENTS];
     TransferEntry transfers[MAX_TRANSFERS];
     PoolEntry pools[MAX_POOLS];
+    GraphEntry graphs[CRX_GRAPH_MAX_GRAPHS];
+    GraphNodeEntry graph_nodes[CRX_GRAPH_MAX_NODE_HANDLES];
+    GraphExecEntry graph_execs[CRX_GRAPH_MAX_EXECS];
+    uint64_t next_graph_id, next_graph_node_id, next_graph_exec_id;
+    uint64_t capture_stream, capture_graph;
     uint64_t default_pool_id;
     uint64_t current_pool_id;
     uint64_t next_pool_id;
@@ -178,7 +184,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
         /* The V3 server exposes logical device zero only. */
         .device_count = 1,
         .device_profile_id = CRX_DEVICE_PROFILE_COREX_GENERIC,
-        .capability_count = g_memory_pools_supported ? 8 : 7,
+        .capability_count = g_memory_pools_supported ? 9 : 8,
         .capabilities = {
             CRX_CAP_DEVICE_INFO,
             CRX_CAP_LINEAR_MEMORY,
@@ -187,6 +193,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
             CRX_CAP_COPY_ASYNC,
             CRX_CAP_MODULE_KERNEL,
             CRX_CAP_LAYOUT_TRANSFER,
+            CRX_CAP_GRAPHS,
             CRX_CAP_MEMORY_POOLS,
         },
     };
@@ -618,8 +625,11 @@ static uint32_t ensure_default_pool(ServerSession *session)
  * ============================================================
  */
 
+static void cleanup_graphs(ServerSession *session);
+
 static void cleanup_session(ServerSession *session)
 {
+    cleanup_graphs(session);
     /*
      * Gate 5E cleanup order:
      *
@@ -3273,15 +3283,21 @@ static void release_raw_kernel_args(void **raw_args, uint32_t argc)
  * ============================================================
  */
 
-static int handle_launch_generic(
-    ServerSession *session,
-    int fd,
-    uint32_t req_id,
-    const unsigned char *payload,
-    uint32_t len)
+typedef struct {
+    CUDA_KERNEL_NODE_PARAMS native;
+    KernelArgStorage storage[MAX_ARGS];
+    void *params[MAX_ARGS], *raw[MAX_ARGS];
+    uint32_t argc;
+    CUstream stream;
+    KernelEntry *kernel;
+} DecodedKernelLaunch;
+
+static uint32_t decode_kernel_launch(ServerSession *session, const unsigned char *payload,
+                                    uint32_t len, DecodedKernelLaunch *decoded)
 {
+    memset(decoded, 0, sizeof(*decoded));
     if (len < 48)
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_BAD_REQUEST, NULL, 0);
+        return ST_BAD_REQUEST;
 
     size_t pos = 0;
 
@@ -3300,13 +3316,13 @@ static int handle_launch_generic(
     uint32_t argc       = corex_protocol_read_u32(payload + pos); pos += 4;
 
     if (argc > MAX_ARGS)
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_BAD_REQUEST, NULL, 0);
+        return ST_BAD_REQUEST;
 
     KernelEntry *k = find_kernel(session, kernel_id);
     if (!k)
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_NOT_FOUND, NULL, 0);
+        return ST_NOT_FOUND;
     if (!k->metadata_valid)
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_METADATA_ERROR, NULL, 0);
+        return ST_METADATA_ERROR;
 
     if (argc != k->metadata.argc) {
         fprintf(stderr,
@@ -3314,7 +3330,7 @@ static int handle_launch_generic(
                 k->name,
                 argc,
                 k->metadata.argc);
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_ABI_MISMATCH, NULL, 0);
+        return ST_ABI_MISMATCH;
     }
 
     CUstream launch_stream = 0;
@@ -3324,36 +3340,22 @@ static int handle_launch_generic(
             fprintf(stderr,
                     "LAUNCH_GENERIC stream_not_found stream_id=%llu\n",
                     (unsigned long long)stream_id);
-            return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_NOT_FOUND, NULL, 0);
+            return ST_NOT_FOUND;
         }
         launch_stream = stream_entry->stream;
     }
 
-    printf("LAUNCH_STREAM_RESOLVE request=%u kernel_id=%llu stream_id=%llu mode=%s\n",
-           req_id,
-           (unsigned long long)kernel_id,
-           (unsigned long long)stream_id,
-           stream_id == 0 ? "DEFAULT" : "EXPLICIT");
-
-    printf("LAUNCH_GENERIC request=%u kernel_id=%llu kernel=%s stream_id=%llu "
-           "grid=(%u,%u,%u) block=(%u,%u,%u) shared=%u argc=%u\n",
-           req_id,
-           (unsigned long long)kernel_id,
-           k->name,
-           (unsigned long long)stream_id,
-           grid_x, grid_y, grid_z,
-           block_x, block_y, block_z,
-           shared_mem,
-           argc);
-
-    KernelArgStorage storage[MAX_ARGS];
-    void *kernel_params[MAX_ARGS];
-    void *raw_args[MAX_ARGS];
-
-    memset(storage, 0, sizeof(storage));
-    memset(kernel_params, 0, sizeof(kernel_params));
-    memset(raw_args, 0, sizeof(raw_args));
-
+    KernelArgStorage *storage = decoded->storage;
+    void **kernel_params = decoded->params;
+    void **raw_args = decoded->raw;
+    decoded->argc = argc;
+    decoded->stream = launch_stream;
+    decoded->kernel = k;
+    decoded->native.func = k->function;
+    decoded->native.gridDimX = grid_x; decoded->native.gridDimY = grid_y; decoded->native.gridDimZ = grid_z;
+    decoded->native.blockDimX = block_x; decoded->native.blockDimY = block_y; decoded->native.blockDimZ = block_z;
+    decoded->native.sharedMemBytes = shared_mem;
+    decoded->native.kernelParams = decoded->params;
     uint32_t fail_status = ST_OK;
 
     for (uint32_t i = 0; i < argc; ++i) {
@@ -3492,30 +3494,32 @@ static int handle_launch_generic(
         goto fail;
     }
 
-    printf("ABI_VALIDATE kernel=%s argc=%u result=PASS\n", k->name, argc);
-
-    CUresult r = corex_backend_launch(
-        k->function,
-        grid_x, grid_y, grid_z,
-        block_x, block_y, block_z,
-        shared_mem,
-        launch_stream,
-        kernel_params,
-        NULL);
-
-    release_raw_kernel_args(raw_args, argc);
-
-    if (r != CUDA_SUCCESS) {
-        fprintf(stderr, "LAUNCH_GENERIC cuLaunchKernel rc=%d\n", (int)r);
-        return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_CUDA_ERROR, NULL, 0);
+    if (!grid_x || !grid_y || !grid_z || !block_x || !block_y || !block_z) {
+        fail_status = ST_BAD_REQUEST; goto fail;
     }
-
-    printf("LAUNCH_GENERIC submit=PASS\n");
-    return send_response(fd, OP_LAUNCH_GENERIC, req_id, ST_OK, NULL, 0);
-
+    return ST_OK;
 fail:
-    release_raw_kernel_args(raw_args, argc);
-    return send_response(fd, OP_LAUNCH_GENERIC, req_id, fail_status, NULL, 0);
+    release_raw_kernel_args(decoded->raw, decoded->argc);
+    memset(decoded->raw, 0, sizeof(decoded->raw));
+    return fail_status;
+}
+
+static int handle_launch_generic(ServerSession *session, int fd, uint32_t req_id,
+                                 const unsigned char *payload, uint32_t len)
+{
+    DecodedKernelLaunch d;
+    uint32_t status = decode_kernel_launch(session, payload, len, &d);
+    if (status != ST_OK)
+        return send_response(fd, OP_LAUNCH_GENERIC, req_id, status, NULL, 0);
+    printf("ABI_VALIDATE kernel=%s argc=%u result=PASS\n",d.kernel->name,d.argc);
+    printf("LAUNCH_GENERIC request=%u kernel_id=%llu kernel=%s stream_id=%llu\n",
+           req_id,(unsigned long long)d.kernel->id,d.kernel->name,
+           (unsigned long long)corex_protocol_read_u64(payload+8));
+    CUresult r = corex_backend_launch(d.native.func,d.native.gridDimX,d.native.gridDimY,
+        d.native.gridDimZ,d.native.blockDimX,d.native.blockDimY,d.native.blockDimZ,
+        d.native.sharedMemBytes,d.stream,d.params,NULL);
+    release_raw_kernel_args(d.raw,d.argc);
+    return send_response(fd,OP_LAUNCH_GENERIC,req_id,r==CUDA_SUCCESS?ST_OK:ST_CUDA_ERROR,NULL,0);
 }
 
 /* ============================================================
@@ -4458,6 +4462,8 @@ static int handle_get_device_info(
         (uint32_t)pos);
 }
 
+#include "corex_graph_runtime.inc"
+
 typedef int (*ServerHandler)(ServerSession *, int, uint32_t,
                              const unsigned char *, uint32_t);
 
@@ -4564,7 +4570,7 @@ static int server_registry_validate(void)
 #undef UNIQUE_OPCODE_CASE
     for (uint32_t opcode = OP_ALLOC; opcode < OP__COUNT; ++opcode) {
         if (!g_handlers[opcode].handler ||
-            g_handlers[opcode].capability_id > CRX_CAP_MEMORY_POOLS)
+            g_handlers[opcode].capability_id > CRX_CAP_GRAPHS)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {
@@ -4633,6 +4639,10 @@ static int serve_session(ServerSession *session, int fd)
                     corex_generated_validate_payload(opcode, payload_len) != 0;
                 break;
             }
+        }
+        if (session->capture_graph && !corex_graph_capture_safe_opcode(opcode)) {
+            int sent=send_response(fd,opcode,req_id,ST_CAPTURE_UNSUPPORTED,NULL,0);
+            free(payload);if(sent!=0)return -1;continue;
         }
         const ServerHandlerEntry *entry =
             opcode < sizeof(g_handlers) / sizeof(g_handlers[0]) &&

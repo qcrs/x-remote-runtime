@@ -1,17 +1,20 @@
 # Project State
 
-The core Runtime and Memory Pool / stream-ordered allocation goal is complete
-on CoreX 4.4 / MR-V100, within the measured limits in the ledger. The final
-requirements audit is in `evidence/m5/memory-pools-20261012/GOAL_AUDIT.md`.
+The Native Graph and practical Stream Capture goal is complete on CoreX 4.4 /
+MR-V100, within the measured limits in the ledger: 40 additional public APIs
+(22 IMPLEMENTED, 18 PARTIAL_IMPLEMENTED). The architecture and limits are in
+[GRAPH_CAPTURE_MODEL](GRAPH_CAPTURE_MODEL.md); the requirements audit is in
+`evidence/m5/graphs-capture-20261013/GOAL_AUDIT.md`. The preceding core Runtime
+and Memory Pool goal remains recorded in `evidence/m5/memory-pools-20261012/`.
 
 | Item | Current value |
 | --- | --- |
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
 | Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
-| Goal baseline | `cf5f8a8` |
-| Last validated slice | Native Memory Pools / stream-ordered allocation; 2026-10-12 |
-| Scope boundary | Graph/Capture, IPC, Peer/Multi-device and External Interop excluded |
-| Core/pool compatibility | Practical APIs in the requested families are exhausted; measured limits remain in the ledger |
+| Goal baseline | `154dde1` |
+| Last validated slice | Native Graph / bounded Stream Capture; 2026-10-13 |
+| Scope boundary | IPC, Peer/Multi-device and External Interop excluded |
+| Graph/Capture compatibility | 40-API target reached with native instantiate/launch and practical capture; broader node/capture families remain uninvestigated |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;

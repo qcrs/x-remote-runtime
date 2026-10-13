@@ -18,6 +18,7 @@ CAPABILITIES = {
     "CRX_CAP_MODULE_KERNEL",
     "CRX_CAP_LAYOUT_TRANSFER",
     "CRX_CAP_MEMORY_POOLS",
+    "CRX_CAP_GRAPHS",
 }
 IMPLEMENTATION_CLASSES = {"client_only", "scalar_query", "object_query", "semantic_rpc"}
 TYPES = {
@@ -33,8 +34,11 @@ TYPES = {
     "module_id": ("uint64_t", 8, "module_id"),
     "kernel_id": ("uint64_t", 8, "kernel_id"),
     "pool_id": ("uint64_t", 8, "pool_id"),
+    "graph_id": ("uint64_t", 8, "graph_id"),
+    "node_id": ("uint64_t", 8, "node_id"),
+    "graph_exec_id": ("uint64_t", 8, "graph_exec_id"),
 }
-OBJECT_KINDS = {"allocation", "stream", "event", "module", "kernel", "pool"}
+OBJECT_KINDS = {"allocation", "stream", "event", "module", "kernel", "pool", "graph", "node", "graph_exec"}
 BOUNDED_TYPES = {"bounded_bytes", "bounded_string"}
 
 

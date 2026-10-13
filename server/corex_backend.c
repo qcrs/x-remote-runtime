@@ -114,3 +114,169 @@ CUresult corex_backend_pool_set_access(CUmemoryPool pool, const CUmemAccessDesc 
 CUresult corex_backend_mem_alloc_async(CUdeviceptr *ptr, size_t bytes, CUstream stream) { return cuMemAllocAsync(ptr,bytes,stream); }
 CUresult corex_backend_mem_alloc_from_pool_async(CUdeviceptr *ptr, size_t bytes, CUmemoryPool pool, CUstream stream) { return cuMemAllocFromPoolAsync(ptr,bytes,pool,stream); }
 CUresult corex_backend_mem_free_async(CUdeviceptr ptr, CUstream stream) { return cuMemFreeAsync(ptr,stream); }
+
+/* Native graph boundary. DAG and owner policy belongs to ServerSession. */
+CUresult corex_backend_graph_create(CUgraph *graph, unsigned int flags)
+{
+    return cuGraphCreate(graph, flags);
+}
+
+CUresult corex_backend_graph_destroy(CUgraph graph)
+{
+    return cuGraphDestroy(graph);
+}
+
+CUresult corex_backend_graph_add_empty(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count)
+{
+    return cuGraphAddEmptyNode(node, graph, deps, count);
+}
+
+CUresult corex_backend_graph_add_kernel(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_KERNEL_NODE_PARAMS *params)
+{
+    return cuGraphAddKernelNode(node, graph, deps, count, params);
+}
+
+CUresult corex_backend_graph_set_kernel(CUgraphNode node, const CUDA_KERNEL_NODE_PARAMS *params)
+{
+    return cuGraphKernelNodeSetParams(node, params);
+}
+
+CUresult corex_backend_graph_exec_set_kernel(CUgraphExec exec, CUgraphNode node, const CUDA_KERNEL_NODE_PARAMS *params)
+{
+    return cuGraphExecKernelNodeSetParams(exec, node, params);
+}
+
+CUresult corex_backend_graph_add_copy(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_MEMCPY3D *params, CUcontext ctx)
+{
+    return cuGraphAddMemcpyNode(node, graph, deps, count, params, ctx);
+}
+
+CUresult corex_backend_graph_set_copy(CUgraphNode node, const CUDA_MEMCPY3D *params)
+{
+    return cuGraphMemcpyNodeSetParams(node, params);
+}
+
+CUresult corex_backend_graph_exec_set_copy(CUgraphExec exec, CUgraphNode node, const CUDA_MEMCPY3D *params, CUcontext ctx)
+{
+    return cuGraphExecMemcpyNodeSetParams(exec, node, params, ctx);
+}
+
+CUresult corex_backend_graph_add_fill(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_MEMSET_NODE_PARAMS *params, CUcontext ctx)
+{
+    return cuGraphAddMemsetNode(node, graph, deps, count, params, ctx);
+}
+
+CUresult corex_backend_graph_set_fill(CUgraphNode node, const CUDA_MEMSET_NODE_PARAMS *params)
+{
+    return cuGraphMemsetNodeSetParams(node, params);
+}
+
+CUresult corex_backend_graph_exec_set_fill(CUgraphExec exec, CUgraphNode node, const CUDA_MEMSET_NODE_PARAMS *params, CUcontext ctx)
+{
+    return cuGraphExecMemsetNodeSetParams(exec, node, params, ctx);
+}
+
+CUresult corex_backend_graph_instantiate(CUgraphExec *exec, CUgraph graph)
+{
+    return cuGraphInstantiate(exec, graph, NULL, NULL, 0);
+}
+
+CUresult corex_backend_graph_exec_destroy(CUgraphExec exec)
+{
+    return cuGraphExecDestroy(exec);
+}
+
+CUresult corex_backend_graph_launch(CUgraphExec exec, CUstream stream)
+{
+    return cuGraphLaunch(exec, stream);
+}
+
+CUresult corex_backend_graph_nodes(CUgraph graph, CUgraphNode *nodes, size_t *count)
+{
+    return cuGraphGetNodes(graph, nodes, count);
+}
+
+CUresult corex_backend_graph_roots(CUgraph graph, CUgraphNode *nodes, size_t *count)
+{
+    return cuGraphGetRootNodes(graph, nodes, count);
+}
+
+CUresult corex_backend_graph_edges(CUgraph graph, CUgraphNode *from, CUgraphNode *to, size_t *count)
+{
+    return cuGraphGetEdges(graph, from, to, count);
+}
+
+CUresult corex_backend_graph_dependencies(CUgraphNode node, CUgraphNode *nodes, size_t *count)
+{
+    return cuGraphNodeGetDependencies(node, nodes, count);
+}
+
+CUresult corex_backend_graph_dependents(CUgraphNode node, CUgraphNode *nodes, size_t *count)
+{
+    return cuGraphNodeGetDependentNodes(node, nodes, count);
+}
+
+CUresult corex_backend_graph_add_dependencies(CUgraph graph, const CUgraphNode *from, const CUgraphNode *to, size_t count)
+{
+    return cuGraphAddDependencies(graph, from, to, count);
+}
+
+CUresult corex_backend_graph_remove_dependencies(CUgraph graph, const CUgraphNode *from, const CUgraphNode *to, size_t count)
+{
+    return cuGraphRemoveDependencies(graph, from, to, count);
+}
+
+CUresult corex_backend_graph_destroy_node(CUgraphNode node)
+{
+    return cuGraphDestroyNode(node);
+}
+
+CUresult corex_backend_graph_set_enabled(CUgraphExec exec, CUgraphNode node, unsigned int enabled)
+{
+    return cuGraphNodeSetEnabled(exec, node, enabled);
+}
+
+CUresult corex_backend_graph_get_enabled(CUgraphExec exec, CUgraphNode node, unsigned int *enabled)
+{
+    return cuGraphNodeGetEnabled(exec, node, enabled);
+}
+
+CUresult corex_backend_capture_begin(CUstream stream, CUstreamCaptureMode mode)
+{
+    return cuStreamBeginCapture(stream, mode);
+}
+
+CUresult corex_backend_capture_end(CUstream stream, CUgraph *graph)
+{
+    return cuStreamEndCapture(stream, graph);
+}
+
+CUresult corex_backend_capture_info(CUstream stream, CUstreamCaptureStatus *status, cuuint64_t *id, CUgraph *graph, const CUgraphNode **deps, size_t *count)
+{
+    return cuStreamGetCaptureInfo_v2(stream, status, id, graph, deps, count);
+}
+
+CUresult corex_backend_graph_clone(CUgraph *clone, CUgraph graph)
+{
+    return cuGraphClone(clone, graph);
+}
+
+CUresult corex_backend_graph_find_clone(CUgraphNode *node, CUgraphNode original, CUgraph clone)
+{
+    return cuGraphNodeFindInClone(node, original, clone);
+}
+
+CUresult corex_backend_graph_exec_update(CUgraphExec exec, CUgraph graph, CUgraphNode *error, CUgraphExecUpdateResult *result)
+{
+    return cuGraphExecUpdate(exec, graph, error, result);
+}
+
+CUresult corex_backend_graph_add_record(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUevent event)
+{
+    return cuGraphAddEventRecordNode(node, graph, deps, count, event);
+}
+
+CUresult corex_backend_graph_add_wait(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUevent event)
+{
+    return cuGraphAddEventWaitNode(node, graph, deps, count, event);
+}

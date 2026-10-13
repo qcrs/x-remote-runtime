@@ -3,6 +3,7 @@
 
 #include "corex_remote_cuda.h"
 #include "corex_protocol.h"
+#include "corex_graph_client.h"
 
 #include <pthread.h>
 #include <stddef.h>
@@ -228,6 +229,7 @@ typedef struct CorexRuntimeContext {
     struct corexCudaEventHandle event_handles[G6C_MAX_EVENT_HANDLES];
     struct corexCudaPoolHandle pool_handles[COREX_MAX_POOL_HANDLES];
     size_t pool_handle_next;
+    CorexClientGraphs graphs;
     HiddenTransfer hidden_transfers[G6C_MAX_HIDDEN_TRANSFERS];
     struct corexRemoteModuleHandle module_handles[G6D_MAX_MODULE_HANDLES];
     corexRemoteKernelHandle kernel_handles[G6D_MAX_KERNEL_HANDLES];

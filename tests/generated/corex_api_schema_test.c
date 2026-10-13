@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 int main(void) {
-    if (COREX_GENERATED_API_COUNT != 44u) return 1;
+    if (COREX_GENERATED_API_COUNT != 45u) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_payload(4u, 0u) != 0) return 1;
     if (corex_generated_validate_response(4u, 0u) != 0) return 1;
@@ -375,6 +375,15 @@ int main(void) {
     if (corex_generated_validate_payload(87u, 17u) == 0) return 1;
     if (corex_generated_validate_response(87u, 1u) == 0) return 1;
     (void)corex_generated_cudaFreeAsync_request_fields;
+    if (corex_generated_validate_payload(88u, 52u) != 0) return 1;
+    if (corex_generated_validate_payload(88u, 8244u) != 0) return 1;
+    if (corex_generated_validate_response(88u, 16u) != 0) return 1;
+    if (corex_generated_validate_response(88u, 65551u) != 0) return 1;
+    if (corex_generated_validate_payload(88u, 51u) == 0) return 1;
+    if (corex_generated_validate_payload(88u, 8245u) == 0) return 1;
+    if (corex_generated_validate_response(88u, 15u) == 0) return 1;
+    if (corex_generated_validate_response(88u, 65552u) == 0) return 1;
+    (void)corex_generated_cudaGraphCreate_request_fields;
     if (COREX_GENERATED_CUDADEVICEGETPCIBUSID_RESPONSE_PCI_BUS_ID_MAX_BYTES != 32u) return 1;
     CorexGeneratedcudaDeviceGetPCIBusIdResponse input_cudaDeviceGetPCIBusId_response_pci_bus_id = {0}, output_cudaDeviceGetPCIBusId_response_pci_bus_id = {0};
     unsigned char wire_cudaDeviceGetPCIBusId_response_pci_bus_id[36u]; size_t wire_length_cudaDeviceGetPCIBusId_response_pci_bus_id = 0;
@@ -475,6 +484,26 @@ int main(void) {
     input_cudaGetSymbolAddress_request_name.name[127u] = '\0';
     if (corex_generated_encode_cudaGetSymbolAddress_request(wire_cudaGetSymbolAddress_request_name, sizeof(wire_cudaGetSymbolAddress_request_name), &wire_length_cudaGetSymbolAddress_request_name, &input_cudaGetSymbolAddress_request_name) != 0 ||
         wire_length_cudaGetSymbolAddress_request_name != 139u) return 1;
+    if (COREX_GENERATED_CUDAGRAPHCREATE_REQUEST_DATA_MAX_BYTES != 8192u) return 1;
+    CorexGeneratedcudaGraphCreateRequest input_cudaGraphCreate_request_data = {0}, output_cudaGraphCreate_request_data = {0};
+    unsigned char wire_cudaGraphCreate_request_data[8244u]; size_t wire_length_cudaGraphCreate_request_data = 0;
+    input_cudaGraphCreate_request_data.data_length = 3u;
+    memcpy(input_cudaGraphCreate_request_data.data, "abc", 3u);
+    if (corex_generated_encode_cudaGraphCreate_request(wire_cudaGraphCreate_request_data, sizeof(wire_cudaGraphCreate_request_data), &wire_length_cudaGraphCreate_request_data, &input_cudaGraphCreate_request_data) != 0 ||
+        corex_generated_decode_cudaGraphCreate_request(wire_cudaGraphCreate_request_data, wire_length_cudaGraphCreate_request_data, &output_cudaGraphCreate_request_data) != 0 ||
+        output_cudaGraphCreate_request_data.data_length != 3u || memcmp(input_cudaGraphCreate_request_data.data, output_cudaGraphCreate_request_data.data, 3u) != 0) return 1;
+    input_cudaGraphCreate_request_data.data_length = 8193u;
+    if (corex_generated_encode_cudaGraphCreate_request(wire_cudaGraphCreate_request_data, sizeof(wire_cudaGraphCreate_request_data), &wire_length_cudaGraphCreate_request_data, &input_cudaGraphCreate_request_data) == 0) return 1;
+    if (COREX_GENERATED_CUDAGRAPHCREATE_RESPONSE_DATA_MAX_BYTES != 65535u) return 1;
+    CorexGeneratedcudaGraphCreateResponse input_cudaGraphCreate_response_data = {0}, output_cudaGraphCreate_response_data = {0};
+    unsigned char wire_cudaGraphCreate_response_data[65551u]; size_t wire_length_cudaGraphCreate_response_data = 0;
+    input_cudaGraphCreate_response_data.data_length = 3u;
+    memcpy(input_cudaGraphCreate_response_data.data, "abc", 3u);
+    if (corex_generated_encode_cudaGraphCreate_response(wire_cudaGraphCreate_response_data, sizeof(wire_cudaGraphCreate_response_data), &wire_length_cudaGraphCreate_response_data, &input_cudaGraphCreate_response_data) != 0 ||
+        corex_generated_decode_cudaGraphCreate_response(wire_cudaGraphCreate_response_data, wire_length_cudaGraphCreate_response_data, &output_cudaGraphCreate_response_data) != 0 ||
+        output_cudaGraphCreate_response_data.data_length != 3u || memcmp(input_cudaGraphCreate_response_data.data, output_cudaGraphCreate_response_data.data, 3u) != 0) return 1;
+    input_cudaGraphCreate_response_data.data_length = 65536u;
+    if (corex_generated_encode_cudaGraphCreate_response(wire_cudaGraphCreate_response_data, sizeof(wire_cudaGraphCreate_response_data), &wire_length_cudaGraphCreate_response_data, &input_cudaGraphCreate_response_data) == 0) return 1;
     if (corex_generated_validate_payload(999u, 0) == 0 ||
         corex_generated_validate_response(999u, 0) == 0 ||
         corex_generated_validate_payload(OP_STREAM_QUERY, 7) == 0) return 1;

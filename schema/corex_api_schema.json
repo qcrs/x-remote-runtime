@@ -1094,6 +1094,71 @@
       "response": [],
       "server_handler": "handle_free_async",
       "backend_binding": "corex_backend_mem_free_async"
+    },
+    {
+      "name": "cudaGraphCreate",
+      "opcode_name": "OP_GRAPH",
+      "opcode": 88,
+      "capability_id": "CRX_CAP_GRAPHS",
+      "implementation_class": "semantic_rpc",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "action",
+          "type": "u32"
+        },
+        {
+          "name": "graph",
+          "type": "graph_id",
+          "object_kind": "graph"
+        },
+        {
+          "name": "node",
+          "type": "node_id",
+          "object_kind": "node"
+        },
+        {
+          "name": "exec",
+          "type": "graph_exec_id",
+          "object_kind": "graph_exec"
+        },
+        {
+          "name": "stream",
+          "type": "stream_id",
+          "object_kind": "stream"
+        },
+        {
+          "name": "kind",
+          "type": "u32"
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        },
+        {
+          "name": "data",
+          "type": "bounded_bytes",
+          "max_bytes": 8192
+        }
+      ],
+      "response": [
+        {
+          "name": "object",
+          "type": "u64"
+        },
+        {
+          "name": "value",
+          "type": "u32"
+        },
+        {
+          "name": "data",
+          "type": "bounded_bytes",
+          "max_bytes": 65535
+        }
+      ],
+      "backend_binding": "corex_backend_graph_create",
+      "server_handler": "handle_graph"
     }
   ]
 }

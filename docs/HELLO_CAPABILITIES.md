@@ -31,12 +31,18 @@ exported symbols or native CoreX structs:
 | 6 | module load and kernel launch |
 | 7 | pointer-backed pitched/3D layout and transfers |
 | 8 | native memory pools and stream-ordered allocation |
+| 9 | bounded native graphs and stream capture |
 
 The server advertises ID 8 only when the configured device reports native
 `CU_DEVICE_ATTRIBUTE_MEMORY_POOLS_SUPPORTED`. Pool entrypoints require that
 advertisement; legacy V3 peers retain the original Runtime behavior but cannot
 accept the new pool service. PoolID is a session-owned scalar identity, never a
 native handle. Async allocations use the existing AllocationID namespace.
+
+Graph operations require ID 9. GraphID, NodeID and GraphExecID are session-owned
+scalar identities; native graph handles remain on the server. The supported
+node types, object bounds and capture modes are described in
+[GRAPH_CAPTURE_MODEL.md](GRAPH_CAPTURE_MODEL.md).
 
 IDs are never reused. Clients may ignore unknown nonzero IDs; zero and
 duplicates are invalid. A new client classifies an empty `ST_BAD_REQUEST` for

@@ -58,6 +58,49 @@ COREX_REMOTE_EXT_1.0 {
 
 COREX_REMOTE_CUDART_1.1 {
     global:
+        cudaGraphClone;
+        cudaGraphNodeFindInClone;
+        cudaGraphExecUpdate;
+        cudaGraphAddEventRecordNode;
+        cudaGraphAddEventWaitNode;
+
+        cudaStreamBeginCapture;
+        cudaStreamEndCapture;
+        cudaStreamIsCapturing;
+        cudaStreamGetCaptureInfo;
+        cudaStreamGetCaptureInfo_v2;
+
+        cudaGraphCreate;
+        cudaGraphDestroy;
+        cudaGraphAddEmptyNode;
+        cudaGraphAddKernelNode;
+        cudaGraphKernelNodeGetParams;
+        cudaGraphKernelNodeSetParams;
+        cudaGraphExecKernelNodeSetParams;
+        cudaGraphAddMemcpyNode;
+        cudaGraphMemcpyNodeGetParams;
+        cudaGraphMemcpyNodeSetParams;
+        cudaGraphExecMemcpyNodeSetParams;
+        cudaGraphAddMemsetNode;
+        cudaGraphMemsetNodeGetParams;
+        cudaGraphMemsetNodeSetParams;
+        cudaGraphExecMemsetNodeSetParams;
+        cudaGraphGetNodes;
+        cudaGraphGetRootNodes;
+        cudaGraphGetEdges;
+        cudaGraphNodeGetType;
+        cudaGraphNodeGetDependencies;
+        cudaGraphNodeGetDependentNodes;
+        cudaGraphAddDependencies;
+        cudaGraphRemoveDependencies;
+        cudaGraphDestroyNode;
+        cudaGraphInstantiate;
+        cudaGraphInstantiateWithFlags;
+        cudaGraphExecDestroy;
+        cudaGraphLaunch;
+        cudaGraphNodeSetEnabled;
+        cudaGraphNodeGetEnabled;
+
         cudaMalloc3D;
         cudaGetDeviceProperties;
         cudaMemGetInfo;

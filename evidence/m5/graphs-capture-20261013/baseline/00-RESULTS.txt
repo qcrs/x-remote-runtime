@@ -1,0 +1,8 @@
+device_identity_app_exit=0
+client_mem_info_count=2
+server_device_info_count=3
+server_get_kernel_count=1
+server_launch_generic_count=1
+server_abi_validate_pass_count=1
+server_session_count=1
+G8C_B_RESULT=PASS

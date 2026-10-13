@@ -123,4 +123,41 @@ CUresult corex_backend_stream_copy_attributes(CUstream dst, CUstream src);
 CUresult corex_backend_stream_get_attribute(CUstream stream, CUstreamAttrID attr, CUstreamAttrValue *value);
 CUresult corex_backend_stream_set_attribute(CUstream stream, CUstreamAttrID attr, const CUstreamAttrValue *value);
 
+/* Native graphs use only server-owned handles. */
+CUresult corex_backend_graph_create(CUgraph *graph, unsigned int flags);
+CUresult corex_backend_graph_destroy(CUgraph graph);
+CUresult corex_backend_graph_add_empty(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count);
+CUresult corex_backend_graph_add_kernel(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_KERNEL_NODE_PARAMS *params);
+CUresult corex_backend_graph_set_kernel(CUgraphNode node, const CUDA_KERNEL_NODE_PARAMS *params);
+CUresult corex_backend_graph_exec_set_kernel(CUgraphExec exec, CUgraphNode node, const CUDA_KERNEL_NODE_PARAMS *params);
+CUresult corex_backend_graph_add_copy(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_MEMCPY3D *params, CUcontext ctx);
+CUresult corex_backend_graph_set_copy(CUgraphNode node, const CUDA_MEMCPY3D *params);
+CUresult corex_backend_graph_exec_set_copy(CUgraphExec exec, CUgraphNode node, const CUDA_MEMCPY3D *params, CUcontext ctx);
+CUresult corex_backend_graph_add_fill(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, const CUDA_MEMSET_NODE_PARAMS *params, CUcontext ctx);
+CUresult corex_backend_graph_set_fill(CUgraphNode node, const CUDA_MEMSET_NODE_PARAMS *params);
+CUresult corex_backend_graph_exec_set_fill(CUgraphExec exec, CUgraphNode node, const CUDA_MEMSET_NODE_PARAMS *params, CUcontext ctx);
+CUresult corex_backend_graph_instantiate(CUgraphExec *exec, CUgraph graph);
+CUresult corex_backend_graph_exec_destroy(CUgraphExec exec);
+CUresult corex_backend_graph_launch(CUgraphExec exec, CUstream stream);
+CUresult corex_backend_graph_nodes(CUgraph graph, CUgraphNode *nodes, size_t *count);
+CUresult corex_backend_graph_roots(CUgraph graph, CUgraphNode *nodes, size_t *count);
+CUresult corex_backend_graph_edges(CUgraph graph, CUgraphNode *from, CUgraphNode *to, size_t *count);
+CUresult corex_backend_graph_dependencies(CUgraphNode node, CUgraphNode *nodes, size_t *count);
+CUresult corex_backend_graph_dependents(CUgraphNode node, CUgraphNode *nodes, size_t *count);
+CUresult corex_backend_graph_add_dependencies(CUgraph graph, const CUgraphNode *from, const CUgraphNode *to, size_t count);
+CUresult corex_backend_graph_remove_dependencies(CUgraph graph, const CUgraphNode *from, const CUgraphNode *to, size_t count);
+CUresult corex_backend_graph_destroy_node(CUgraphNode node);
+CUresult corex_backend_graph_set_enabled(CUgraphExec exec, CUgraphNode node, unsigned int enabled);
+CUresult corex_backend_graph_get_enabled(CUgraphExec exec, CUgraphNode node, unsigned int *enabled);
+
+CUresult corex_backend_capture_begin(CUstream stream, CUstreamCaptureMode mode);
+CUresult corex_backend_capture_end(CUstream stream, CUgraph *graph);
+CUresult corex_backend_capture_info(CUstream stream, CUstreamCaptureStatus *status, cuuint64_t *id, CUgraph *graph, const CUgraphNode **deps, size_t *count);
+
+CUresult corex_backend_graph_clone(CUgraph *clone, CUgraph graph);
+CUresult corex_backend_graph_find_clone(CUgraphNode *node, CUgraphNode original, CUgraph clone);
+CUresult corex_backend_graph_exec_update(CUgraphExec exec, CUgraph graph, CUgraphNode *error, CUgraphExecUpdateResult *result);
+CUresult corex_backend_graph_add_record(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUevent event);
+CUresult corex_backend_graph_add_wait(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUevent event);
+
 #endif

@@ -16,8 +16,11 @@ with remote copies. Session reset, pre-resource context flags, basic extended
 launches and client host callbacks are supported within the documented limits.
 Native memory pools and stream-ordered allocation share the existing remote
 allocation, stream ordering and session lifetime machinery.
-Array allocation, texture objects, and managed
-allocation are unavailable on the measured CoreX backend.
+Native graphs support device operation DAGs, inspection/mutation, executable
+snapshots and replay. A bounded native stream-capture layer reuses those graphs;
+its scope and lifetime model are in [Graph/Capture](docs/GRAPH_CAPTURE_MODEL.md).
+Array allocation, texture objects, and managed allocation are unavailable on the
+measured CoreX backend.
 
 ## Build
 
@@ -92,5 +95,5 @@ deployment, or cross-host x86_64-to-aarch64 validation.
 
 Detailed API status and limitations are recorded in the
 [compatibility ledger](compat/cuda-api-ledger.csv); validated development status
-and evidence links are in [PROJECT_STATE](docs/PROJECT_STATE.md). Graph/Stream
-Capture, IPC, Peer/Multi-device, and External Interop remain excluded. Pool sharing/import/export also remains excluded.
+and evidence links are in [PROJECT_STATE](docs/PROJECT_STATE.md). IPC,
+Peer/Multi-device, and External Interop remain excluded. Pool sharing/import/export also remains excluded.

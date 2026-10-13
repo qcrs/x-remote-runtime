@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Graph/capture ID ownership, bounded commands and EOF cleanup over CRX9."""
+import os
+import socket
+import struct
+from function_occupancy_protocol import call
+
+endpoint = ("127.0.0.1", int(os.environ["COREX_REMOTE_PORT"]))
+request = 0
+
+
+def command(sock, action, graph=0, node=0, exec_id=0, stream=0, kind=0, value=0, data=b""):
+    global request
+    request += 1
+    payload = struct.pack("!IQQQQIQI", action, graph, node, exec_id, stream, kind, value, len(data)) + data
+    return call(sock, 88, request, payload)
+
+
+def object_id(result):
+    status, data = result
+    assert status == 0 and len(data) >= 16, result
+    return struct.unpack("!Q", data[:8])[0]
+
+
+with socket.create_connection(endpoint, timeout=10) as sock:
+    status, hello = call(sock, 27, 1)
+    assert status == 0 and 9 in struct.unpack("!" + "I" * (len(hello)//4), hello)[11:]
+    for payload in [b"", b"bad", b"\0"*51, b"\0"*53]:
+        assert call(sock, 88, 2, payload) == (1, b"")
+    graph = object_id(command(sock, 1))
+    assert command(sock, 1, value=1) == (1, b"")
+    assert command(sock, 999) == (1, b"")
+    assert command(sock, 3, graph=graph, kind=5, data=struct.pack("!I", 65)) == (1, b"")
+    first = object_id(command(sock, 3, graph=graph, kind=5, data=struct.pack("!I", 0)))
+    second = object_id(command(sock, 3, graph=graph, kind=5, data=struct.pack("!IQ", 1, first)))
+    assert command(sock, 3, graph=graph, kind=5, data=struct.pack("!IQQ", 2, first, first)) == (1, b"")
+    assert command(sock, 3, graph=graph, kind=2, data=struct.pack("!I", 0)+b"bad") == (1, b"")
+    foreign = object_id(command(sock, 1))
+    assert command(sock, 3, graph=foreign, kind=5, data=struct.pack("!IQ", 1, first)) == (1, b"")
+    executable = object_id(command(sock, 8, graph=graph))
+    assert command(sock, 10, exec_id=999) == (2, b"")
+    assert command(sock, 10, exec_id=executable, stream=999) == (2, b"")
+    assert command(sock, 19, node=first, exec_id=executable, value=1) == (1, b"")
+    assert command(sock, 2, graph=graph)[0] == 0
+    assert command(sock, 16, node=first) == (2, b"")
+    assert command(sock, 10, exec_id=executable)[0] == 0
+    assert call(sock, 4, 20) == (0, b"")
+    # Leave an executable and graph to exercise the EOF cleanup path.
+
+with socket.create_connection(endpoint, timeout=10) as sock:
+    assert command(sock, 10, exec_id=executable) == (2, b"")
+    status, data = call(sock, 12, 1, struct.pack("!I", 1))
+    assert status == 0
+    stream = struct.unpack("!Q", data)[0]
+    # Actions are pinned in corex_graph_protocol.h: clone/find/update precede capture.
+    capture = object_id(command(sock, 24, stream=stream, value=1))
+    assert call(sock, 1, 2, struct.pack("!Q", 64)) == (11, b"")
+    assert command(sock, 1) == (10, b"")
+    assert command(sock, 25, graph=capture, stream=stream, kind=2, data=b"bad") == (1, b"")
+    # EOF during active native capture must restore a usable next session.
+
+with socket.create_connection(endpoint, timeout=10) as sock:
+    graph = object_id(command(sock, 1))
+    first = object_id(command(sock, 3, graph=graph, kind=5, data=struct.pack("!I", 0)))
+    executable = object_id(command(sock, 8, graph=graph))
+    assert command(sock, 10, exec_id=executable)[0] == 0
+    assert call(sock, 4, 1) == (0, b"")
+    assert call(sock, 7, 2) == (0, b"")
+print("GRAPHS_PROTOCOL=PASS bounded_commands stale_IDs graph_exec_ownership capture_EOF session_isolation")
