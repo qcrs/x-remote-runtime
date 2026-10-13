@@ -75,11 +75,12 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Workload: numerical_pipeline (first normal compiler build).
 - Observed → expected: compile rejects event helper because CUDA macro local
   `e` shadows the event variable inside its initializer → public API gets event pointer.
-- Evidence: `real-workloads-20261013/compiler-first/numerical_pipeline-compile.stderr.log`.
+- Evidence: `evidence/m6/real-workloads-20261013/compiler-first/numerical_pipeline-compile.stderr.log`.
 - Root cause: common workload macro identifier collision; no Runtime defect.
 - Resolution: use a distinct macro-local error name; rebuild and execute normal
-  compiler launch path through namespace/veth before closing.
-- Fixing commit: workload implementation commit (full hash in the final workload audit).
+  compiler launch path passed through namespace/veth; final twelve-application
+  build/run passed with the shared helper.
+- Fixing commit: `e225f3f311875b06016ea5ab0278eb36ef10696d`.
 
 ## RC-006
 
@@ -88,8 +89,9 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Observed → expected: four graph allocation/kernel/copy/free replays produce
   correct data, but the application rejects the expected stale-pointer last-error
   value → verify and clear cudaErrorInvalidDevicePointer after the negative call.
-- Evidence: `real-workloads-20261013/run-initial/graph_memory.stderr.log` and stdout.
+- Evidence: `evidence/m6/real-workloads-20261013/run-initial/graph_memory.stderr.log` and stdout.
 - Root cause: workload incorrectly wrapped cudaGetLastError in a success-only macro;
   no Runtime or graph lifetime defect.
-- Resolution: assert the expected last-error value and rerun graph memory and mixed app.
-- Fixing commit: workload implementation commit (full hash in the final workload audit).
+- Resolution: assert the expected last-error value; graph memory and mixed app
+  regression passed, followed by the full committed namespace suite.
+- Fixing commit: `e225f3f311875b06016ea5ab0278eb36ef10696d`.

@@ -1,0 +1,1 @@
+/home/lvtong/corex-remote-runtime/tests/workloads/graph_memory.cu:19 cudaGetLastError(): 17 cudaErrorInvalidDevicePointer

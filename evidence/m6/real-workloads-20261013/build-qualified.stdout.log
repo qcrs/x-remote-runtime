@@ -1,0 +1,12 @@
+capture_pipeline_BUILD=PASS
+explicit_graph_BUILD=PASS
+graph_memory_BUILD=PASS
+host_interaction_BUILD=PASS
+mixed_iterations_BUILD=PASS
+numerical_pipeline_BUILD=PASS
+pitched_image_BUILD=PASS
+pool_pipeline_BUILD=PASS
+shared_reduction_BUILD=PASS
+stream_pipeline_BUILD=PASS
+symbol_pipeline_BUILD=PASS
+volume_transform_BUILD=PASS

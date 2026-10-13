@@ -1,0 +1,16 @@
+capture_pipeline=PASS
+explicit_graph=PASS
+graph_memory=PASS
+host_interaction=PASS
+mixed_iterations=PASS
+numerical_pipeline=PASS
+pitched_image=PASS
+pool_pipeline=PASS
+shared_reduction=PASS
+stream_pipeline=PASS
+symbol_pipeline=PASS
+volume_transform=PASS
+REAL_WORKLOADS=FULL_PASS
+SESSION_CLEANUP_EMPTY=12/12
+CLIENT_NAMESPACE_AND_INDEPENDENT_PID=12/12
+DYNAMIC_BINDINGS=PASS

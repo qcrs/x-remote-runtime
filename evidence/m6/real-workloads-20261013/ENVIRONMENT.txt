@@ -1,0 +1,19 @@
+UTC=2026-10-13T08:07:15Z
+HOST=server310p
+CLIENT_ARCH=aarch64
+SERVER_ARCH=aarch64
+COREX=4.4.0
+GPU=MR-V100 (confirmed by server log)
+VALIDATION_HEAD=e225f3f311875b06016ea5ab0278eb36ef10696d
+SERVER_NETNS=net:[4026541968]
+CLIENT_NETNS=net:[4026542023]
+CLIENT_KEEPER_PID=2446332
+INITIAL_HOST_NETNS=net:[4026531840]
+ORIGINAL_UID=1002
+SERVER_NAMESPACE_MODE=rootless user-owned network namespace
+TOPOLOGY=same-host emulation; independent client/server processes; isolated client netns 198.18.0.2 -> veth/TCP 198.18.0.1:50991 -> server -> real CoreX Driver -> MR-V100
+No physical two-host, performance or cross-architecture claim. No device/mount namespace.
+Rootless mode keeps devices/filesystem on host and leaves initial host network unchanged.
+SERVER_PID=2446349
+TOOLCHAIN_DETAILS=TOOLCHAIN.txt
+BASE_HEAD=2e8528ffc29452c8783934d837e572b58095732e

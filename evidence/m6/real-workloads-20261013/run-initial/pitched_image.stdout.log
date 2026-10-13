@@ -1,0 +1,65 @@
+G7C_REGISTER_FATBINARY handle=0xffff9498c608 generation=1 wrapper=0xaaaac48b7018
+G7C_FATBIN_SPAN handle=0xffff9498c608 generation=1 bytes=10442 object=<main>
+G7C_IMAGE_EXTRACT handle=0xffff9498c608 generation=1 offset=51 bytes=5944 result=PASS
+G6A_VA_ARENA base=0xffef940d0000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=9
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=198.18.0.1 port=50991 protocol=CRX9 version=3 default_stream=LEGACY
+G7C_MODULE_AUTO_LOAD handle=0xffff9498c608 generation=1 module_handle=0xffff94951e08 module_id=1 bytes=5944 result=PASS
+G7D_FUNCTION_BIND handle=0xffff9498c608 generation=1 module_id=1 host_fun=0xaaaac48a1154 kernel_handle=0xffff94953608 kernel_id=1 name=_Z6affinePKiPiiii abi=UNKNOWN result=PASS
+G7E_ABI_ARG kernel_id=1 name=_Z6affinePKiPiiii arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=1 name=_Z6affinePKiPiiii arg=1 meta_kind=global_buffer offset=8 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=1 name=_Z6affinePKiPiiii arg=2 meta_kind=by_value offset=16 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=1 name=_Z6affinePKiPiiii arg=3 meta_kind=by_value offset=20 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=1 name=_Z6affinePKiPiiii arg=4 meta_kind=by_value offset=24 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=1 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8 abi=READY result=PASS
+G7D_FUNCTION_BIND handle=0xffff9498c608 generation=1 module_id=1 host_fun=0xaaaac48a1210 kernel_handle=0xffff949537d0 kernel_id=2 name=_Z7combinePKiS0_Piii abi=UNKNOWN result=PASS
+G7E_ABI_ARG kernel_id=2 name=_Z7combinePKiS0_Piii arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=2 name=_Z7combinePKiS0_Piii arg=1 meta_kind=global_buffer offset=8 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=2 name=_Z7combinePKiS0_Piii arg=2 meta_kind=global_buffer offset=16 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=2 name=_Z7combinePKiS0_Piii arg=3 meta_kind=by_value offset=24 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=2 name=_Z7combinePKiS0_Piii arg=4 meta_kind=by_value offset=28 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=1 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8 abi=READY result=PASS
+G7D_FUNCTION_BIND handle=0xffff9498c608 generation=1 module_id=1 host_fun=0xaaaac48a12cc kernel_handle=0xffff94953998 kernel_id=3 name=_Z5imagePKcmPcmiii abi=UNKNOWN result=PASS
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=0 meta_kind=global_buffer offset=0 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=1 meta_kind=by_value offset=8 size=8 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=2 meta_kind=global_buffer offset=16 size=8 normalized=DEVICE_PTR
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=3 meta_kind=by_value offset=24 size=8 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=4 meta_kind=by_value offset=32 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=5 meta_kind=by_value offset=36 size=4 normalized=BY_VALUE
+G7E_ABI_ARG kernel_id=3 name=_Z5imagePKcmPcmiii arg=6 meta_kind=by_value offset=40 size=4 normalized=BY_VALUE
+G7E_ABI_ATTACH generation=1 module_id=1 kernel_id=3 name=_Z5imagePKcmPcmiii argc=7 kernarg_size=44 kernarg_align=8 abi=READY result=PASS
+G7C_REGISTER_FATBINARY_END handle=0xffff9498c608 generation=1 state=LIVE module_id=1 function_registrations=3
+G8A_PUSH_CONFIG depth=1 grid=(7,4,1) block=(8,8,1) shared=0 stream=(nil) result=PASS
+G8A_POP_CONFIG depth=0 grid=(7,4,1) block=(8,8,1) shared=0 stream=(nil) result=PASS
+G6A_PTR_RESOLVE ptr=0xffef940d0000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=1 offset=0
+G6D_LAUNCH_ARG arg=1 kind=RAW_VALUE bytes=8
+G6A_PTR_RESOLVE ptr=0xffef940f0000 allocation_id=2 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=2 kind=REMOTE_PTR allocation_id=2 offset=0
+G6D_LAUNCH_ARG arg=3 kind=RAW_VALUE bytes=8
+G6D_LAUNCH_ARG arg=4 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=5 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=6 kind=RAW_VALUE bytes=4
+G8A_PUSH_CONFIG depth=1 grid=(7,4,1) block=(8,8,1) shared=0 stream=(nil) result=PASS
+G8A_POP_CONFIG depth=0 grid=(7,4,1) block=(8,8,1) shared=0 stream=(nil) result=PASS
+G6A_PTR_RESOLVE ptr=0xffef94110000 allocation_id=3 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=0 kind=REMOTE_PTR allocation_id=3 offset=0
+G6D_LAUNCH_ARG arg=1 kind=RAW_VALUE bytes=8
+G6A_PTR_RESOLVE ptr=0xffef940d0000 allocation_id=1 offset=0 bytes=1
+G6D_LAUNCH_ARG arg=2 kind=REMOTE_PTR allocation_id=1 offset=0
+G6D_LAUNCH_ARG arg=3 kind=RAW_VALUE bytes=8
+G6D_LAUNCH_ARG arg=4 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=5 kind=RAW_VALUE bytes=4
+G6D_LAUNCH_ARG arg=6 kind=RAW_VALUE bytes=4
+G6A_CUDA_FREE ptr=0xffef940d0000 allocation_id=1 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffef940f0000 allocation_id=2 result=PASS tombstone=YES
+G6A_CUDA_FREE ptr=0xffef94110000 allocation_id=3 result=PASS tombstone=YES
+pitched_image=PASS
+G7C_UNREGISTER_FATBINARY handle=0xffff9498c608 generation=1 module_id=1 state=LIVE
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffff94953608 host_fun=0xaaaac48a1154 kernel_id=1 module_id=1 name=_Z6affinePKiPiiii origin=COMPILER
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffff949537d0 host_fun=0xaaaac48a1210 kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii origin=COMPILER
+G6D_KERNEL_TOKEN_INVALIDATE token=0xffff94953998 host_fun=0xaaaac48a12cc kernel_id=3 module_id=1 name=_Z5imagePKcmPcmiii origin=COMPILER
+G6D_MODULE_UNLOAD handle=0xffff94951e08 module_id=1 result=PASS tombstone=YES
+G7C_MODULE_AUTO_UNLOAD handle=0xffff9498c608 generation=1 module_id=1 result=PASS
+G7C_REGISTRATION_TOMBSTONE handle=0xffff9498c608 generation=1 state=DEAD
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

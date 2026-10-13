@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/lvtong/corex-remote-runtime/scripts/run-remote-correctness.py", line 136, in <module>
+    run([ROOT / 'build/workloads' / name], name, client=True)
+  File "/home/lvtong/corex-remote-runtime/scripts/run-remote-correctness.py", line 54, in run
+    raise RuntimeError(f'{label} failed ({result.returncode}); see {out}')
+RuntimeError: graph_memory failed (1); see /home/lvtong/corex-remote-runtime/evidence/m6/real-workloads-20261013/run-initial

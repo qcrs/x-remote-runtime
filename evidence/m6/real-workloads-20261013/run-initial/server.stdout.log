@@ -1,0 +1,1284 @@
+===== CoreX Remote Runtime Server =====
+GPU=Iluvatar MR-V100
+startup_modules=0
+startup_kernels=0
+protocol=CRX9 version=3 default_stream=LEGACY
+listen=198.18.0.1:50991
+SERVER_READY
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+ALLOC request=5 allocation_id=1 size=16384
+ALLOC request=6 allocation_id=2 size=16384
+ALLOC request=7 allocation_id=3 size=16384
+CREATE_STREAM request=8 stream_id=1 flags=1
+H2D_ASYNC_SUBMIT request=9 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=10 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=11 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=1
+D2H_ASYNC_SUBMIT request=12 transfer_id=2 allocation_id=3 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=13 stream_id=1 result=PASS
+TRANSFER_WAIT request=14 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=15 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=16 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=17 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=18 allocation_id=3
+STREAM_SYNC request=19 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=20 stream_id=1 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=21 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=3
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=6032 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+GET_KERNEL_METADATA name=_Z6reducePKiPii argc=3 kernarg_size=20 kernarg_align=8
+GET_KERNEL request=5 module_id=1 kernel_id=3 name=_Z6reducePKiPii
+ALLOC request=6 allocation_id=1 size=16384
+ALLOC request=7 allocation_id=2 size=128
+ALLOC request=8 allocation_id=3 size=4
+H2D request=9 allocation_id=1 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6reducePKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=10 kernel_id=3 kernel=_Z6reducePKiPii stream_id=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6reducePKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=11 kernel_id=3 kernel=_Z6reducePKiPii stream_id=0
+D2H request=12 allocation_id=3 offset=0 bytes=4
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=13 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=14 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=15 allocation_id=3
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+invalidate kernel_id=3 module_id=1 name=_Z6reducePKiPii
+UNLOAD_MODULE request=16 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=3
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=5944 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+GET_KERNEL_METADATA name=_Z5imagePKcmPcmiii argc=7 kernarg_size=44 kernarg_align=8
+GET_KERNEL request=5 module_id=1 kernel_id=3 name=_Z5imagePKcmPcmiii
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=24 metadata_size=8 result=PASS
+  arg[3] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=32 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[5] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=36 metadata_size=4 result=PASS
+  arg[5] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[6] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=40 metadata_size=4 result=PASS
+  arg[6] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z5imagePKcmPcmiii argc=7 result=PASS
+LAUNCH_GENERIC request=12 kernel_id=3 kernel=_Z5imagePKcmPcmiii stream_id=0
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=24 metadata_size=8 result=PASS
+  arg[3] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=32 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[5] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=36 metadata_size=4 result=PASS
+  arg[5] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[6] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=40 metadata_size=4 result=PASS
+  arg[6] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z5imagePKcmPcmiii argc=7 result=PASS
+LAUNCH_GENERIC request=14 kernel_id=3 kernel=_Z5imagePKcmPcmiii stream_id=0
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=16 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=17 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=18 allocation_id=3
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+invalidate kernel_id=3 module_id=1 name=_Z5imagePKcmPcmiii
+UNLOAD_MODULE request=19 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=3
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=5920 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+GET_KERNEL_METADATA name=_Z5voxelPcmmiii argc=6 kernarg_size=36 kernarg_align=8
+GET_KERNEL request=5 module_id=1 kernel_id=3 name=_Z5voxelPcmmiii
+CREATE_STREAM request=7 stream_id=1 flags=1
+MEMCPY_3D request=8 opcode=56 mode=4 stream_id=1 backend=cuMemcpy3DAsync src_offset=0 dst_offset=0 packed_bytes=8624 transfer_id=1
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=8 abi_size=8 metadata_kind=by_value metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] RAW_VALUE bytes=8
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[5] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=32 metadata_size=4 result=PASS
+  arg[5] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z5voxelPcmmiii argc=6 result=PASS
+LAUNCH_GENERIC request=9 kernel_id=3 kernel=_Z5voxelPcmmiii stream_id=1
+MEMCPY_3D request=10 opcode=56 mode=5 stream_id=1 backend=cuMemcpy3DAsync src_offset=0 dst_offset=0 packed_bytes=8624 transfer_id=2
+STREAM_SYNC request=11 stream_id=1 result=PASS
+TRANSFER_WAIT request=12 transfer_id=1 kind=H2D bytes=8624 result=PASS retire=YES
+TRANSFER_WAIT request=13 transfer_id=2 kind=D2H bytes=8624 result=PASS retire=YES
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=14 allocation_id=1
+STREAM_SYNC request=15 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=16 stream_id=1 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+invalidate kernel_id=3 module_id=1 name=_Z5voxelPcmmiii
+UNLOAD_MODULE request=17 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+CREATE_STREAM request=5 stream_id=1 flags=1
+CREATE_STREAM request=6 stream_id=2 flags=1
+CREATE_EVENT request=7 event_id=1 flags=2
+CREATE_EVENT request=8 event_id=2 flags=2
+ALLOC request=9 allocation_id=1 size=16384
+ALLOC request=10 allocation_id=2 size=16384
+ALLOC request=11 allocation_id=3 size=16384
+H2D_ASYNC_SUBMIT request=12 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=13 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=14 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=15 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=16 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=17 transfer_id=2 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=18 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=19 event_id=2 result=PASS
+TRANSFER_WAIT request=20 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=21 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=22 stream_id=1 event_id=2 result=PASS
+H2D_ASYNC_SUBMIT request=23 transfer_id=3 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=24 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=25 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=26 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=27 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=28 transfer_id=4 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=29 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=30 event_id=2 result=PASS
+TRANSFER_WAIT request=31 transfer_id=3 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=32 transfer_id=4 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=33 stream_id=1 event_id=2 result=PASS
+H2D_ASYNC_SUBMIT request=34 transfer_id=5 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=35 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=36 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=37 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=38 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=39 transfer_id=6 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=40 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=41 event_id=2 result=PASS
+TRANSFER_WAIT request=42 transfer_id=5 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=43 transfer_id=6 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=44 stream_id=1 event_id=2 result=PASS
+H2D_ASYNC_SUBMIT request=45 transfer_id=7 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=46 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=47 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=48 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=49 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=50 transfer_id=8 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=51 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=52 event_id=2 result=PASS
+TRANSFER_WAIT request=53 transfer_id=7 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=54 transfer_id=8 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=55 stream_id=1 event_id=2 result=PASS
+H2D_ASYNC_SUBMIT request=56 transfer_id=9 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=57 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=58 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=59 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=60 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=61 transfer_id=10 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=62 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=63 event_id=2 result=PASS
+TRANSFER_WAIT request=64 transfer_id=9 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=65 transfer_id=10 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=66 stream_id=1 event_id=2 result=PASS
+H2D_ASYNC_SUBMIT request=67 transfer_id=11 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=68 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=69 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=70 stream_id=2 event_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z7combinePKiS0_Piii argc=5 result=PASS
+LAUNCH_GENERIC request=71 kernel_id=2 kernel=_Z7combinePKiS0_Piii stream_id=2
+D2H_ASYNC_SUBMIT request=72 transfer_id=12 allocation_id=3 offset=0 stream_id=2 bytes=16384 staging=PINNED
+EVENT_RECORD request=73 event_id=2 stream_id=2 result=PASS
+EVENT_SYNC request=74 event_id=2 result=PASS
+TRANSFER_WAIT request=75 transfer_id=11 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=76 transfer_id=12 kind=D2H bytes=16384 result=PASS retire=YES
+STREAM_WAIT_EVENT request=77 stream_id=1 event_id=2 result=PASS
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=78 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=79 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=80 allocation_id=3
+EVENT_SYNC request=81 event_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=1 scope=CONTEXT rc=0 result=PASS
+DESTROY_EVENT request=82 event_id=1 result=PASS
+EVENT_SYNC request=83 event_id=2 result=PASS
+LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=2 scope=CONTEXT rc=0 result=PASS
+DESTROY_EVENT request=84 event_id=2 result=PASS
+STREAM_SYNC request=85 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=86 stream_id=1 result=PASS
+STREAM_SYNC request=87 stream_id=2 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=2 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=88 stream_id=2 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=89 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+CREATE_STREAM request=6 stream_id=1 flags=1
+CREATE_STREAM request=7 stream_id=2 flags=1
+CREATE_EVENT request=8 event_id=1 flags=2
+ALLOC_ASYNC allocation_id=1 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=2 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=11 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=12 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=13 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=14 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=15 transfer_id=2 allocation_id=2 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=18 stream_id=2 result=PASS
+TRANSFER_WAIT request=19 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=20 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+ALLOC_ASYNC allocation_id=3 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=4 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=23 transfer_id=3 allocation_id=3 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=24 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=25 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=26 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=27 transfer_id=4 allocation_id=4 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=30 stream_id=2 result=PASS
+TRANSFER_WAIT request=31 transfer_id=3 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=32 transfer_id=4 kind=D2H bytes=16384 result=PASS retire=YES
+ALLOC_ASYNC allocation_id=5 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=6 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=35 transfer_id=5 allocation_id=5 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=5 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=6 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=36 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=37 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=38 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=39 transfer_id=6 allocation_id=6 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=42 stream_id=2 result=PASS
+TRANSFER_WAIT request=43 transfer_id=5 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=44 transfer_id=6 kind=D2H bytes=16384 result=PASS retire=YES
+ALLOC_ASYNC allocation_id=7 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=8 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=47 transfer_id=7 allocation_id=7 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=7 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=8 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=48 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=49 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=50 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=51 transfer_id=8 allocation_id=8 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=54 stream_id=2 result=PASS
+TRANSFER_WAIT request=55 transfer_id=7 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=56 transfer_id=8 kind=D2H bytes=16384 result=PASS retire=YES
+ALLOC_ASYNC allocation_id=9 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=10 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=59 transfer_id=9 allocation_id=9 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=9 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=10 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=60 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=61 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=62 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=63 transfer_id=10 allocation_id=10 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=66 stream_id=2 result=PASS
+TRANSFER_WAIT request=67 transfer_id=9 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=68 transfer_id=10 kind=D2H bytes=16384 result=PASS retire=YES
+ALLOC_ASYNC allocation_id=11 pool_id=1 stream_id=1 bytes=16384
+ALLOC_ASYNC allocation_id=12 pool_id=2 stream_id=1 bytes=16384
+H2D_ASYNC_SUBMIT request=71 transfer_id=11 allocation_id=11 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=11 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=12 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=72 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+EVENT_RECORD request=73 event_id=1 stream_id=1 result=PASS
+STREAM_WAIT_EVENT request=74 stream_id=2 event_id=1 result=PASS
+D2H_ASYNC_SUBMIT request=75 transfer_id=12 allocation_id=12 offset=0 stream_id=2 bytes=16384 staging=PINNED
+STREAM_SYNC request=78 stream_id=2 result=PASS
+TRANSFER_WAIT request=79 transfer_id=11 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=80 transfer_id=12 kind=D2H bytes=16384 result=PASS retire=YES
+EVENT_SYNC request=83 event_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=1 scope=CONTEXT rc=0 result=PASS
+DESTROY_EVENT request=84 event_id=1 result=PASS
+STREAM_SYNC request=85 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=86 stream_id=1 result=PASS
+STREAM_SYNC request=87 stream_id=2 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=2 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=88 stream_id=2 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=89 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+cleanup default_pool_id=2 restore_rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+ALLOC request=5 allocation_id=1 size=16384
+ALLOC request=6 allocation_id=2 size=16384
+ALLOC request=7 allocation_id=3 size=16384
+CREATE_STREAM request=8 stream_id=1 flags=1
+CREATE_EVENT request=9 event_id=1 flags=2
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+EVENT_SYNC request=18 event_id=1 result=PASS
+D2H request=19 allocation_id=3 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+EVENT_SYNC request=22 event_id=1 result=PASS
+D2H request=23 allocation_id=3 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+EVENT_SYNC request=26 event_id=1 result=PASS
+D2H request=27 allocation_id=3 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+EVENT_SYNC request=30 event_id=1 result=PASS
+D2H request=31 allocation_id=3 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+EVENT_SYNC request=34 event_id=1 result=PASS
+D2H request=35 allocation_id=3 offset=0 bytes=16384
+EVENT_SYNC request=38 event_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_EVENT resource=EVENT id=1 scope=CONTEXT rc=0 result=PASS
+DESTROY_EVENT request=39 event_id=1 result=PASS
+STREAM_SYNC request=40 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=41 stream_id=1 result=PASS
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=42 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=43 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=44 allocation_id=3
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=45 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+ALLOC request=5 allocation_id=1 size=16384
+ALLOC request=6 allocation_id=2 size=16384
+ALLOC request=7 allocation_id=3 size=16384
+CREATE_STREAM request=8 stream_id=1 flags=1
+H2D request=9 allocation_id=1 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+H2D_ASYNC_SUBMIT request=17 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=19 transfer_id=2 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=20 stream_id=1 result=PASS
+TRANSFER_WAIT request=21 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=22 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+H2D_ASYNC_SUBMIT request=23 transfer_id=3 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=25 transfer_id=4 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=26 stream_id=1 result=PASS
+TRANSFER_WAIT request=27 transfer_id=3 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=28 transfer_id=4 kind=D2H bytes=16384 result=PASS retire=YES
+H2D_ASYNC_SUBMIT request=29 transfer_id=5 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=31 transfer_id=6 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=32 stream_id=1 result=PASS
+TRANSFER_WAIT request=33 transfer_id=5 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=34 transfer_id=6 kind=D2H bytes=16384 result=PASS retire=YES
+H2D_ASYNC_SUBMIT request=35 transfer_id=7 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=37 transfer_id=8 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=38 stream_id=1 result=PASS
+TRANSFER_WAIT request=39 transfer_id=7 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=40 transfer_id=8 kind=D2H bytes=16384 result=PASS retire=YES
+H2D_ASYNC_SUBMIT request=41 transfer_id=9 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[2] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=16 metadata_size=8 result=PASS
+  arg[2] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=28 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=43 transfer_id=10 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=44 stream_id=1 result=PASS
+TRANSFER_WAIT request=45 transfer_id=9 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=46 transfer_id=10 kind=D2H bytes=16384 result=PASS retire=YES
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=49 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=50 allocation_id=2
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=51 allocation_id=3
+STREAM_SYNC request=52 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=53 stream_id=1 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=54 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=3
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=6072 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+GET_KERNEL_METADATA name=_Z16symbol_transformPKiPii argc=3 kernarg_size=20 kernarg_align=8
+GET_KERNEL request=5 module_id=1 kernel_id=3 name=_Z16symbol_transformPKiPii
+MODULE_GLOBAL module=1 allocation=1 name=generation bytes=4 owner=MODULE
+MODULE_GLOBAL module=1 allocation=2 name=coefficients bytes=8 owner=MODULE
+ALLOC request=8 allocation_id=3 size=16384
+ALLOC request=9 allocation_id=4 size=16384
+CREATE_STREAM request=10 stream_id=1 flags=1
+H2D_ASYNC_SUBMIT request=11 transfer_id=1 allocation_id=3 offset=0 stream_id=1 bytes=16384 staging=PINNED
+H2D_ASYNC_SUBMIT request=12 transfer_id=2 allocation_id=1 offset=0 stream_id=1 bytes=4 staging=PINNED
+H2D_ASYNC_SUBMIT request=13 transfer_id=3 allocation_id=2 offset=4 stream_id=1 bytes=4 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z16symbol_transformPKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=14 kernel_id=3 kernel=_Z16symbol_transformPKiPii stream_id=1
+D2H_ASYNC_SUBMIT request=15 transfer_id=4 allocation_id=4 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=16 stream_id=1 result=PASS
+TRANSFER_WAIT request=17 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=18 transfer_id=2 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=19 transfer_id=3 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=20 transfer_id=4 kind=D2H bytes=16384 result=PASS retire=YES
+D2H request=21 allocation_id=1 offset=0 bytes=4
+H2D_ASYNC_SUBMIT request=22 transfer_id=5 allocation_id=1 offset=0 stream_id=1 bytes=4 staging=PINNED
+H2D_ASYNC_SUBMIT request=23 transfer_id=6 allocation_id=2 offset=4 stream_id=1 bytes=4 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z16symbol_transformPKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=24 kernel_id=3 kernel=_Z16symbol_transformPKiPii stream_id=1
+D2H_ASYNC_SUBMIT request=25 transfer_id=7 allocation_id=4 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=26 stream_id=1 result=PASS
+TRANSFER_WAIT request=27 transfer_id=5 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=28 transfer_id=6 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=29 transfer_id=7 kind=D2H bytes=16384 result=PASS retire=YES
+D2H request=30 allocation_id=1 offset=0 bytes=4
+H2D_ASYNC_SUBMIT request=31 transfer_id=8 allocation_id=1 offset=0 stream_id=1 bytes=4 staging=PINNED
+H2D_ASYNC_SUBMIT request=32 transfer_id=9 allocation_id=2 offset=4 stream_id=1 bytes=4 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z16symbol_transformPKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=33 kernel_id=3 kernel=_Z16symbol_transformPKiPii stream_id=1
+D2H_ASYNC_SUBMIT request=34 transfer_id=10 allocation_id=4 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=35 stream_id=1 result=PASS
+TRANSFER_WAIT request=36 transfer_id=8 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=37 transfer_id=9 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=38 transfer_id=10 kind=D2H bytes=16384 result=PASS retire=YES
+D2H request=39 allocation_id=1 offset=0 bytes=4
+H2D_ASYNC_SUBMIT request=40 transfer_id=11 allocation_id=1 offset=0 stream_id=1 bytes=4 staging=PINNED
+H2D_ASYNC_SUBMIT request=41 transfer_id=12 allocation_id=2 offset=4 stream_id=1 bytes=4 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z16symbol_transformPKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=42 kernel_id=3 kernel=_Z16symbol_transformPKiPii stream_id=1
+D2H_ASYNC_SUBMIT request=43 transfer_id=13 allocation_id=4 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=44 stream_id=1 result=PASS
+TRANSFER_WAIT request=45 transfer_id=11 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=46 transfer_id=12 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=47 transfer_id=13 kind=D2H bytes=16384 result=PASS retire=YES
+D2H request=48 allocation_id=1 offset=0 bytes=4
+H2D_ASYNC_SUBMIT request=49 transfer_id=14 allocation_id=1 offset=0 stream_id=1 bytes=4 staging=PINNED
+H2D_ASYNC_SUBMIT request=50 transfer_id=15 allocation_id=2 offset=4 stream_id=1 bytes=4 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=3 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=4 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z16symbol_transformPKiPii argc=3 result=PASS
+LAUNCH_GENERIC request=51 kernel_id=3 kernel=_Z16symbol_transformPKiPii stream_id=1
+D2H_ASYNC_SUBMIT request=52 transfer_id=16 allocation_id=4 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=53 stream_id=1 result=PASS
+TRANSFER_WAIT request=54 transfer_id=14 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=55 transfer_id=15 kind=H2D bytes=4 result=PASS retire=YES
+TRANSFER_WAIT request=56 transfer_id=16 kind=D2H bytes=16384 result=PASS retire=YES
+D2H request=57 allocation_id=1 offset=0 bytes=4
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=58 allocation_id=3
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=4 scope=CONTEXT rc=0 result=PASS
+FREE request=59 allocation_id=4
+STREAM_SYNC request=60 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=61 stream_id=1 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+invalidate kernel_id=3 module_id=1 name=_Z16symbol_transformPKiPii
+UNLOAD_MODULE request=62 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+ALLOC request=5 allocation_id=1 size=16384
+ALLOC request=6 allocation_id=2 size=16384
+CREATE_STREAM request=7 stream_id=1 flags=1
+H2D_ASYNC_SUBMIT request=8 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=9 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+D2H_ASYNC_SUBMIT request=10 transfer_id=2 allocation_id=2 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=11 stream_id=1 result=PASS
+TRANSFER_WAIT request=12 transfer_id=1 kind=H2D bytes=16384 result=PASS retire=YES
+TRANSFER_WAIT request=13 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+ABI_VALIDATE kernel=_Z6affinePKiPiiii argc=5 result=PASS
+LAUNCH_GENERIC request=14 kernel_id=1 kernel=_Z6affinePKiPiiii stream_id=1
+STREAM_SYNC request=15 stream_id=1 result=PASS
+D2H request=16 allocation_id=1 offset=0 bytes=16384
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+STREAM_SYNC request=22 stream_id=1 result=PASS
+STREAM_SYNC request=23 stream_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+STREAM_SYNC request=25 stream_id=1 result=PASS
+STREAM_SYNC request=26 stream_id=1 result=PASS
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=1 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+STREAM_SYNC request=28 stream_id=1 result=PASS
+STREAM_SYNC request=29 stream_id=1 result=PASS
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=32 allocation_id=1
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=33 allocation_id=2
+STREAM_SYNC request=34 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=35 stream_id=1 result=PASS
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=36 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=4408 magic=7f454c46
+GET_KERNEL_METADATA name=_Z6affinePKiPiiii argc=5 kernarg_size=28 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=_Z6affinePKiPiiii
+GET_KERNEL_METADATA name=_Z7combinePKiS0_Piii argc=5 kernarg_size=32 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=_Z7combinePKiS0_Piii
+ALLOC request=5 allocation_id=1 size=16384
+CREATE_STREAM request=6 stream_id=1 flags=1
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=16 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=17 stream_id=1 result=PASS
+TRANSFER_WAIT request=18 transfer_id=1 kind=D2H bytes=16384 result=PASS retire=YES
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=20 transfer_id=2 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=21 stream_id=1 result=PASS
+TRANSFER_WAIT request=22 transfer_id=2 kind=D2H bytes=16384 result=PASS retire=YES
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=24 transfer_id=3 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=25 stream_id=1 result=PASS
+TRANSFER_WAIT request=26 transfer_id=3 kind=D2H bytes=16384 result=PASS retire=YES
+  ABI_VALIDATE arg[0] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=0 metadata_size=8 result=PASS
+  arg[0] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[1] client=REMOTE_PTR wire_payload=16 abi_size=8 metadata_kind=global_buffer metadata_offset=8 metadata_size=8 result=PASS
+  arg[1] REMOTE_PTR allocation_id=2 offset=0
+  ABI_VALIDATE arg[2] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=16 metadata_size=4 result=PASS
+  arg[2] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[3] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=20 metadata_size=4 result=PASS
+  arg[3] RAW_VALUE bytes=4
+  ABI_VALIDATE arg[4] client=RAW_VALUE wire_payload=4 abi_size=4 metadata_kind=by_value metadata_offset=24 metadata_size=4 result=PASS
+  arg[4] RAW_VALUE bytes=4
+D2H_ASYNC_SUBMIT request=28 transfer_id=4 allocation_id=1 offset=0 stream_id=1 bytes=16384 staging=PINNED
+STREAM_SYNC request=29 stream_id=1 result=PASS
+TRANSFER_WAIT request=30 transfer_id=4 kind=D2H bytes=16384 result=PASS retire=YES
+SYNC request=32
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=_Z6affinePKiPiiii
+invalidate kernel_id=2 module_id=1 name=_Z7combinePKiS0_Piii
+UNLOAD_MODULE request=33 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup stream_id=1 sync_rc=0
+cleanup stream_id=1 destroy_rc=0
+cleanup_sync rc=0
+cleanup allocation_id=1
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0

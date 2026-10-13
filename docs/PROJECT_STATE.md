@@ -1,5 +1,35 @@
 # Project State
 
+Real-application workload qualification **FULL PASS** on 2026-10-13, from clean
+baseline `2e8528ffc29452c8783934d837e572b58095732e` at implementation
+`e225f3f311875b06016ea5ab0278eb36ef10696d`. Twelve ordinary CUDA/CoreX compiled
+applications in `tests/workloads/` validate deterministic data and ordering over
+the previously qualified isolated client → non-loopback veth/TCP → independent
+runtime_server → real CoreX 4.4 / MR-V100 path. All use compiler-generated
+fatbinary/function registration; numerical pipelines use normal `<<<>>>`
+launches, and symbol applications use compiler variable registration. Public
+SDK dependencies and actual loader bindings prove execution through the remote
+Runtime library, with no application Driver/protocol/controlled-module calls.
+
+Coverage includes multi-kernel numerics, dynamic shared-memory reduction,
+pitched 2D images, 3D voxels, multi-stream/event dependencies, deferred host
+visibility, custom/default pool allocation/free, explicit Graph parameter
+updates, bounded Stream Capture replay, global/constant symbols, client host
+functions/Graph host tails, native Graph allocation/free and twelve rounds of
+mixed resource creation/replay/cleanup. Every application passed and all twelve
+server sessions ended empty with a successful context reset. Required build,
+ABI/export, protocol/golden, schema/contracts, registry and backend seam gates
+passed. RC-005 (macro shadowing) and RC-006 (expected last-error handling) were
+new workload infrastructure bugs, recorded and fixed; no new Runtime
+implementation defect was observed. Existing integration/API tests were not
+counted or rerun as application evidence.
+
+Same CPU architecture and compatible host ABI remain required. This is aarch64
+same-host remote emulation using the RC-003 rootless server-netns variant, not
+physical two-host or initial-host-server-netns validation. No performance or
+cross-ISA work was performed. See [REAL_WORKLOAD_COMPATIBILITY](REAL_WORKLOAD_COMPATIBILITY.md)
+and `evidence/m6/real-workloads-20261013/GOAL_AUDIT.md` for scope, limits and evidence.
+
 Same-architecture remote correctness qualification passed on 2026-10-13 at
 implementation `cbcbc2636c5d186a0b1c0e0238c9e79c5e36117d`, from clean baseline
 `6538a582fa4ff2266d00c5b59af20316238ff018`. Independent aarch64 public-library
@@ -69,7 +99,7 @@ current requirements and evidence-version audit is in
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
 | Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
 | Goal baseline | `154dde1` |
-| Last validated slice | Same-architecture namespace/veth remote correctness; 2026-10-13 |
+| Last validated slice | Twelve real application workloads over namespace/veth; 2026-10-13 |
 | Scope boundary | IPC, Peer/Multi-device and External Interop excluded |
 | Graph/Capture compatibility | 40 baseline + 25 newly supported APIs; three user-object APIs blocked by remote destructor lifecycle |
 

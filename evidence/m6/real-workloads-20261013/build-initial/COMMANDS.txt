@@ -1,0 +1,48 @@
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/capture_pipeline.cu -o /home/lvtong/corex-remote-runtime/build/workloads/capture_pipeline.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/capture_pipeline.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/capture_pipeline
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/capture_pipeline
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/capture_pipeline.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/explicit_graph.cu -o /home/lvtong/corex-remote-runtime/build/workloads/explicit_graph.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/explicit_graph.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/explicit_graph
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/explicit_graph
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/explicit_graph.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/graph_memory.cu -o /home/lvtong/corex-remote-runtime/build/workloads/graph_memory.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/graph_memory.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/graph_memory
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/graph_memory
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/graph_memory.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/host_interaction.cu -o /home/lvtong/corex-remote-runtime/build/workloads/host_interaction.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/host_interaction.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/host_interaction
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/host_interaction
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/host_interaction.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/mixed_iterations.cu -o /home/lvtong/corex-remote-runtime/build/workloads/mixed_iterations.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/mixed_iterations.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/mixed_iterations
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/mixed_iterations
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/mixed_iterations.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/numerical_pipeline.cu -o /home/lvtong/corex-remote-runtime/build/workloads/numerical_pipeline.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/numerical_pipeline.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/numerical_pipeline
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/numerical_pipeline
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/numerical_pipeline.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/pitched_image.cu -o /home/lvtong/corex-remote-runtime/build/workloads/pitched_image.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/pitched_image.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/pitched_image
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/pitched_image
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/pitched_image.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/pool_pipeline.cu -o /home/lvtong/corex-remote-runtime/build/workloads/pool_pipeline.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/pool_pipeline.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/pool_pipeline
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/pool_pipeline
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/pool_pipeline.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/shared_reduction.cu -o /home/lvtong/corex-remote-runtime/build/workloads/shared_reduction.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/shared_reduction.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/shared_reduction
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/shared_reduction
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/shared_reduction.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/stream_pipeline.cu -o /home/lvtong/corex-remote-runtime/build/workloads/stream_pipeline.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/stream_pipeline.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/stream_pipeline
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/stream_pipeline
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/stream_pipeline.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/symbol_pipeline.cu -o /home/lvtong/corex-remote-runtime/build/workloads/symbol_pipeline.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/symbol_pipeline.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/symbol_pipeline
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/symbol_pipeline
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/symbol_pipeline.o
+/usr/local/corex-4.4.0/bin/clang++ -x ivcore --cuda-path=/usr/local/corex-4.4.0 -I/usr/local/corex-4.4.0/include -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 -isystem /usr/include/c++/11/backward -c /home/lvtong/corex-remote-runtime/tests/workloads/volume_transform.cu -o /home/lvtong/corex-remote-runtime/build/workloads/volume_transform.o
+g++ /home/lvtong/corex-remote-runtime/build/workloads/volume_transform.o -L/home/lvtong/corex-remote-runtime/dist/lib -lcorex_remote_cudart -Wl,-rpath,/home/lvtong/corex-remote-runtime/dist/lib -pthread -o /home/lvtong/corex-remote-runtime/build/workloads/volume_transform
+readelf -dW /home/lvtong/corex-remote-runtime/build/workloads/volume_transform
+nm -u /home/lvtong/corex-remote-runtime/build/workloads/volume_transform.o

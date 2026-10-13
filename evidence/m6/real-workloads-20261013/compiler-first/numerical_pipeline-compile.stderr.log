@@ -1,0 +1,11 @@
+In file included from /home/lvtong/corex-remote-runtime/tests/workloads/numerical_pipeline.cu:1:
+/home/lvtong/corex-remote-runtime/tests/workloads/common.cuh:23:50: error: no matching function for call to 'cudaEventCreateWithFlags'
+   23 | static cudaEvent_t event() { cudaEvent_t e; CUDA(cudaEventCreateWithFlags(&e,cudaEventDisableTiming)); return e; }
+      |                                                  ^~~~~~~~~~~~~~~~~~~~~~~~
+/home/lvtong/corex-remote-runtime/tests/workloads/common.cuh:8:40: note: expanded from macro 'CUDA'
+    8 | #define CUDA(call) do { cudaError_t e=(call); if(e!=cudaSuccess) { fprintf(stderr,"%s:%d %s: %d %s\n",__FILE__,__LINE__,#call,(int)e,cudaGetErrorString(e)); exit(1); } } while(0)
+      |                                        ^~~~
+/usr/local/corex-4.4.0/include/cuda_runtime_api.h:2771:58: note: candidate function not viable: no known conversion from 'cudaError_t *' (aka 'cudaError *') to 'cudaEvent_t *' (aka 'CUevent_st **') for 1st argument
+ 2771 | extern __host__ __cudart_builtin__ cudaError_t CUDARTAPI cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int flags);
+      |                                                          ^                        ~~~~~~~~~~~~~~~~~~
+1 error generated when compiling for ivcore11.

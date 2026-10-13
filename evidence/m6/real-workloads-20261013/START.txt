@@ -1,0 +1,3 @@
+BASE_HEAD=2e8528ffc29452c8783934d837e572b58095732e
+INITIAL_WORKTREE=CLEAN (git status --short returned no entries before artifact creation)
+START_AFTER_EVIDENCE_CREATION.txt records the later appearance of this new evidence directory.
