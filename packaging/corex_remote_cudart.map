@@ -144,6 +144,7 @@ COREX_REMOTE_CUDART_1.1 {
         cudaGetFuncBySymbol;
         cudaGetKernel;
         cudaChooseDevice;
+        cudaDeviceCanAccessPeer;
         cudaSetValidDevices;
         cudaThreadSynchronize;
         cudaThreadGetLimit;

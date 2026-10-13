@@ -699,6 +699,24 @@ static int remote_function_set_cache_config(uint64_t kernel_id, int config)
 
 static int remote_function_attributes(uint64_t kernel_id, cudaFuncAttributes *attr)
 {
+    for (uint32_t i = 0; i < g_hello.capability_count; ++i) {
+        if (g_hello.capabilities[i] != CRX_CAP_FUNCTION_INFO) continue;
+        CorexGeneratedcudaFuncGetAttributesRequest request = {.kernel = kernel_id};
+        CorexGeneratedcudaFuncGetAttributesResponse response;
+        if (corex_generated_call_cudaFuncGetAttributes(generated_rpc_call, &request, &response)) return -1;
+        attr->sharedSizeBytes = response.shared_bytes;
+        attr->constSizeBytes = response.const_bytes;
+        attr->localSizeBytes = response.local_bytes;
+        attr->numRegs = response.registers;
+        attr->ptxVersion = response.ptx_version;
+        attr->binaryVersion = response.binary_version;
+        attr->maxThreadsPerBlock = response.max_threads;
+        attr->cacheModeCA = response.cache_mode_ca;
+        attr->maxDynamicSharedSizeBytes = response.max_dynamic_shared;
+        /* The native carveout query returns NotSupported. */
+        attr->preferredShmemCarveout = -1;
+        return 0;
+    }
     uint64_t wire_id = corex_protocol_to_be64(kernel_id); unsigned char *response = NULL; uint32_t len = 0;
     if (rpc(g_fd, OP_FUNCTION_ATTRIBUTES, &wire_id, 8, &response, &len) != 0 || len != 28) { free(response); return -1; }
     attr->sharedSizeBytes = corex_protocol_read_u32(response + 0);
@@ -4857,45 +4875,12 @@ cudaError_t cudaGetLastError(void)
 
 const char *cudaGetErrorString(cudaError_t error)
 {
-    switch (error) {
-    case cudaSuccess:
-        return "cudaSuccess";
-    case cudaErrorInvalidValue:
-        return "cudaErrorInvalidValue";
-    case cudaErrorMemoryAllocation:
-        return "cudaErrorMemoryAllocation";
-    case cudaErrorInitializationError:
-        return "cudaErrorInitializationError";
-    case cudaErrorInvalidDevice:
-        return "cudaErrorInvalidDevice";
-    case cudaErrorInvalidDevicePointer:
-        return "cudaErrorInvalidDevicePointer";
-    case cudaErrorInvalidSymbol:
-        return "cudaErrorInvalidSymbol";
-    case cudaErrorInvalidMemcpyDirection:
-        return "cudaErrorInvalidMemcpyDirection";
-    case cudaErrorInvalidResourceHandle:
-        return "cudaErrorInvalidResourceHandle";
-    case cudaErrorSymbolNotFound:
-        return "cudaErrorSymbolNotFound";
-    case cudaErrorNotReady:
-        return "cudaErrorNotReady";
-    case cudaErrorHostMemoryAlreadyRegistered:
-        return "cudaErrorHostMemoryAlreadyRegistered";
-    case cudaErrorHostMemoryNotRegistered:
-        return "cudaErrorHostMemoryNotRegistered";
-    case cudaErrorNotSupported:
-        return "cudaErrorNotSupported";
-    case cudaErrorStreamCaptureUnsupported: return "cudaErrorStreamCaptureUnsupported";
-    case cudaErrorStreamCaptureInvalidated: return "cudaErrorStreamCaptureInvalidated";
-    case cudaErrorStreamCaptureWrongThread: return "cudaErrorStreamCaptureWrongThread";
-    case cudaErrorGraphExecUpdateFailure: return "cudaErrorGraphExecUpdateFailure";
-    case cudaErrorOperatingSystem:
-        return "cudaErrorOperatingSystem";
-    case cudaErrorUnknown:
-        return "cudaErrorUnknown";
+    switch ((int)error) {
+#define COREX_ERROR(value, name, description) case value: return description;
+#include "corex_error_catalog.inc"
+#undef COREX_ERROR
     default:
-        return "cudaErrorUnrecognized";
+        return "internal error";
     }
 }
 
@@ -5742,26 +5727,31 @@ static cudaError_t cudaHostRegister_locked(void *ptr, size_t size, unsigned int 
 {
     size_t page = (size_t)sysconf(_SC_PAGESIZE);
     if (!ptr || !size || (flags & ~15u) || !page ||
-        (uintptr_t)ptr % page || size > SIZE_MAX - (page - 1) ||
+        size > SIZE_MAX - (page - 1) ||
         (uintptr_t)ptr > UINTPTR_MAX - size || pointer_in_remote_arena(ptr))
         G6E_RETURN(cudaErrorInvalidValue);
     if (flags & ~1u) G6E_RETURN(cudaErrorNotSupported);
-    size_t locked = (size + page - 1) / page * page;
     uintptr_t start = (uintptr_t)ptr;
-    if (start > UINTPTR_MAX - locked) G6E_RETURN(cudaErrorInvalidValue);
+    uintptr_t lock_start = start / page * page;
+    size_t offset = start - lock_start;
+    if (size > SIZE_MAX - offset - (page - 1)) G6E_RETURN(cudaErrorInvalidValue);
+    size_t locked = (size + offset + page - 1) / page * page;
+    if (lock_start > UINTPTR_MAX - locked) G6E_RETURN(cudaErrorInvalidValue);
     HostAllocation *allocs = corex_runtime_context_get()->host_allocs;
     for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
         HostAllocation *a = &allocs[i];
         if (a->base) {
             uintptr_t base = (uintptr_t)a->base;
-            size_t span = (a->locked_size + page - 1) / page * page;
-            if (start < base + span && base < start + locked)
+            /* Owned mappings cover their whole page even when the requested
+             * size is smaller; free must not unmap a second registration. */
+            size_t span = a->owned ? (a->size + page - 1) / page * page : a->size;
+            if (start < base + span && base < start + size)
                 G6E_RETURN(cudaErrorHostMemoryAlreadyRegistered);
         }
     }
     HostAllocation *a = host_slot();
     if (!a) G6E_RETURN(cudaErrorMemoryAllocation);
-    if (mlock(ptr, locked) != 0) G6E_RETURN(cudaErrorMemoryAllocation);
+    if (mlock((void *)lock_start, locked) != 0) G6E_RETURN(cudaErrorMemoryAllocation);
     *a = (HostAllocation){ptr, size, locked, flags, 0};
     return cudaSuccess;
 }
@@ -5778,7 +5768,30 @@ static cudaError_t release_host_locked(void *ptr, int owned)
         cudaError_t result = cudaDeviceSynchronize_locked();
         if (result != cudaSuccess) return result;
     }
-    if (munlock(a->base, a->locked_size) != 0) G6E_RETURN(cudaErrorUnknown);
+    /* mlock is page-granular and does not count registrations. Disjoint
+     * byte ranges may share a page; unlock only pages with no remaining
+     * owner in the existing host registry. */
+    size_t page = (size_t)sysconf(_SC_PAGESIZE);
+    uintptr_t cursor = (uintptr_t)a->base / page * page;
+    uintptr_t end = cursor + (a->locked_size + page - 1) / page * page;
+    HostAllocation *allocs = corex_runtime_context_get()->host_allocs;
+    while (cursor < end) {
+        uintptr_t covered_end = cursor, next = end;
+        for (size_t i = 0; i < G6A_MAX_ALLOCS; ++i) {
+            HostAllocation *other = &allocs[i];
+            if (other == a || !other->base) continue;
+            uintptr_t first = (uintptr_t)other->base / page * page;
+            uintptr_t last = first + (other->locked_size + page - 1) / page * page;
+            if (first <= cursor && last > covered_end) covered_end = last;
+            if (first > cursor && first < next) next = first;
+        }
+        if (covered_end > cursor) {
+            cursor = covered_end < end ? covered_end : end;
+        } else {
+            if (munlock((void *)cursor, next - cursor) != 0) G6E_RETURN(cudaErrorUnknown);
+            cursor = next;
+        }
+    }
     if (owned && munmap(a->base, a->size) != 0) G6E_RETURN(cudaErrorUnknown);
     memset(a, 0, sizeof(*a));
     return cudaSuccess;
@@ -5826,14 +5839,11 @@ static cudaError_t cudaPointerGetAttributes_locked(cudaPointerAttributes *attrib
 
 const char *cudaGetErrorName(cudaError_t error)
 {
-    switch (error) {
-    case cudaErrorSymbolNotFound: return "cudaErrorSymbolNotFound";
-    case cudaErrorHostMemoryAlreadyRegistered: return "cudaErrorHostMemoryAlreadyRegistered";
-    case cudaErrorHostMemoryNotRegistered: return "cudaErrorHostMemoryNotRegistered";
-    default:
-        if (!strcmp(cudaGetErrorString(error), "cudaErrorUnrecognized"))
-            return "unrecognized error code";
-        return cudaGetErrorString(error);
+    switch ((int)error) {
+#define COREX_ERROR(value, name, description) case value: return name;
+#include "corex_error_catalog.inc"
+#undef COREX_ERROR
+    default: return "unrecognized error code";
     }
 }
 

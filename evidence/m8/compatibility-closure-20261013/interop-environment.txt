@@ -1,0 +1,17 @@
+/dev/dri: ['/dev/dri/by-path', '/dev/dri/card0']
+/usr/share/vulkan/icd.d: []
+nvscisync: None
+nvscibuf: None
+vulkan: None
+EGL: None
+GL: libGL.so.1
+DISPLAY=None
+WAYLAND_DISPLAY=None
+cuda cuImportExternalMemory SYMBOL=PRESENT
+cuda cuImportExternalSemaphore SYMBOL=PRESENT
+cuda cuGraphicsGLRegisterBuffer SYMBOL=ABSENT
+cuda cuDeviceGetNvSciSyncAttributes SYMBOL=ABSENT
+cudart cudaImportExternalMemory SYMBOL=PRESENT
+cudart cudaImportExternalSemaphore SYMBOL=PRESENT
+cudart cudaGraphicsGLRegisterBuffer SYMBOL=ABSENT
+cudart cudaDeviceGetNvSciSyncAttributes SYMBOL=ABSENT

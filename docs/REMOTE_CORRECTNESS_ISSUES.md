@@ -1,5 +1,8 @@
 # Remote correctness issues
 
+Compatibility closure baseline: `1f9502b05d12f46df21c95cd0aac78a88dd871e1`.
+Evidence: `evidence/m8/compatibility-closure-20261013/`.
+
 Real-workload qualification baseline: `2e8528ffc29452c8783934d837e572b58095732e`.
 New evidence root: `evidence/m6/real-workloads-20261013/`.
 
@@ -109,3 +112,21 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
 - Resolution: named-result audit passed for all twelve applications plus bindings;
   application rerun unnecessary because only the post-run assertion changes.
 - Fixing commit: `914ef7842eabb5080171dfd94afff41f69cb05c9`.
+
+## RC-008
+
+- Status: FIXED; category: RUNTIME_BUG; subsystem: public error diagnostics.
+- Observed → expected: baseline `cudaGetErrorString(cudaErrorInvalidValue)`
+  returns `cudaErrorInvalidValue` → a human-readable description (`invalid
+  argument` on the measured native CoreX Runtime). Names and descriptions are
+  different Runtime contracts.
+- Evidence: `src/corex_remote_cuda.c` at the closure baseline returns enum names
+  from both APIs; `evidence/m8/compatibility-closure-20261013/error-enum-native.tsv`
+  measures all 112 installed header enums, and `closure-remote.stdout.log`
+  compares every final description with that independent native result.
+- Root cause: the limited error-name switch was reused as the description API.
+- Resolution: separate canonical header names and native descriptions in one
+  client-only catalog; names include two newer header enums missing in native
+  CoreX's name table. Unknown values preserve each native fallback. No native
+  DSO link dependency or last-error mutation is introduced.
+- Fixing commit: compatibility-closure implementation commit (see M8 COMMIT.txt).

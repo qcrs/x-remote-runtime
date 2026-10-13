@@ -63,6 +63,9 @@ failure; live registry records must also match the active generation. Server IDs
 are monotonically allocated within a session and may restart in the next session;
 client generation ownership prevents stale tokens from resolving to a new object.
 Client page-locked staging records are process-owned and survive remote reset.
+Unaligned registrations track byte ranges in that same host registry. Disjoint
+ranges can share an OS page; unregister unlocks only pages with no remaining
+registered owner, after retiring pending host transfers.
 
 H2D submission copies host data into server staging. D2H bytes become visible at
 client synchronization/query/frontier retirement boundaries, not simply when a

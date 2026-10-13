@@ -1,5 +1,19 @@
 # Project state
 
+CUDA Runtime compatibility closure is complete from clean baseline
+`1f9502b05d12f46df21c95cd0aac78a88dd871e1` on 2026-10-13. The 35 previously required
+public APIs now have terminal classifications; all 77 baseline partial APIs have
+an individual review. Public totals are 107 implemented, 75 partial, 63 blocked,
+13 backend unsupported and eight explicitly out of scope. Practical changes add
+the single-device self-peer query, full installed error names/descriptions,
+unaligned host registration with shared-page lock ownership, and native function
+cache/dynamic-shared-memory queries. The remaining carveout query is unsupported.
+See [API_COMPATIBILITY_CLOSURE](API_COMPATIBILITY_CLOSURE.md) and
+`evidence/m8/compatibility-closure-20261013/` for the final baseline audit.
+RC-008 records the corrected error-description defect. Build/static gates,
+targeted independent public remote clients and the two affected real workloads
+pass; unchanged historical suites were not repeated.
+
 Engineering prototype release hardening is complete from clean baseline
 `97907fe70a09fed21f1a8d28d52cb92acdb8fd0c` on 2026-10-13. API coverage and Runtime
 semantics are unchanged. The release entrypoint is [README](../README.md);
@@ -20,7 +34,7 @@ Major capabilities and resource ownership are summarized in
 remain in [GRAPH_CAPTURE_MODEL](GRAPH_CAPTURE_MODEL.md); qualification scopes are
 [REMOTE_CORRECTNESS_MATRIX](REMOTE_CORRECTNESS_MATRIX.md) and
 [REAL_WORKLOAD_COMPATIBILITY](REAL_WORKLOAD_COMPATIBILITY.md). Issues RC-001 through
-RC-007 remain recorded in [REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md).
+RC-008 remain recorded in [REMOTE_CORRECTNESS_ISSUES](REMOTE_CORRECTNESS_ISSUES.md).
 
 Release evidence: `evidence/m7/release-hardening-20261013/`.
 Earlier milestones and their evidence are preserved in [HISTORY](HISTORY.md).

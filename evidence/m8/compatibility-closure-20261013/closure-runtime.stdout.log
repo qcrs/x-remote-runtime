@@ -1,0 +1,12 @@
+cudaDeviceCanAccessPeer(&value, 0, 0) result=0
+SAME_DEVICE_CAN_ACCESS=0
+cudaDeviceCanAccessPeer(&value, 0, 1) result=101
+cudaDeviceGetP2PAttribute(&value, cudaDevP2PAttrAccessSupported, 0, 0) result=101
+cudaChooseDevice(&value, &prop) result=0
+CHOSEN_DEVICE=0
+cudaSetValidDevices(devices, 2) result=1
+cudaHostRegister((char *)p + 1, 64, 0) result=0
+cudaHostRegister((char *)p + 128, 64, 0) result=0
+cudaHostUnregister((char *)p + 128) result=0
+cudaHostUnregister((char *)p + 1) result=0
+CLOSURE_RUNTIME_PROBE=COMPLETE

@@ -257,6 +257,7 @@ cudaError_t cudaDeviceSetSharedMemConfig(cudaSharedMemConfig config);
 cudaError_t cudaStreamCopyAttributes(cudaStream_t dst, cudaStream_t src);
 
 cudaError_t cudaGetDeviceCount(int *count);
+cudaError_t cudaDeviceCanAccessPeer(int *can_access, int device, int peer_device);
 cudaError_t cudaGetDevice(int *device);
 cudaError_t cudaSetDevice(int device);
 cudaError_t cudaDriverGetVersion(int *driverVersion);

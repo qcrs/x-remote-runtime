@@ -1,0 +1,10 @@
+/home/lvtong/corex-remote-runtime/tests/probes/corex_closure_legacy_probe.cu:8:61: error: no matching function for call to 'tex1Dfetch'
+    8 | __global__ void closure_texture_kernel(float *out) { *out = tex1Dfetch(closure_texture, 0); }
+      |                                                             ^~~~~~~~~~
+/usr/local/corex-4.4.0/include/texture_indirect_functions.h:112:21: note: candidate template ignored: couldn't infer template argument 'T'
+  112 | static __device__ T tex1Dfetch(cudaTextureObject_t texObject, int x)
+      |                     ^
+/usr/local/corex-4.4.0/include/texture_indirect_functions.h:104:53: note: candidate function template not viable: requires 3 arguments, but 2 were provided
+  104 | static __device__ typename __nv_itex_trait<T>::type tex1Dfetch(T *ptr, cudaTextureObject_t obj, int x)
+      |                                                     ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated when compiling for ivcore11.

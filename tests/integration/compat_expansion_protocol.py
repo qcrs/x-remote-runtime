@@ -32,6 +32,10 @@ with socket.create_connection((os.environ.get("COREX_REMOTE_HOST", "127.0.0.1"),
     for opcode, size in ((59, 12), (60, 4), (61, 4), (62, 16), (63, 12), (64, 52)):
         call(opcode, b"\0" * (size - 1), expected=1)
         call(opcode, b"\0" * (size + 1), expected=1)
+    # Extended function attributes still use session-owned KernelID tokens.
+    call(92, bytes(7), expected=1)
+    call(92, bytes(9), expected=1)
+    call(92, struct.pack("!Q", 999), expected=2)
     call(59, struct.pack("!iQ", 99, 1), expected=1)
     call(60, struct.pack("!i", 99), expected=1)
     call(61, struct.pack("!i", 99), expected=1)

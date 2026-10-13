@@ -128,6 +128,7 @@ are in [release readiness](docs/RELEASE_READINESS.md).
 
 See [architecture](docs/ARCHITECTURE.md) for ownership and transport,
 [current state](docs/PROJECT_STATE.md) for the latest result,
+[compatibility closure](docs/API_COMPATIBILITY_CLOSURE.md) for the audited boundary,
 [Graph/Capture model](docs/GRAPH_CAPTURE_MODEL.md) for detailed semantics,
 [correctness issues](docs/REMOTE_CORRECTNESS_ISSUES.md) for accepted limitations,
 [evidence policy](docs/EVIDENCE_POLICY.md) for audit format, and

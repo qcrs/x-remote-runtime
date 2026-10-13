@@ -150,7 +150,8 @@ typedef enum {
     OP_GRAPH_MEM_GET = 89,
     OP_GRAPH_MEM_SET = 90,
     OP_GRAPH_MEM_TRIM = 91,
-    OP__COUNT               = 92,
+    OP_FUNCTION_INFO        = 92,
+    OP__COUNT               = 93,
 } CorexProtocolOpcode;
 
 #define CRX_HELLO_SCHEMA_VERSION 1u
@@ -179,6 +180,7 @@ typedef enum {
     CRX_CAP_LAYOUT_TRANSFER = 7,
     CRX_CAP_MEMORY_POOLS = 8,
     CRX_CAP_GRAPHS = 9,
+    CRX_CAP_FUNCTION_INFO = 10,
 } CorexCapabilityId;
 
 typedef struct {

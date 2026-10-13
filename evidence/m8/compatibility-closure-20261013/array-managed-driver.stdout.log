@@ -1,0 +1,117 @@
+cuInit(0) result=0 name=CUDA_SUCCESS
+cuDeviceGet(&device, 0) result=0 name=CUDA_SUCCESS
+cuCtxCreate(&ctx, 0, device) result=0 name=CUDA_SUCCESS
+cuDeviceGetName(name, sizeof(name), device) result=0 name=CUDA_SUCCESS
+cuDriverGetVersion(&version) result=0 name=CUDA_SUCCESS
+DEVICE=Iluvatar MR-V100 DRIVER_VERSION=10020
+cuStreamCreate(&stream, 0) result=0 name=CUDA_SUCCESS
+cuMemHostAlloc(flags=0) result=0 name=CUDA_SUCCESS
+cuMemHostGetFlags(&actual, p) result=0 name=CUDA_SUCCESS
+HOST_FLAGS requested=0 actual=0
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&device, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyHtoD(device, p, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyDtoH(out, device, 4096) result=0 name=CUDA_SUCCESS
+HOST_ROUNDTRIP=PASS
+cuMemFree(device) result=0 name=CUDA_SUCCESS
+cuMemFreeHost(p) result=0 name=CUDA_SUCCESS
+cuMemHostAlloc(flags=1) result=0 name=CUDA_SUCCESS
+cuMemHostGetFlags(&actual, p) result=0 name=CUDA_SUCCESS
+HOST_FLAGS requested=1 actual=1
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&device, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyHtoD(device, p, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyDtoH(out, device, 4096) result=0 name=CUDA_SUCCESS
+HOST_ROUNDTRIP=PASS
+cuMemFree(device) result=0 name=CUDA_SUCCESS
+cuMemFreeHost(p) result=0 name=CUDA_SUCCESS
+cuMemHostAlloc(flags=2) result=0 name=CUDA_SUCCESS
+cuMemHostGetFlags(&actual, p) result=0 name=CUDA_SUCCESS
+HOST_FLAGS requested=2 actual=2
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&device, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyHtoD(device, p, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyDtoH(out, device, 4096) result=0 name=CUDA_SUCCESS
+HOST_ROUNDTRIP=PASS
+cuMemFree(device) result=0 name=CUDA_SUCCESS
+cuMemFreeHost(p) result=0 name=CUDA_SUCCESS
+cuMemHostAlloc(flags=3) result=0 name=CUDA_SUCCESS
+cuMemHostGetFlags(&actual, p) result=0 name=CUDA_SUCCESS
+HOST_FLAGS requested=3 actual=3
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&device, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyHtoD(device, p, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyDtoH(out, device, 4096) result=0 name=CUDA_SUCCESS
+HOST_ROUNDTRIP=PASS
+cuMemFree(device) result=0 name=CUDA_SUCCESS
+cuMemFreeHost(p) result=0 name=CUDA_SUCCESS
+cuMemHostAlloc(flags=4) result=0 name=CUDA_SUCCESS
+cuMemHostGetFlags(&actual, p) result=0 name=CUDA_SUCCESS
+HOST_FLAGS requested=4 actual=4
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&device, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyHtoD(device, p, 4096) result=0 name=CUDA_SUCCESS
+cuMemcpyDtoH(out, device, 4096) result=0 name=CUDA_SUCCESS
+HOST_ROUNDTRIP=PASS
+cuMemFree(device) result=0 name=CUDA_SUCCESS
+cuMemFreeHost(p) result=0 name=CUDA_SUCCESS
+cuMemHostRegister(p, 4096, 0) result=0 name=CUDA_SUCCESS
+cuMemHostGetDevicePointer(&mapped, p, 0) result=0 name=CUDA_SUCCESS
+cuMemHostUnregister(p) result=0 name=CUDA_SUCCESS
+cuArrayCreate(&a, &d) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+ARRAY_DEPENDENTS=BLOCKED_BY_CREATE result=801
+cuArray3DCreate(&a, &d3) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+cuArray3DCreate(&a, &d3) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+SURFACE_DEPENDENTS=BLOCKED_BY_ARRAY_CREATE
+cuMipmappedArrayCreate(&mip, &d3, 3) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+MIPMAP_DEPENDENTS=BLOCKED_BY_CREATE
+cuMemAlloc(&p, 4096) result=0 name=CUDA_SUCCESS
+cuTexObjectCreate(&t, &res, &tex, NULL) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+cuMemFree(p) result=0 name=CUDA_SUCCESS
+cuCtxGetCacheConfig(&cache) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_SHARED) result=0 name=CUDA_SUCCESS
+cuCtxGetCacheConfig(&actual) result=0 name=CUDA_SUCCESS
+CACHE_AFTER_SET=1
+cuCtxSetCacheConfig(cache) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(0) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(1) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(2) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(3) result=0 name=CUDA_SUCCESS
+cuCtxSetCacheConfig(cache) result=0 name=CUDA_SUCCESS
+cuCtxGetSharedMemConfig(&shared) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(CU_SHARED_MEM_CONFIG_FOUR_BYTE_BANK_SIZE) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(shared) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(0) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(1) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(2) result=0 name=CUDA_SUCCESS
+cuCtxSetSharedMemConfig(shared) result=0 name=CUDA_SUCCESS
+cuCtxGetLimit(0) result=215 name=CUDA_ERROR_UNSUPPORTED_LIMIT
+cuCtxGetLimit(1) result=0 name=CUDA_SUCCESS
+cuCtxSetLimit(1,value=5242880) result=0 name=CUDA_SUCCESS
+cuCtxGetLimit(2) result=0 name=CUDA_SUCCESS
+cuCtxSetLimit(2,value=8388608) result=0 name=CUDA_SUCCESS
+cuCtxGetLimit(3) result=215 name=CUDA_ERROR_UNSUPPORTED_LIMIT
+cuCtxGetLimit(4) result=215 name=CUDA_ERROR_UNSUPPORTED_LIMIT
+cuCtxGetLimit(5) result=215 name=CUDA_ERROR_UNSUPPORTED_LIMIT
+cuCtxGetLimit(6) result=0 name=CUDA_SUCCESS
+cuCtxSetLimit(6,value=0) result=0 name=CUDA_SUCCESS
+cuMemAllocManaged(&managed, 4096, CU_MEM_ATTACH_GLOBAL) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+MANAGED_DEPENDENTS=BLOCKED_BY_ALLOC
+cuStreamGetAttribute(stream, CU_STREAM_ATTRIBUTE_SYNCHRONIZATION_POLICY, &attr) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+cuStreamSetAttribute(stream, CU_STREAM_ATTRIBUTE_SYNCHRONIZATION_POLICY, &attr) result=801 name=CUDA_ERROR_NOT_SUPPORTED
+cuStreamGetAttribute(stream, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &attr) result=0 name=CUDA_SUCCESS
+cuStreamSetAttribute(stream, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &attr) result=0 name=CUDA_SUCCESS
+cuStreamCreate(&other, 0) result=0 name=CUDA_SUCCESS
+cuMemAlloc(&window, 4096) result=0 name=CUDA_SUCCESS
+cuStreamSetAttribute(stream, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &requested) result=1 name=CUDA_ERROR_INVALID_VALUE
+cuStreamSetAttribute(stream, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &requested) result=1 name=CUDA_ERROR_INVALID_VALUE
+cuStreamGetAttribute(stream, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &got) result=0 name=CUDA_SUCCESS
+ACCESS_WINDOW_READBACK base_matches=0 bytes=0 hitRatio=0 hitProp=0 missProp=0
+cuStreamCopyAttributes(other, stream) result=0 name=CUDA_SUCCESS
+cuStreamGetAttribute(other, CU_STREAM_ATTRIBUTE_ACCESS_POLICY_WINDOW, &got) result=0 name=CUDA_SUCCESS
+ACCESS_WINDOW_COPY_READBACK base_matches=0 bytes=0 hitRatio=0 hitProp=0 missProp=0
+cuMemFree(window) result=0 name=CUDA_SUCCESS
+cuStreamDestroy(other) result=0 name=CUDA_SUCCESS
+cuStreamDestroy(stream) result=0 name=CUDA_SUCCESS
+cuCtxDestroy(ctx) result=0 name=CUDA_SUCCESS
+COMPAT_FAMILIES_PROBE=COMPLETE

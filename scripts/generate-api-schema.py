@@ -19,6 +19,7 @@ CAPABILITIES = {
     "CRX_CAP_LAYOUT_TRANSFER",
     "CRX_CAP_MEMORY_POOLS",
     "CRX_CAP_GRAPHS",
+    "CRX_CAP_FUNCTION_INFO",
 }
 IMPLEMENTATION_CLASSES = {"client_only", "scalar_query", "object_query", "semantic_rpc"}
 TYPES = {

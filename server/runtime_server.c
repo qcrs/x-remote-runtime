@@ -188,7 +188,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
         /* The V3 server exposes logical device zero only. */
         .device_count = 1,
         .device_profile_id = CRX_DEVICE_PROFILE_COREX_GENERIC,
-        .capability_count = g_memory_pools_supported ? 9 : 8,
+        .capability_count = g_memory_pools_supported ? 10 : 9,
         .capabilities = {
             CRX_CAP_DEVICE_INFO,
             CRX_CAP_LINEAR_MEMORY,
@@ -198,6 +198,7 @@ static int handle_hello(int fd, uint32_t req_id, uint32_t payload_len)
             CRX_CAP_MODULE_KERNEL,
             CRX_CAP_LAYOUT_TRANSFER,
             CRX_CAP_GRAPHS,
+            CRX_CAP_FUNCTION_INFO,
             CRX_CAP_MEMORY_POOLS,
         },
     };
@@ -2592,6 +2593,32 @@ static int handle_function_attributes(ServerSession *session, int fd, uint32_t r
     return send_response(fd, OP_FUNCTION_ATTRIBUTES, req_id, ST_OK, response, 28);
 }
 
+static int handle_function_info(ServerSession *session, int fd, uint32_t req_id,
+                                const unsigned char *payload, uint32_t len)
+{
+    CorexGeneratedcudaFuncGetAttributesRequest request;
+    if (corex_generated_decode_cudaFuncGetAttributes_request(payload, len, &request))
+        return send_response(fd, OP_FUNCTION_INFO, req_id, ST_BAD_REQUEST, NULL, 0);
+    KernelEntry *kernel = find_kernel(session, request.kernel);
+    if (!kernel) return send_response(fd, OP_FUNCTION_INFO, req_id, ST_NOT_FOUND, NULL, 0);
+    CUfunction_attribute attrs[] = {CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES,
+        CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, CU_FUNC_ATTRIBUTE_NUM_REGS, CU_FUNC_ATTRIBUTE_PTX_VERSION,
+        CU_FUNC_ATTRIBUTE_BINARY_VERSION, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK,
+        CU_FUNC_ATTRIBUTE_CACHE_MODE_CA, CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES};
+    int values[9];
+    for (size_t i = 0; i < 9; ++i) {
+        CUresult result = corex_backend_function_attribute(&values[i], kernel->function, attrs[i]);
+        if (result != CUDA_SUCCESS)
+            return send_response(fd, OP_FUNCTION_INFO, req_id, pool_status(result), NULL, 0);
+    }
+    CorexGeneratedcudaFuncGetAttributesResponse response = {
+        values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]};
+    unsigned char wire[36]; size_t length = 0;
+    if (corex_generated_encode_cudaFuncGetAttributes_response(wire, sizeof(wire), &length, &response))
+        return send_response(fd, OP_FUNCTION_INFO, req_id, ST_INTERNAL, NULL, 0);
+    return send_response(fd, OP_FUNCTION_INFO, req_id, ST_OK, wire, (uint32_t)length);
+}
+
 static int handle_device_default_pool(ServerSession *session,int fd,uint32_t req_id,const unsigned char *payload,uint32_t len)
 {
     CorexGeneratedcudaDeviceGetDefaultMemPoolRequest request;
@@ -4587,7 +4614,7 @@ static int server_registry_validate(void)
 #undef UNIQUE_OPCODE_CASE
     for (uint32_t opcode = OP_ALLOC; opcode < OP__COUNT; ++opcode) {
         if (!g_handlers[opcode].handler ||
-            g_handlers[opcode].capability_id > CRX_CAP_GRAPHS)
+            g_handlers[opcode].capability_id > CRX_CAP_FUNCTION_INFO)
             return -1;
     }
     for (size_t i = 0; i < COREX_GENERATED_API_COUNT; ++i) {

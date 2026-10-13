@@ -1,0 +1,5 @@
+HEADER=/usr/local/corex-4.4.0/include/cuda_runtime_api.h
+SHA256=3dc000562a5e405de809595f0e2dd95ab935f945dbe01382f9e79c6dce34139a
+9687: /** \cond impl_private */
+9688: extern __host__ cudaError_t CUDARTAPI cudaGetExportTable(const void **ppExportTable, const cudaUUID_t *pExportTableId);
+9689: /** \endcond impl_private */

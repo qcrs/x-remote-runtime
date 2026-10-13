@@ -1,0 +1,112 @@
+===== CoreX Remote Runtime Server =====
+GPU=Iluvatar MR-V100
+startup_modules=0
+startup_kernels=0
+protocol=CRX9 version=3 default_stream=LEGACY
+listen=127.0.0.1:38689
+SERVER_READY
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+ALLOC request=2 allocation_id=1 size=32
+H2D_ASYNC_SUBMIT request=3 transfer_id=1 allocation_id=1 offset=0 stream_id=0 bytes=32 staging=PINNED
+D2H_ASYNC_SUBMIT request=4 transfer_id=2 allocation_id=1 offset=0 stream_id=0 bytes=32 staging=PINNED
+SYNC request=5
+TRANSFER_WAIT request=6 transfer_id=1 kind=H2D bytes=32 result=PASS retire=YES
+TRANSFER_WAIT request=7 transfer_id=2 kind=D2H bytes=32 result=PASS retire=YES
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=8 allocation_id=1
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=2 module_id=1 name=g7c-auto-1.cubin size=3944 magic=7f454c46
+GET_KERNEL_METADATA name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8
+GET_KERNEL request=3 module_id=1 kernel_id=1 name=m1s2_lifecycle_kernel
+GET_KERNEL_METADATA name=library_mixed_kernel argc=3 kernarg_size=16 kernarg_align=8
+GET_KERNEL request=4 module_id=1 kernel_id=2 name=library_mixed_kernel
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel
+invalidate kernel_id=2 module_id=1 name=library_mixed_kernel
+UNLOAD_MODULE request=6 module_id=1 name=g7c-auto-1.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+ALLOC request=2 allocation_id=1 size=4096
+CREATE_STREAM request=3 stream_id=1 flags=0
+H2D_ASYNC_SUBMIT request=4 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=4096 staging=PINNED
+D2H_ASYNC_SUBMIT request=5 transfer_id=2 allocation_id=1 offset=0 stream_id=1 bytes=4096 staging=PINNED
+SYNC request=6
+TRANSFER_WAIT request=7 transfer_id=1 kind=H2D bytes=4096 result=PASS retire=YES
+TRANSFER_WAIT request=8 transfer_id=2 kind=D2H bytes=4096 result=PASS retire=YES
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=9 allocation_id=1
+STREAM_SYNC request=10 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=11 stream_id=1 result=PASS
+ALLOC request=12 allocation_id=2 size=32
+H2D request=13 allocation_id=2 offset=0 bytes=32
+D2H request=14 allocation_id=2 offset=0 bytes=32
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=2 scope=CONTEXT rc=0 result=PASS
+FREE request=15 allocation_id=2
+CREATE_STREAM request=26 stream_id=2 flags=0
+CREATE_STREAM request=27 stream_id=3 flags=0
+ALLOC request=30 allocation_id=3 size=4096
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=3 scope=CONTEXT rc=0 result=PASS
+FREE request=32 allocation_id=3
+STREAM_SYNC request=38 stream_id=2 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=2 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=39 stream_id=2 result=PASS
+STREAM_SYNC request=40 stream_id=3 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=3 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=41 stream_id=3 result=PASS
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+ALLOC request=11 allocation_id=1 size=16
+CREATE_STREAM request=12 stream_id=1 flags=0
+MEMSET_ASYNC request=13 allocation_id=1 offset=0 value=167 bytes=16
+D2H_ASYNC_SUBMIT request=14 transfer_id=1 allocation_id=1 offset=0 stream_id=1 bytes=16 staging=PINNED
+SYNC request=15
+TRANSFER_WAIT request=16 transfer_id=1 kind=D2H bytes=16 result=PASS retire=YES
+STREAM_SYNC request=17 stream_id=1 result=PASS
+LIFETIME_BARRIER op=DESTROY_STREAM resource=STREAM id=1 scope=STREAM rc=0 result=PASS
+DESTROY_STREAM request=18 stream_id=1 result=PASS
+LIFETIME_BARRIER op=FREE resource=ALLOCATION id=1 scope=CONTEXT rc=0 result=PASS
+FREE request=19 allocation_id=1
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0
+SESSION_START
+SESSION_IDS next_allocation_id=1 next_stream_id=1
+UPLOAD_METADATA version=1.0 kernel_count=2
+UPLOAD_MODULE request=1 module_id=1 name=closure.cubin size=3944 magic=7f454c46
+GET_KERNEL_METADATA name=m1s2_lifecycle_kernel argc=1 kernarg_size=8 kernarg_align=8
+GET_KERNEL request=2 module_id=1 kernel_id=1 name=m1s2_lifecycle_kernel
+LIFETIME_BARRIER op=UNLOAD_MODULE resource=MODULE id=1 scope=CONTEXT rc=0 result=PASS
+invalidate kernel_id=1 module_id=1 name=m1s2_lifecycle_kernel
+UNLOAD_MODULE request=5 module_id=1 name=closure.cubin
+SESSION_CLOSE
+cleanup_sync rc=0
+SESSION_CLEANUP_EMPTY=YES
+SESSION_CONTEXT_RESET rc=0

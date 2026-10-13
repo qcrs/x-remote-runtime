@@ -1,0 +1,113 @@
+value	header_name	native_name	native_description
+0	cudaSuccess	cudaSuccess	no error
+1	cudaErrorInvalidValue	cudaErrorInvalidValue	invalid argument
+2	cudaErrorMemoryAllocation	cudaErrorMemoryAllocation	out of memory
+3	cudaErrorInitializationError	cudaErrorInitializationError	initialization error
+4	cudaErrorCudartUnloading	cudaErrorCudartUnloading	driver shutting down
+5	cudaErrorProfilerDisabled	cudaErrorProfilerDisabled	profiler disabled while using external profiling tool
+6	cudaErrorProfilerNotInitialized	cudaErrorProfilerNotInitialized	profiler not initialized, call cudaProfilerInitialize()
+7	cudaErrorProfilerAlreadyStarted	cudaErrorProfilerAlreadyStarted	profiler already started
+8	cudaErrorProfilerAlreadyStopped	cudaErrorProfilerAlreadyStopped	profiler already stopped
+9	cudaErrorInvalidConfiguration	cudaErrorInvalidConfiguration	invalid configuration argument
+12	cudaErrorInvalidPitchValue	cudaErrorInvalidPitchValue	invalid pitch argument
+13	cudaErrorInvalidSymbol	cudaErrorInvalidSymbol	invalid device symbol
+16	cudaErrorInvalidHostPointer	cudaErrorInvalidHostPointer	invalid host pointer
+17	cudaErrorInvalidDevicePointer	cudaErrorInvalidDevicePointer	invalid device pointer
+18	cudaErrorInvalidTexture	cudaErrorInvalidTexture	invalid texture reference
+19	cudaErrorInvalidTextureBinding	cudaErrorInvalidTextureBinding	texture is not bound to a pointer
+20	cudaErrorInvalidChannelDescriptor	cudaErrorInvalidChannelDescriptor	invalid channel descriptor
+21	cudaErrorInvalidMemcpyDirection	cudaErrorInvalidMemcpyDirection	invalid copy direction for memcpy
+22	cudaErrorAddressOfConstant	cudaErrorAddressOfConstant	invalid address of constant
+23	cudaErrorTextureFetchFailed	cudaErrorTextureFetchFailed	fetch from texture failed
+24	cudaErrorTextureNotBound	cudaErrorTextureNotBound	cannot fetch from a texture that is not bound
+25	cudaErrorSynchronizationError	cudaErrorSynchronizationError	incorrect use of __syncthreads()
+26	cudaErrorInvalidFilterSetting	cudaErrorInvalidFilterSetting	linear filtering not supported for non-float type
+27	cudaErrorInvalidNormSetting	cudaErrorInvalidNormSetting	read as normalized float not supported for 32-bit non float type
+28	cudaErrorMixedDeviceExecution	cudaErrorMixedDeviceExecution	device emulation mode and device execution mode cannot be mixed
+31	cudaErrorNotYetImplemented	cudaErrorNotYetImplemented	feature not yet implemented
+32	cudaErrorMemoryValueTooLarge	cudaErrorMemoryValueTooLarge	memory size or pointer value too large to fit in 32 bit
+34	cudaErrorStubLibrary	unrecognized error code	internal error
+35	cudaErrorInsufficientDriver	cudaErrorInsufficientDriver	CUDA driver version is insufficient for CUDA runtime version
+36	cudaErrorCallRequiresNewerDriver	unrecognized error code	internal error
+37	cudaErrorInvalidSurface	cudaErrorInvalidSurface	invalid surface reference
+43	cudaErrorDuplicateVariableName	cudaErrorDuplicateVariableName	duplicate global variable looked up by string name
+44	cudaErrorDuplicateTextureName	cudaErrorDuplicateTextureName	duplicate texture looked up by string name
+45	cudaErrorDuplicateSurfaceName	cudaErrorDuplicateSurfaceName	duplicate surface looked up by string name
+46	cudaErrorDevicesUnavailable	cudaErrorDevicesUnavailable	all CUDA-capable devices are busy or unavailable
+49	cudaErrorIncompatibleDriverContext	cudaErrorIncompatibleDriverContext	incompatible driver context
+52	cudaErrorMissingConfiguration	cudaErrorMissingConfiguration	__global__ function call is not configured
+53	cudaErrorPriorLaunchFailure	cudaErrorPriorLaunchFailure	unspecified launch failure in prior launch
+65	cudaErrorLaunchMaxDepthExceeded	cudaErrorLaunchMaxDepthExceeded	launch would exceed maximum depth of nested launches
+66	cudaErrorLaunchFileScopedTex	cudaErrorLaunchFileScopedTex	launch failed because kernel uses unsupported, file-scoped textures (texture objects are supported)
+67	cudaErrorLaunchFileScopedSurf	cudaErrorLaunchFileScopedSurf	launch failed because kernel uses unsupported, file-scoped surfaces (surface objects are supported)
+68	cudaErrorSyncDepthExceeded	cudaErrorSyncDepthExceeded	cudaDeviceSynchronize failed because caller's grid depth exceeds cudaLimitDevRuntimeSyncDepth
+69	cudaErrorLaunchPendingCountExceeded	cudaErrorLaunchPendingCountExceeded	launch failed because launch would exceed cudaLimitDevRuntimePendingLaunchCount
+98	cudaErrorInvalidDeviceFunction	cudaErrorInvalidDeviceFunction	invalid device function
+100	cudaErrorNoDevice	cudaErrorNoDevice	no CUDA-capable device is detected
+101	cudaErrorInvalidDevice	cudaErrorInvalidDevice	invalid device ordinal
+127	cudaErrorStartupFailure	cudaErrorStartupFailure	startup failure in cuda runtime
+200	cudaErrorInvalidKernelImage	cudaErrorInvalidKernelImage	device kernel image is invalid
+201	cudaErrorDeviceUninitialized	cudaErrorDeviceUninitialized	 invalid device context
+205	cudaErrorMapBufferObjectFailed	cudaErrorMapBufferObjectFailed	mapping of buffer object failed
+206	cudaErrorUnmapBufferObjectFailed	cudaErrorUnmapBufferObjectFailed	unmapping of buffer object failed
+207	cudaErrorArrayIsMapped	cudaErrorArrayIsMapped	array is mapped
+208	cudaErrorAlreadyMapped	cudaErrorAlreadyMapped	resource already mapped
+209	cudaErrorNoKernelImageForDevice	cudaErrorNoKernelImageForDevice	no kernel image is available for execution on the device
+210	cudaErrorAlreadyAcquired	cudaErrorAlreadyAcquired	 resource already acquired
+211	cudaErrorNotMapped	cudaErrorNotMapped	resource not mapped
+212	cudaErrorNotMappedAsArray	cudaErrorNotMappedAsArray	resource not mapped as array
+213	cudaErrorNotMappedAsPointer	cudaErrorNotMappedAsPointer	resource not mapped as pointer
+214	cudaErrorECCUncorrectable	cudaErrorECCUncorrectable	uncorrectable ECC error encountered
+215	cudaErrorUnsupportedLimit	cudaErrorUnsupportedLimit	limit is not supported on this architecture
+216	cudaErrorDeviceAlreadyInUse	cudaErrorDeviceAlreadyInUse	exclusive-thread device already in use by a different thread
+217	cudaErrorPeerAccessUnsupported	cudaErrorPeerAccessUnsupported	peer access is not supported between these two devices
+218	cudaErrorInvalidPtx	cudaErrorInvalidPtx	a PTX JIT compilation failed
+219	cudaErrorInvalidGraphicsContext	cudaErrorInvalidGraphicsContext	invalid OpenGL or DirectX context
+220	cudaErrorNvlinkUncorrectable	cudaErrorNvlinkUncorrectable	uncorrectable NVLink error detected during the execution
+221	cudaErrorJitCompilerNotFound	cudaErrorJitCompilerNotFound	PTX JIT compiler library not found
+300	cudaErrorInvalidSource	cudaErrorInvalidSource	device kernel image is invalid
+301	cudaErrorFileNotFound	cudaErrorFileNotFound	file not found
+302	cudaErrorSharedObjectSymbolNotFound	cudaErrorSharedObjectSymbolNotFound	shared object symbol not found
+303	cudaErrorSharedObjectInitFailed	cudaErrorSharedObjectInitFailed	shared object initialization failed
+304	cudaErrorOperatingSystem	cudaErrorOperatingSystem	OS call failed or operation not supported on this OS
+400	cudaErrorInvalidResourceHandle	cudaErrorInvalidResourceHandle	invalid resource handle
+401	cudaErrorIllegalState	cudaErrorIllegalState	the operation cannot be performed in the present state
+500	cudaErrorSymbolNotFound	cudaErrorSymbolNotFound	named symbol not found
+600	cudaErrorNotReady	cudaErrorNotReady	device not ready
+700	cudaErrorIllegalAddress	cudaErrorIllegalAddress	an illegal memory access was encountered
+701	cudaErrorLaunchOutOfResources	cudaErrorLaunchOutOfResources	too many resources requested for launch
+702	cudaErrorLaunchTimeout	cudaErrorLaunchTimeout	the launch timed out and was terminated
+703	cudaErrorLaunchIncompatibleTexturing	cudaErrorLaunchIncompatibleTexturing	launch uses incompatible texturing mode
+704	cudaErrorPeerAccessAlreadyEnabled	cudaErrorPeerAccessAlreadyEnabled	peer access is already enabled
+705	cudaErrorPeerAccessNotEnabled	cudaErrorPeerAccessNotEnabled	peer access has not been enabled
+708	cudaErrorSetOnActiveProcess	cudaErrorSetOnActiveProcess	cannot set while device is active in this process
+709	cudaErrorContextIsDestroyed	cudaErrorContextIsDestroyed	context is destroyed
+710	cudaErrorAssert	cudaErrorAssert	device-side assert triggered
+711	cudaErrorTooManyPeers	cudaErrorTooManyPeers	peer mapping resources exhausted
+712	cudaErrorHostMemoryAlreadyRegistered	cudaErrorHostMemoryAlreadyRegistered	part or all of the requested memory range is already mapped
+713	cudaErrorHostMemoryNotRegistered	cudaErrorHostMemoryNotRegistered	pointer does not correspond to a registered memory region
+714	cudaErrorHardwareStackError	cudaErrorHardwareStackError	hardware stack error
+715	cudaErrorIllegalInstruction	cudaErrorIllegalInstruction	an illegal instruction was encountered
+716	cudaErrorMisalignedAddress	cudaErrorMisalignedAddress	misaligned address
+717	cudaErrorInvalidAddressSpace	cudaErrorInvalidAddressSpace	operation not supported on global/shared address space
+718	cudaErrorInvalidPc	cudaErrorInvalidPc	invalid program counter
+719	cudaErrorLaunchFailure	cudaErrorLaunchFailure	unspecified launch failure
+720	cudaErrorCooperativeLaunchTooLarge	cudaErrorCooperativeLaunchTooLarge	too many blocks in cooperative launch
+800	cudaErrorNotPermitted	cudaErrorNotPermitted	operation not permitted
+801	cudaErrorNotSupported	cudaErrorNotSupported	operation not supported
+802	cudaErrorSystemNotReady	cudaErrorSystemNotReady	system not yet initialized
+803	cudaErrorSystemDriverMismatch	cudaErrorSystemDriverMismatch	system has unsupported display driver / cuda driver combination
+804	cudaErrorCompatNotSupportedOnDevice	cudaErrorCompatNotSupportedOnDevice	forward compatibility was attempted on non supported HW
+900	cudaErrorStreamCaptureUnsupported	cudaErrorStreamCaptureUnsupported	operation not permitted when stream is capturing
+901	cudaErrorStreamCaptureInvalidated	cudaErrorStreamCaptureInvalidated	operation failed due to a previous error during capture
+902	cudaErrorStreamCaptureMerge	cudaErrorStreamCaptureMerge	operation would result in a merge of separate capture sequences
+903	cudaErrorStreamCaptureUnmatched	cudaErrorStreamCaptureUnmatched	capture was not ended in the same stream as it began
+904	cudaErrorStreamCaptureUnjoined	cudaErrorStreamCaptureUnjoined	capturing stream has unjoined work
+905	cudaErrorStreamCaptureIsolation	cudaErrorStreamCaptureIsolation	dependency created on uncaptured work in another stream
+906	cudaErrorStreamCaptureImplicit	cudaErrorStreamCaptureImplicit	operation would make the legacy stream depend on a capturing blocking stream
+907	cudaErrorCapturedEvent	cudaErrorCapturedEvent	operation not permitted on an event last recorded in a capturing stream
+908	cudaErrorStreamCaptureWrongThread	cudaErrorStreamCaptureWrongThread	 attempt to terminate a thread-local capture sequence from another thread
+909	cudaErrorTimeout	cudaErrorTimeout	wait operation timed out
+910	cudaErrorGraphExecUpdateFailure	cudaErrorGraphExecUpdateFailure	the graph update was not performed because it included changes which violated constrainic to instantiated graph update
+999	cudaErrorUnknown	cudaErrorUnknown	unknown error
+10000	cudaErrorApiFailureBase	cudaErrorApiFailureBase	api failure base

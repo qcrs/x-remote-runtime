@@ -1,0 +1,66 @@
+cudaSetDevice(0) result=0 name=cudaSuccess
+cudaCreateChannelDesc MATCH=FAIL
+NATIVE_CHANNEL_DESC x=-352756904 y=65535 z=-1831119984 w=65535 kind=1
+cudaGetErrorName(unrecognized)=unrecognized error code
+cudaMallocArray(&a, &desc, 16, 4, 0) result=31 name=cudaErrorNotYetImplemented
+cudaMalloc3DArray(&a, &desc, extent, 0) result=31 name=cudaErrorNotYetImplemented
+cudaMalloc3DArray(&a, &desc, extent, cudaArraySurfaceLoadStore) result=31 name=cudaErrorNotYetImplemented
+cudaMallocMipmappedArray(&mip, &desc, extent, 3, 0) result=31 name=cudaErrorNotYetImplemented
+cudaMalloc(&p, 4096) result=0 name=cudaSuccess
+cudaCreateTextureObject(&t, &res, &tex, NULL) result=801 name=cudaErrorNotSupported
+cudaPointerGetAttributes(&attributes, p) result=0 name=cudaSuccess
+cudaFree(p) result=0 name=cudaSuccess
+cudaMallocManaged(&p, 4096, cudaMemAttachGlobal) result=31 name=cudaErrorNotYetImplemented
+cudaPointerGetAttributes(&unregistered, pageable) result=0 name=cudaSuccess
+PAGEABLE_ATTRIBUTES type=0 device=0 host_matches=0
+cudaHostAlloc(flags=0) result=0 name=cudaSuccess
+cudaHostGetFlags(&actual, p) result=0 name=cudaSuccess
+RUNTIME_HOST_FLAGS requested=0 actual=0
+cudaHostGetDevicePointer(&mapped, p, 0) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaHostAlloc(flags=1) result=0 name=cudaSuccess
+cudaHostGetFlags(&actual, p) result=0 name=cudaSuccess
+RUNTIME_HOST_FLAGS requested=1 actual=1
+cudaHostGetDevicePointer(&mapped, p, 0) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaHostAlloc(flags=2) result=0 name=cudaSuccess
+cudaHostGetFlags(&actual, p) result=0 name=cudaSuccess
+RUNTIME_HOST_FLAGS requested=2 actual=2
+cudaHostGetDevicePointer(&mapped, p, 0) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaHostAlloc(flags=3) result=0 name=cudaSuccess
+cudaHostGetFlags(&actual, p) result=0 name=cudaSuccess
+RUNTIME_HOST_FLAGS requested=3 actual=3
+cudaHostGetDevicePointer(&mapped, p, 0) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaHostAlloc(flags=4) result=0 name=cudaSuccess
+cudaHostGetFlags(&actual, p) result=0 name=cudaSuccess
+RUNTIME_HOST_FLAGS requested=4 actual=4
+cudaHostGetDevicePointer(&mapped, p, 0) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaMallocHost(&p, 4096) result=0 name=cudaSuccess
+cudaFreeHost(p) result=0 name=cudaSuccess
+cudaHostRegister(p, 4096, 0) result=0 name=cudaSuccess
+cudaHostUnregister(p) result=0 name=cudaSuccess
+cudaDeviceGetCacheConfig(&cache) result=0 name=cudaSuccess
+cudaDeviceSetCacheConfig(cudaFuncCachePreferShared) result=0 name=cudaSuccess
+cudaDeviceSetCacheConfig(cache) result=0 name=cudaSuccess
+cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeFourByte) result=0 name=cudaSuccess
+cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeDefault) result=0 name=cudaSuccess
+cudaDeviceGetLimit(&limit, cudaLimitPrintfFifoSize) result=0 name=cudaSuccess
+cudaDeviceSetLimit(cudaLimitPrintfFifoSize, limit) result=0 name=cudaSuccess
+cudaStreamCreate(&s) result=0 name=cudaSuccess
+cudaStreamCreate(&t) result=0 name=cudaSuccess
+cudaStreamGetAttribute(sync-policy) result=801 name=cudaErrorNotSupported
+cudaStreamSetAttribute(sync-policy) result=801 name=cudaErrorNotSupported
+cudaStreamGetAttribute(access-policy-window) result=0 name=cudaSuccess
+cudaStreamSetAttribute(access-policy-window) result=0 name=cudaSuccess
+cudaStreamCopyAttributes result=0 name=cudaSuccess
+cudaMalloc(&p, 4096) result=0 name=cudaSuccess
+cudaStreamSetAttribute(nonempty-normal-window) result=1 name=cudaErrorInvalidValue
+cudaStreamGetAttribute(window-readback) result=0 name=cudaSuccess
+RUNTIME_WINDOW_READBACK bytes=0 base_matches=0 hitRatio=0
+cudaFree(p) result=0 name=cudaSuccess
+cudaStreamDestroy(t) result=0 name=cudaSuccess
+cudaStreamDestroy(s) result=0 name=cudaSuccess
+COREX_RUNTIME_FAMILIES_PROBE=COMPLETE

@@ -50,7 +50,8 @@ _Static_assert(OP_SET_LIMIT == 59 && OP_SET_CACHE_CONFIG == 60 &&
                OP_LIBRARY_COUNT == 71 && OP_LIBRARY_KERNEL_NAME == 72 && OP_MODULE_GET_GLOBAL == 73 && OP_SET_DEVICE_FLAGS == 74 && OP_DEVICE_DEFAULT_POOL == 75 &&
                OP_ALLOC_ASYNC == 85 && OP_ALLOC_FROM_POOL_ASYNC == 86 &&
                OP_FREE_ASYNC == 87 && OP_GRAPH == 88 && OP_GRAPH_MEM_GET == 89 &&
-               OP_GRAPH_MEM_SET == 90 && OP_GRAPH_MEM_TRIM == 91 && OP__COUNT == 92,
+               OP_GRAPH_MEM_SET == 90 && OP_GRAPH_MEM_TRIM == 91 &&
+               OP_FUNCTION_INFO == 92 && OP__COUNT == 93,
                "compatibility expansion opcode assignment changed");
 
 _Static_assert(GRAPH_CREATE==1 && GRAPH_INSTANTIATE==8 && GRAPH_LAUNCH==10 &&

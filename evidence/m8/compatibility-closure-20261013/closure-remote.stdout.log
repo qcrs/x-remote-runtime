@@ -1,0 +1,17 @@
+G6A_VA_ARENA base=0xffefb5130000 bytes=68719476736 protection=PROT_NONE
+M2_S2_HELLO=NEGOTIATED server=1.1.0 backend=1 backend_version=10020 devices=1 profile=1 capabilities=10
+G6E_REMOTE_SESSION=CONNECTED generation=1 host=127.0.0.1 port=38689 protocol=CRX9 version=3 default_stream=LEGACY
+DEVICE_SELECTION_SELF_PEER=PASS
+G6A_CUDA_MALLOC ptr=0xffefb5130000 allocation_id=1 bytes=32 span=131072 result=PASS
+G6A_PTR_RESOLVE ptr=0xffefb5130000 allocation_id=1 offset=0 bytes=32
+G6E_CUDA_MEMCPY_ASYNC kind=H2D transfer_id=1 stream_id=0 stream_slot=1024 seq=1 allocation_id=1 offset=0 bytes=32 hidden=YES
+G6A_PTR_RESOLVE ptr=0xffefb5130000 allocation_id=1 offset=0 bytes=32
+G6E_CUDA_MEMCPY_ASYNC kind=D2H transfer_id=2 stream_id=0 stream_slot=1024 seq=2 allocation_id=1 offset=0 bytes=32 host_dst=0xffffb5735ff0 hidden=YES
+G6C_TRANSFER_DRAIN transfer_id=1 kind=H2D origin_stream_slot=1024 seq=1 bytes=32 host_visible=N/A retire=YES
+G6C_TRANSFER_DRAIN transfer_id=2 kind=D2H origin_stream_slot=1024 seq=2 bytes=32 host_visible=YES retire=YES
+G6E_CUDA_DEVICE_SYNCHRONIZE hidden_transfers=0 result=PASS
+G6A_CUDA_FREE ptr=0xffefb5130000 allocation_id=1 result=PASS tombstone=YES
+UNALIGNED_SHARED_PAGE_REGISTRATION_AND_RETIREMENT=PASS
+ERROR_ENUM_NAMES_AND_NATIVE_DESCRIPTIONS=PASS count=112
+COMPATIBILITY_CLOSURE_REMOTE=PASS
+M1_S2_RUNTIME_SHUTDOWN generation=1 state=DISCONNECTED result=PASS

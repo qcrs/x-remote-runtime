@@ -63,6 +63,10 @@ results, installed-library binding and no source/build-tree dependency.
 
 ## Compatibility summary derived from the ledger
 
+The current snapshot includes the subsequent
+[compatibility closure](API_COMPATIBILITY_CLOSURE.md); release packaging results
+below retain their original M7 validation scope.
+
 Snapshot: 276 total records, including 266 public Runtime APIs, seven private
 compiler ABI hooks and three project extensions. Recompute with
 `python3 scripts/report-api-coverage.py`; the
@@ -70,17 +74,17 @@ compiler ABI hooks and three project extensions. Recompute with
 
 | Summary label | Exact ledger status | All records | Public Runtime APIs |
 | --- | --- | ---: | ---: |
-| IMPLEMENTED | IMPLEMENTED | 113 | 104 |
-| PARTIAL_IMPLEMENTED | PARTIAL_IMPLEMENTED | 78 | 77 |
-| BLOCKED | GROUND_TRUTH_BLOCKED | 35 | 35 |
-| BACKEND_UNSUPPORTED | BACKEND_UNSUPPORTED | 7 | 7 |
+| IMPLEMENTED | IMPLEMENTED | 116 | 107 |
+| PARTIAL_IMPLEMENTED | PARTIAL_IMPLEMENTED | 76 | 75 |
+| BLOCKED | GROUND_TRUTH_BLOCKED | 63 | 63 |
+| BACKEND_UNSUPPORTED | BACKEND_UNSUPPORTED | 13 | 13 |
 | OUT_OF_SCOPE | OUT_OF_SCOPE_CURRENT | 8 | 8 |
-| Uninvestigated declarations | GROUND_TRUTH_REQUIRED | 35 | 35 |
+| Uninvestigated declarations | GROUND_TRUTH_REQUIRED | 0 | 0 |
 
-Counts describe ledger rows, not full CUDA compatibility. Many excluded census
-entries still carry GROUND_TRUTH_REQUIRED; this hardening release does not
-investigate or reclassify them. OUT_OF_SCOPE_CURRENT is a literal ledger count,
-not the entire excluded release surface.
+Counts describe ledger rows, not full CUDA compatibility. The M8 closure
+investigates the remaining declarations and preserves specific technical limits.
+OUT_OF_SCOPE_CURRENT is a literal ledger count, not the entire excluded release
+surface.
 
 Supported families: linear/pitched/3D pointer memory and fills, streams/events,
 staged host transfers, compiler kernel/symbol registration, device/context/function
@@ -105,5 +109,5 @@ Documentation/evidence links and committed-tree audit are recorded in the
 [release audit](../evidence/m7/release-hardening-20261013/GOAL_AUDIT.md). This is an engineering
 prototype qualification, not production, arbitrary CUDA application, PyTorch,
 performance or physical two-host qualification. Runtime/protocol/lifetime
-findings continue at RC-008 in the retained [issue register](REMOTE_CORRECTNESS_ISSUES.md);
+findings are retained in the [issue register](REMOTE_CORRECTNESS_ISSUES.md);
 packaging/documentation findings belong in the release audit.

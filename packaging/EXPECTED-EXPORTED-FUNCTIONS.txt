@@ -91,6 +91,7 @@ cudaLibraryEnumerateKernels
 cudaGetFuncBySymbol
 cudaGetKernel
 cudaChooseDevice
+cudaDeviceCanAccessPeer
 cudaSetValidDevices
 cudaThreadSynchronize
 cudaThreadGetLimit

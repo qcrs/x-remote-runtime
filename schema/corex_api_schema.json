@@ -1230,6 +1230,62 @@
       "response": [],
       "server_handler": "handle_graph_mem_trim",
       "backend_binding": "corex_backend_graph_mem_trim"
+    },
+    {
+      "name": "cudaFuncGetAttributes",
+      "opcode_name": "OP_FUNCTION_INFO",
+      "opcode": 92,
+      "capability_id": "CRX_CAP_FUNCTION_INFO",
+      "implementation_class": "object_query",
+      "public_export": true,
+      "abi": "COREX_REMOTE_CUDART_1.1",
+      "request": [
+        {
+          "name": "kernel",
+          "type": "kernel_id",
+          "object_kind": "kernel"
+        }
+      ],
+      "response": [
+        {
+          "name": "shared_bytes",
+          "type": "i32"
+        },
+        {
+          "name": "const_bytes",
+          "type": "i32"
+        },
+        {
+          "name": "local_bytes",
+          "type": "i32"
+        },
+        {
+          "name": "registers",
+          "type": "i32"
+        },
+        {
+          "name": "ptx_version",
+          "type": "i32"
+        },
+        {
+          "name": "binary_version",
+          "type": "i32"
+        },
+        {
+          "name": "max_threads",
+          "type": "i32"
+        },
+        {
+          "name": "cache_mode_ca",
+          "type": "i32"
+        },
+        {
+          "name": "max_dynamic_shared",
+          "type": "i32"
+        }
+      ],
+      "backend_binding": "corex_backend_function_attribute",
+      "server_handler": "handle_function_info"
     }
   ]
 }

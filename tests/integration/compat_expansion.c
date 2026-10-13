@@ -72,7 +72,7 @@ static int host_memory(void)
     CHECK(cudaHostRegister(registered, page * 2, cudaHostRegisterPortable));
     EXPECT(cudaHostRegister(registered + page, page, 0), cudaErrorHostMemoryAlreadyRegistered);
     EXPECT(cudaFreeHost(registered), cudaErrorInvalidValue);
-    EXPECT(cudaHostRegister(registered + 1, 16, 0), cudaErrorInvalidValue);
+    EXPECT(cudaHostRegister(registered + 1, 16, 0), cudaErrorHostMemoryAlreadyRegistered);
     CHECK(cudaHostGetFlags(&flags, registered));
     if (flags != cudaHostRegisterPortable) return 1;
     CHECK(cudaMalloc(&device, 32)); memset(registered, 0x5c, 32);

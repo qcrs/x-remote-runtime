@@ -1,0 +1,7 @@
+cudaGetTextureReference(&texture_ref, &closure_texture) result=31
+cudaGetSurfaceReference(&surface_ref, &closure_surface) result=801
+cudaBindTexture(&offset, &closure_texture, p, &desc, 4096) result=801
+cudaBindTexture2D(&offset, &closure_texture_2d, p, &desc, 32, 2, 128) result=801
+cudaGetTextureAlignmentOffset(&offset, &closure_texture) result=31
+cudaUnbindTexture(&closure_texture) result=31
+LEGACY_REFERENCE_PROBE=COMPLETE

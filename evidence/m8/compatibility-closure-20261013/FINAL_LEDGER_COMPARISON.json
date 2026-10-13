@@ -1,0 +1,91 @@
+{
+  "base_head": "1f9502b05d12f46df21c95cd0aac78a88dd871e1",
+  "baseline_partial_reviewed": 77,
+  "partial_to_implemented": [
+    "cudaChooseDevice",
+    "cudaGetErrorName"
+  ],
+  "required_to_terminal": {
+    "cudaBindSurfaceToArray": "GROUND_TRUTH_BLOCKED",
+    "cudaBindTexture": "BACKEND_UNSUPPORTED",
+    "cudaBindTexture2D": "BACKEND_UNSUPPORTED",
+    "cudaBindTextureToArray": "GROUND_TRUTH_BLOCKED",
+    "cudaBindTextureToMipmappedArray": "GROUND_TRUTH_BLOCKED",
+    "cudaDeviceCanAccessPeer": "IMPLEMENTED",
+    "cudaDeviceDisablePeerAccess": "GROUND_TRUTH_BLOCKED",
+    "cudaDeviceEnablePeerAccess": "GROUND_TRUTH_BLOCKED",
+    "cudaDeviceGetNvSciSyncAttributes": "GROUND_TRUTH_BLOCKED",
+    "cudaDeviceGetP2PAttribute": "GROUND_TRUTH_BLOCKED",
+    "cudaExternalMemoryGetMappedBuffer": "GROUND_TRUTH_BLOCKED",
+    "cudaExternalMemoryGetMappedMipmappedArray": "GROUND_TRUTH_BLOCKED",
+    "cudaGetSurfaceReference": "BACKEND_UNSUPPORTED",
+    "cudaGetTextureAlignmentOffset": "BACKEND_UNSUPPORTED",
+    "cudaGetTextureReference": "BACKEND_UNSUPPORTED",
+    "cudaGraphicsMapResources": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsResourceGetMappedMipmappedArray": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsResourceGetMappedPointer": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsResourceSetMapFlags": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsSubResourceGetMappedArray": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsUnmapResources": "GROUND_TRUTH_BLOCKED",
+    "cudaGraphicsUnregisterResource": "GROUND_TRUTH_BLOCKED",
+    "cudaIpcCloseMemHandle": "GROUND_TRUTH_BLOCKED",
+    "cudaIpcGetEventHandle": "GROUND_TRUTH_BLOCKED",
+    "cudaIpcGetMemHandle": "GROUND_TRUTH_BLOCKED",
+    "cudaIpcOpenEventHandle": "GROUND_TRUTH_BLOCKED",
+    "cudaIpcOpenMemHandle": "GROUND_TRUTH_BLOCKED",
+    "cudaLaunchCooperativeKernelMultiDevice": "GROUND_TRUTH_BLOCKED",
+    "cudaMemcpy3DPeer": "GROUND_TRUTH_BLOCKED",
+    "cudaMemcpy3DPeerAsync": "GROUND_TRUTH_BLOCKED",
+    "cudaMemcpyPeer": "GROUND_TRUTH_BLOCKED",
+    "cudaMemcpyPeerAsync": "GROUND_TRUTH_BLOCKED",
+    "cudaSignalExternalSemaphoresAsync": "GROUND_TRUTH_BLOCKED",
+    "cudaUnbindTexture": "BACKEND_UNSUPPORTED",
+    "cudaWaitExternalSemaphoresAsync": "GROUND_TRUTH_BLOCKED"
+  },
+  "new_supported": [
+    "cudaDeviceCanAccessPeer"
+  ],
+  "public_counts": {
+    "GROUND_TRUTH_BLOCKED": 63,
+    "BACKEND_UNSUPPORTED": 13,
+    "IMPLEMENTED": 107,
+    "PARTIAL_IMPLEMENTED": 75,
+    "OUT_OF_SCOPE_CURRENT": 8
+  },
+  "remaining_partial_by_family": {
+    "Other Runtime": 12,
+    "Graph": 32,
+    "Host Memory": 7,
+    "Function": 1,
+    "Execution": 3,
+    "Memory Pool / Async Allocation": 6,
+    "Memcpy": 4,
+    "Device": 2,
+    "Stream": 8
+  },
+  "remaining_blocked_by_family": {
+    "Array": 10,
+    "Surface Object": 3,
+    "Other Runtime": 9,
+    "Texture Object": 4,
+    "Peer / Multi-device": 7,
+    "Device": 2,
+    "External Resource Interop": 4,
+    "Linear Memory": 1,
+    "Graph": 1,
+    "Graphics Interop": 7,
+    "Host Memory": 2,
+    "IPC": 5,
+    "Execution": 1,
+    "Memcpy": 6,
+    "Stream": 1
+  },
+  "remaining_unsupported_by_family": {
+    "Texture Object": 6,
+    "Surface Object": 1,
+    "Device": 1,
+    "Execution": 1,
+    "Linear Memory": 3,
+    "Array": 1
+  }
+}

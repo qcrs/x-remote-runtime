@@ -212,3 +212,19 @@ cudaError_t cudaChooseDevice(int *device,const struct cudaDeviceProp *properties
      * preference, including preferences larger than the native device. */
     return cudaGetDevice(device);
 }
+
+cudaError_t cudaDeviceCanAccessPeer(int *can_access, int device, int peer_device)
+{
+    if (!can_access)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidValue);
+    if (device != 0 || peer_device != 0)
+        return (cudaError_t)corexRemoteRecordErrorInternal(cudaErrorInvalidDevice);
+    int count;
+    cudaError_t result = cudaGetDeviceCount(&count);
+    if (result == cudaSuccess) {
+        /* The sole logical device cannot be its own peer. Both native
+         * CoreX Runtime and Driver queries return success with zero. */
+        *can_access = 0;
+    }
+    return result;
+}
