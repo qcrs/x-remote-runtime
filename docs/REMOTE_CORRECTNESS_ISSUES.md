@@ -129,4 +129,4 @@ are not new issues. Passing scenarios appear in the audit, not as issues.
   client-only catalog; names include two newer header enums missing in native
   CoreX's name table. Unknown values preserve each native fallback. No native
   DSO link dependency or last-error mutation is introduced.
-- Fixing commit: compatibility-closure implementation commit (see M8 COMMIT.txt).
+- Fixing commit: `a3e4fac3f29579f724521d2b7d3057699d40bf59` (see M8 COMMIT.txt).
