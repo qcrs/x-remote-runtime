@@ -109,4 +109,44 @@ if os.environ.get("COREX_GRAPH_EXPANSION"):
         executable=object_id(command(sock,8,graph=graph))
         assert command(sock,10,exec_id=executable)[0]==0
         assert call(sock,4,18)==(0,b"")
+    with socket.create_connection(endpoint,timeout=10) as sock:
+        graph=object_id(command(sock,1))
+        assert command(sock,32,graph=graph,value=32,data=b"bad")== (1,b"")
+        assert command(sock,32,graph=graph,value=0)== (1,b"")
+        assert command(sock,32,graph=graph,value=32,kind=1)== (10,b"")
+        result=command(sock,32,graph=graph,value=32)
+        alloc=object_id(result);allocation=struct.unpack("!Q",result[1][16:24])[0]
+        assert command(sock,33,graph=graph,value=999)==(1,b"")
+        assert command(sock,34,exec_id=999)==(2,b"")
+        assert command(sock,35,graph=graph,value=1)==(1,b"")
+        # A reserved graph address cannot bypass transport trust checks.
+        assert call(sock,29,19,struct.pack("!QQIQ",allocation,0,0,4))==(1,b"")
+        exec_id=object_id(command(sock,8,graph=graph))
+        assert command(sock,34,exec_id=exec_id)[0]==0
+        launch=command(sock,10,exec_id=exec_id)
+        assert launch[0]==0,launch
+        assert call(sock,4,20)==(0,b"")
+        assert command(sock,2,graph=graph)[0]==0
+        assert command(sock,9,exec_id=exec_id)[0]==0
+        assert command(sock,10,exec_id=exec_id)==(2,b"")
+        # The active allocation is held by the retired native exec until EOF cleanup.
+    with socket.create_connection(endpoint,timeout=10) as sock:
+        status,data=call(sock,89,21,struct.pack("!iI",0,0));assert status==0
+        print("GRAPH_USED_AFTER_EOF_BEFORE_TRIM="+str(struct.unpack("!Q",data)[0]))
+        # CoreX caches graph-pool accounting after freeing uploaded backing;
+        # the native trim probe establishes the observable retirement boundary.
+        assert call(sock,91,22,struct.pack("!i",0))==(0,b"")
+        status,data=call(sock,89,23,struct.pack("!iI",0,0));assert status==0
+        assert struct.unpack("!Q",data)[0]==0, ("graph_used_after_EOF",struct.unpack("!Q",data)[0])
+        status,data=call(sock,12,22,struct.pack("!I",1));assert status==0
+        stream=struct.unpack("!Q",data)[0]
+        capture=object_id(command(sock,24,stream=stream,value=1))
+        assert command(sock,35,graph=capture,value=4)==(1,b"")
+        assert command(sock,35,graph=capture,value=1)[0]==0
+        # Permission is consumed by exactly the next request, even a different opcode.
+        assert command(sock,11,graph=capture)[0]==0
+        assert call(sock,1,23,struct.pack("!Q",32))==(11,b"")
+        assert command(sock,35,graph=capture,value=1)[0]==0
+        status,data=call(sock,1,24,struct.pack("!Q",32));assert status==0
+        assert object_id(command(sock,26,graph=capture,stream=stream))==capture
     print("GRAPH_EXPANSION_PROTOCOL=PASS new_actions DTO_bounds child_dependency_ownership supplied_graph_EOF")

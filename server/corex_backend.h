@@ -151,6 +151,7 @@ CUresult corex_backend_graph_set_enabled(CUgraphExec exec, CUgraphNode node, uns
 CUresult corex_backend_graph_get_enabled(CUgraphExec exec, CUgraphNode node, unsigned int *enabled);
 
 CUresult corex_backend_capture_begin(CUstream stream, CUstreamCaptureMode mode);
+CUresult corex_backend_capture_exchange(CUstreamCaptureMode *mode);
 CUresult corex_backend_capture_begin_to_graph(CUstream stream, CUgraph graph, const CUgraphNode *deps, size_t count);
 CUresult corex_backend_capture_dependencies(CUstream stream, CUgraphNode *deps, size_t count, unsigned flags);
 CUresult corex_backend_graph_mem_get(CUdevice device, CUgraphMem_attribute attr, uint64_t *value);
@@ -158,6 +159,9 @@ CUresult corex_backend_graph_mem_set(CUdevice device, CUgraphMem_attribute attr,
 CUresult corex_backend_graph_mem_trim(CUdevice device);
 CUresult corex_backend_graph_add_child(CUgraphNode *node, CUgraph graph, const CUgraphNode *deps, size_t count, CUgraph child);
 CUresult corex_backend_graph_child(CUgraphNode node, CUgraph *graph);
+CUresult corex_backend_graph_add_alloc(CUgraphNode *node,CUgraph graph,const CUgraphNode *deps,size_t count,CUDA_MEM_ALLOC_NODE_PARAMS *params);
+CUresult corex_backend_graph_add_free(CUgraphNode *node,CUgraph graph,const CUgraphNode *deps,size_t count,CUdeviceptr ptr);
+CUresult corex_backend_graph_upload(CUgraphExec exec,CUstream stream);
 CUresult corex_backend_capture_end(CUstream stream, CUgraph *graph);
 CUresult corex_backend_capture_info(CUstream stream, CUstreamCaptureStatus *status, cuuint64_t *id, CUgraph *graph, const CUgraphNode **deps, size_t *count);
 

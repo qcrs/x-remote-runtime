@@ -192,6 +192,17 @@ COREX_REMOTE_CUDART_1.1 {
         cudaGraphAddChildGraphNode;
         cudaGraphChildGraphNodeGetGraph;
         cudaGraphExecChildGraphNodeSetParams;
+        cudaGraphAddMemAllocNode;
+        cudaGraphAddMemFreeNode;
+        cudaGraphMemAllocNodeGetParams;
+        cudaGraphMemFreeNodeGetParams;
+        cudaGraphUpload;
+        cudaGraphAddHostNode;
+        cudaGraphHostNodeGetParams;
+        cudaGraphHostNodeSetParams;
+        cudaGraphExecHostNodeSetParams;
+        cudaThreadExchangeStreamCaptureMode;
+        cudaGraphDebugDotPrint;
     local:
         *;
 } COREX_REMOTE_CUDART_1.0;

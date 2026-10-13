@@ -37,6 +37,7 @@ typedef enum cudaError {
     cudaErrorStreamCaptureInvalidated = 901,
     cudaErrorStreamCaptureWrongThread = 908,
     cudaErrorGraphExecUpdateFailure = 910,
+    cudaErrorOperatingSystem        = 304,
     cudaErrorUnknown                = 999
 } cudaError_t;
 
@@ -121,8 +122,11 @@ enum cudaGraphNodeType {
     cudaGraphNodeTypeKernel=0,cudaGraphNodeTypeMemcpy=1,cudaGraphNodeTypeMemset=2,
     cudaGraphNodeTypeHost=3,cudaGraphNodeTypeGraph=4,cudaGraphNodeTypeEmpty=5,
     cudaGraphNodeTypeWaitEvent=6,cudaGraphNodeTypeEventRecord=7,
+    cudaGraphNodeTypeMemAlloc=10,cudaGraphNodeTypeMemFree=11,
 };
 struct cudaMemsetParams { void *dst;size_t pitch;unsigned int value,elementSize;size_t width,height; };
+typedef void (*cudaHostFn_t)(void *);
+struct cudaHostNodeParams {cudaHostFn_t fn;void *userData;};
 struct cudaKernelNodeParams { void *func;dim3 gridDim,blockDim;unsigned int sharedMemBytes;void **kernelParams,**extra; };
 typedef struct corexCudaPoolHandle *cudaMemPool_t;
 enum cudaMemPoolAttr {
@@ -147,6 +151,12 @@ struct cudaMemPoolProps {
     struct cudaMemLocation location;
     void *win32SecurityAttributes;
     unsigned char reserved[64];
+};
+struct cudaMemAllocNodeParams {
+    struct cudaMemPoolProps poolProps;
+    const struct cudaMemAccessDesc *accessDescs;
+    size_t accessDescCount, bytesize;
+    void *dptr;
 };
 typedef struct corexRemoteModuleHandle *corexRemoteModule_t;
 
@@ -500,6 +510,20 @@ cudaError_t cudaStreamUpdateCaptureDependencies(cudaStream_t stream, cudaGraphNo
 cudaError_t cudaGraphAddChildGraphNode(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,cudaGraph_t child);
 cudaError_t cudaGraphChildGraphNodeGetGraph(cudaGraphNode_t node,cudaGraph_t *graph);
 cudaError_t cudaGraphExecChildGraphNodeSetParams(cudaGraphExec_t exec,cudaGraphNode_t node,cudaGraph_t child);
+
+cudaError_t cudaGraphAddMemAllocNode(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,struct cudaMemAllocNodeParams *params);
+cudaError_t cudaGraphAddMemFreeNode(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,void *ptr);
+cudaError_t cudaGraphMemAllocNodeGetParams(cudaGraphNode_t node,struct cudaMemAllocNodeParams *params);
+cudaError_t cudaGraphMemFreeNodeGetParams(cudaGraphNode_t node,void **ptr);
+
+cudaError_t cudaGraphUpload(cudaGraphExec_t exec,cudaStream_t stream);
+cudaError_t cudaGraphAddHostNode(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,const struct cudaHostNodeParams *params);
+cudaError_t cudaGraphHostNodeGetParams(cudaGraphNode_t node,struct cudaHostNodeParams *params);
+cudaError_t cudaGraphHostNodeSetParams(cudaGraphNode_t node,const struct cudaHostNodeParams *params);
+cudaError_t cudaGraphExecHostNodeSetParams(cudaGraphExec_t exec,cudaGraphNode_t node,const struct cudaHostNodeParams *params);
+
+cudaError_t cudaThreadExchangeStreamCaptureMode(enum cudaStreamCaptureMode *mode);
+cudaError_t cudaGraphDebugDotPrint(cudaGraph_t graph,const char *path,unsigned flags);
 
 #ifdef __cplusplus
 }

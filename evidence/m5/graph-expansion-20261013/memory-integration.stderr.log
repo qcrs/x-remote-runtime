@@ -1,0 +1,7 @@
+G6E_RPC_REMOTE_ERROR opcode=88 request=14 status=1
+G6E_RPC_REMOTE_ERROR opcode=88 request=15 status=1
+G6E_RPC_REMOTE_ERROR opcode=88 request=16 status=10
+G6E_RPC_REMOTE_ERROR opcode=88 request=18 status=10
+G6E_RPC_REMOTE_ERROR opcode=88 request=19 status=10
+G6E_RPC_REMOTE_ERROR opcode=88 request=35 status=1
+G6E_RPC_REMOTE_ERROR opcode=88 request=52 status=1

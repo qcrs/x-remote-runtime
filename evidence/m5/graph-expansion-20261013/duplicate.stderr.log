@@ -1,47 +1,47 @@
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4557:16: error: initialized field overwritten [-Werror=override-init]
- 4557 |     [opcode] = {function, capability},
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4573:16: error: initialized field overwritten [-Werror=override-init]
+ 4573 |     [opcode] = {function, capability},
       |                ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4505:43: note: in expansion of macro ‘REGISTRY_ENTRY’
- 4505 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4521:43: note: in expansion of macro ‘REGISTRY_ENTRY’
+ 4521 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
       |                                           ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4554:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
- 4554 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4570:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
+ 4570 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4559:5: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
- 4559 |     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4575:5: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
+ 4575 |     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
       |     ^~~~~~~~~~~~~~~~~~~~~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4557:16: note: (near initialization for ‘g_handlers[1]’)
- 4557 |     [opcode] = {function, capability},
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4573:16: note: (near initialization for ‘g_handlers[1]’)
+ 4573 |     [opcode] = {function, capability},
       |                ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4505:43: note: in expansion of macro ‘REGISTRY_ENTRY’
- 4505 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4521:43: note: in expansion of macro ‘REGISTRY_ENTRY’
+ 4521 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
       |                                           ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4554:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
- 4554 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4570:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
+ 4570 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4559:5: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
- 4559 |     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4575:5: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
+ 4575 |     SERVER_HANDLER_REGISTRY(REGISTRY_ENTRY)
       |     ^~~~~~~~~~~~~~~~~~~~~~~
 /home/lvtong/corex-remote-runtime/server/runtime_server.c: In function ‘server_registry_validate’:
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4566:58: error: duplicate case value
- 4566 | #define UNIQUE_OPCODE_CASE(opcode, function, capability) case opcode: break;
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4582:58: error: duplicate case value
+ 4582 | #define UNIQUE_OPCODE_CASE(opcode, function, capability) case opcode: break;
       |                                                          ^~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4505:43: note: in expansion of macro ‘UNIQUE_OPCODE_CASE’
- 4505 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4521:43: note: in expansion of macro ‘UNIQUE_OPCODE_CASE’
+ 4521 | #define SERVER_REGISTRY_DUPLICATE_TEST(X) X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY)
       |                                           ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4554:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
- 4554 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4570:5: note: in expansion of macro ‘SERVER_REGISTRY_DUPLICATE_TEST’
+ 4570 |     SERVER_REGISTRY_DUPLICATE_TEST(X)
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4568:9: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
- 4568 |         SERVER_HANDLER_REGISTRY(UNIQUE_OPCODE_CASE)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4584:9: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
+ 4584 |         SERVER_HANDLER_REGISTRY(UNIQUE_OPCODE_CASE)
       |         ^~~~~~~~~~~~~~~~~~~~~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4566:58: note: previously used here
- 4566 | #define UNIQUE_OPCODE_CASE(opcode, function, capability) case opcode: break;
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4582:58: note: previously used here
+ 4582 | #define UNIQUE_OPCODE_CASE(opcode, function, capability) case opcode: break;
       |                                                          ^~~~
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4510:5: note: in expansion of macro ‘UNIQUE_OPCODE_CASE’
- 4510 |     X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY) \
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4526:5: note: in expansion of macro ‘UNIQUE_OPCODE_CASE’
+ 4526 |     X(OP_ALLOC, handle_alloc, CRX_CAP_LINEAR_MEMORY) \
       |     ^
-/home/lvtong/corex-remote-runtime/server/runtime_server.c:4568:9: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
- 4568 |         SERVER_HANDLER_REGISTRY(UNIQUE_OPCODE_CASE)
+/home/lvtong/corex-remote-runtime/server/runtime_server.c:4584:9: note: in expansion of macro ‘SERVER_HANDLER_REGISTRY’
+ 4584 |         SERVER_HANDLER_REGISTRY(UNIQUE_OPCODE_CASE)
       |         ^~~~~~~~~~~~~~~~~~~~~~~
 cc1: all warnings being treated as errors

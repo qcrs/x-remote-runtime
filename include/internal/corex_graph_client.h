@@ -6,6 +6,7 @@ struct corexCudaGraphHandle {
     uint64_t id, generation;
     int live;
     uint64_t owner_node_id;
+    int memory_frozen;
 };
 struct corexCudaGraphExecHandle {
     uint64_t id, generation;
@@ -16,6 +17,10 @@ struct corexCudaGraphExecHandle {
     cudaEvent_t events[CRX_GRAPH_MAX_NODES];
     uint64_t event_nodes[CRX_GRAPH_MAX_NODES];
     uint32_t event_kinds[CRX_GRAPH_MAX_NODES];
+    size_t allocation_count;
+    uint64_t allocations[CRX_GRAPH_MAX_NODES];
+    struct cudaHostNodeParams host;
+    uint64_t host_node;
 };
 struct corexCudaGraphNodeHandle {
     uint64_t id, generation, graph_id;
@@ -30,6 +35,9 @@ struct corexCudaGraphNodeHandle {
     cudaEvent_t event;
     uint64_t original_id;
     cudaGraph_t child_graph;
+    struct cudaMemAllocNodeParams mem_alloc;
+    void *mem_free;
+    struct cudaHostNodeParams host;
 };
 typedef struct {
     struct corexCudaGraphHandle graphs[CRX_GRAPH_MAX_GRAPHS];

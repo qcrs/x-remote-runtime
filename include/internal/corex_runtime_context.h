@@ -32,6 +32,8 @@ typedef struct {
     size_t size;
     uint64_t allocation_id;
     uint64_t parent_module_id; /* nonzero: module-owned global storage */
+    uint64_t graph_id; /* graph reservation shares this allocation/fake-VA record */
+    int graph_active, graph_paired;
     const void *host_symbol;
     uint32_t layout_kind;
     size_t logical_width_bytes;

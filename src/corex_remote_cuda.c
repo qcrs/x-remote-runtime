@@ -67,6 +67,7 @@ typedef enum {
     RESOLVE_OK = 0,
     RESOLVE_INVALID,
     RESOLVE_OOB,
+    RESOLVE_GRAPH_RESERVED,
 } ResolveResult;
 
 typedef struct {
@@ -117,6 +118,9 @@ static cudaError_t map_last_rpc_error(cudaError_t fallback);
 static cudaError_t drain_allocation_transfers_blocking(uint64_t allocation_id);
 static void mark_session_failed_locked(const char *reason);
 static void invalidate_client_graphs(void);
+static void retire_client_graph_allocations(void);
+static int capture_allow_allocation_locked(void);
+static _Thread_local enum cudaStreamCaptureMode g_capture_interaction=cudaStreamCaptureModeGlobal;
 static cudaError_t capture_submit_locked(cudaStream_t stream,uint32_t kind,const void *params);
 static cudaError_t capture_reject_locked(void);
 static int capture_active_locked(void);
@@ -282,9 +286,16 @@ static int rpc(
     g_last_rpc_transport_error = 0;
     if (corex_runtime_context_get()->graphs.capture.status != cudaStreamCaptureStatusNone &&
         !corex_graph_capture_safe_opcode(opcode)) {
+        if(opcode==OP_ALLOC &&
+           corex_runtime_context_get()->graphs.capture.status==cudaStreamCaptureStatusActive &&
+           (!pthread_equal(corex_runtime_context_get()->graphs.capture.owner,pthread_self()) ||
+            g_capture_interaction==cudaStreamCaptureModeRelaxed)) {
+            if(capture_allow_allocation_locked())return -1;
+        } else {
         corex_runtime_context_get()->graphs.capture.status = cudaStreamCaptureStatusInvalidated;
         g_last_remote_status = ST_CAPTURE_UNSUPPORTED;
         return -1;
+        }
     }
     uint32_t req_id = g_next_req_id++;
     unsigned char h[CRX_REQUEST_HEADER_BYTES];
@@ -1418,10 +1429,10 @@ static VirtualAllocation *find_exact_live_base(const void *ptr)
     return NULL;
 }
 
-static ResolveResult resolve_remote_ptr(
+static ResolveResult resolve_remote_ptr_mode(
     const void *ptr,
     size_t access_bytes,
-    ResolvedRemotePtr *resolved)
+    ResolvedRemotePtr *resolved, int graph_resources)
 {
     uintptr_t value = (uintptr_t)ptr;
 
@@ -1436,6 +1447,7 @@ static ResolveResult resolve_remote_ptr(
 
         if (value < base || value > end)
             continue;
+        if(!graph_resources && a->graph_id && !a->graph_active) return RESOLVE_GRAPH_RESERVED;
 
         size_t offset = (size_t)(value - base);
         if (offset > a->size || access_bytes > a->size - offset)
@@ -1458,6 +1470,9 @@ static ResolveResult resolve_remote_ptr(
 
     return RESOLVE_INVALID;
 }
+
+static ResolveResult resolve_remote_ptr(const void *ptr,size_t bytes,ResolvedRemotePtr *out)
+{ return resolve_remote_ptr_mode(ptr,bytes,out,0); }
 
 static int pointer_in_remote_arena(const void *ptr)
 {
@@ -2278,18 +2293,8 @@ static cudaError_t cudaSetDevice_locked(int device)
     return cudaSuccess;
 }
 
-static cudaError_t allocate_linear_locked(void **devPtr, size_t size,
-                                          const G6EStreamView *view, uint64_t pool_id)
+static cudaError_t prepare_linear_identity(size_t size,VirtualAllocation **out,size_t *span_out)
 {
-    if (!devPtr || size == 0)
-        G6E_RETURN(cudaErrorInvalidValue);
-
-    *devPtr = NULL;
-
-    cudaError_t init = ensure_runtime();
-    if (init != cudaSuccess)
-        G6E_RETURN(init);
-
     VirtualAllocation *slot = find_free_slot();
     if (!slot)
         G6E_RETURN(cudaErrorMemoryAllocation);
@@ -2306,25 +2311,12 @@ static cudaError_t allocate_linear_locked(void **devPtr, size_t size,
         span > (size_t)G6A_VA_ARENA_BYTES - g_va_next)
         G6E_RETURN(cudaErrorMemoryAllocation);
 
-    uint64_t allocation_id = 0;
-    if (view) {
-        if (pool_id) {
-            CorexGeneratedcudaMallocFromPoolAsyncRequest request={.bytes=size,.pool=pool_id,.stream=view->stream_id};
-            CorexGeneratedcudaMallocFromPoolAsyncResponse response;
-            if (corex_generated_call_cudaMallocFromPoolAsync(generated_rpc_call,&request,&response))
-                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
-            allocation_id=response.allocation;
-        } else {
-            CorexGeneratedcudaMallocAsyncRequest request={.bytes=size,.stream=view->stream_id};
-            CorexGeneratedcudaMallocAsyncResponse response;
-            if (corex_generated_call_cudaMallocAsync(generated_rpc_call,&request,&response))
-                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
-            allocation_id=response.allocation;
-        }
-        uint64_t seq=++(*view->next_transfer_seq);view->frontier[view->slot_index]=seq;
-    } else if (remote_alloc((uint64_t)size, &allocation_id) != 0)
-        G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+    *out=slot;*span_out=span;return cudaSuccess;
+}
 
+static cudaError_t commit_linear_identity(VirtualAllocation *slot,size_t size,uint64_t allocation_id,
+    size_t span,void **devPtr)
+{
     uintptr_t base = (uintptr_t)(g_va_arena + g_va_next);
 
     /* Commit local identity only after the remote AllocationID exists. */
@@ -2353,6 +2345,46 @@ static cudaError_t allocate_linear_locked(void **devPtr, size_t size,
     return cudaSuccess;
 }
 
+static cudaError_t allocate_linear_locked(void **devPtr, size_t size,
+                                          const G6EStreamView *view, uint64_t pool_id)
+{
+    if (!devPtr || size == 0)
+        G6E_RETURN(cudaErrorInvalidValue);
+
+    *devPtr = NULL;
+    if(corex_runtime_context_get()->graphs.capture.status==cudaStreamCaptureStatusInvalidated)
+        G6E_RETURN(cudaErrorStreamCaptureInvalidated);
+
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess)
+        G6E_RETURN(init);
+
+    VirtualAllocation *slot;size_t span;
+    cudaError_t prepared=prepare_linear_identity(size,&slot,&span);
+    if(prepared)return prepared;
+
+    uint64_t allocation_id = 0;
+    if (view) {
+        if (pool_id) {
+            CorexGeneratedcudaMallocFromPoolAsyncRequest request={.bytes=size,.pool=pool_id,.stream=view->stream_id};
+            CorexGeneratedcudaMallocFromPoolAsyncResponse response;
+            if (corex_generated_call_cudaMallocFromPoolAsync(generated_rpc_call,&request,&response))
+                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+            allocation_id=response.allocation;
+        } else {
+            CorexGeneratedcudaMallocAsyncRequest request={.bytes=size,.stream=view->stream_id};
+            CorexGeneratedcudaMallocAsyncResponse response;
+            if (corex_generated_call_cudaMallocAsync(generated_rpc_call,&request,&response))
+                G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+            allocation_id=response.allocation;
+        }
+        uint64_t seq=++(*view->next_transfer_seq);view->frontier[view->slot_index]=seq;
+    } else if (remote_alloc((uint64_t)size, &allocation_id) != 0)
+        G6E_RETURN(map_last_rpc_error(cudaErrorMemoryAllocation));
+
+    return commit_linear_identity(slot,size,allocation_id,span,devPtr);
+}
+
 static cudaError_t cudaMalloc_locked(void **devPtr, size_t size)
 {
     return allocate_linear_locked(devPtr,size,NULL,0);
@@ -2372,6 +2404,7 @@ static cudaError_t cudaFree_locked(void *devPtr)
         G6E_RETURN(cudaErrorInvalidDevicePointer);
 
     if(slot->parent_module_id) G6E_RETURN(cudaErrorInvalidDevicePointer);
+    if(slot->graph_id && !slot->graph_active) G6E_RETURN(cudaErrorNotSupported);
 
     uint64_t allocation_id = slot->allocation_id;
 
@@ -2397,8 +2430,8 @@ static cudaError_t cudaFree_locked(void *devPtr)
            devPtr,
            (unsigned long long)allocation_id);
 
-    slot->live = 0;
-    slot->allocation_id = 0;
+    if(slot->graph_id) {slot->graph_active=0;retire_client_graph_allocations();}
+    else {slot->live = 0;slot->allocation_id = 0;}
     /* virtual_base/size are intentionally not reused by g_va_next. */
 
     return cudaSuccess;
@@ -2406,6 +2439,7 @@ static cudaError_t cudaFree_locked(void *devPtr)
 
 static cudaError_t map_resolve_error(ResolveResult result)
 {
+    if(result==RESOLVE_GRAPH_RESERVED) G6E_RETURN(cudaErrorNotSupported);
     if (result == RESOLVE_OOB)
         G6E_RETURN(cudaErrorInvalidValue);
     G6E_RETURN(cudaErrorInvalidDevicePointer);
@@ -2424,7 +2458,7 @@ static ResolveResult resolve_remote_2d_region(const void *ptr, size_t pitch, siz
 {
     if (!ptr || !resolved || !width || !height || !pitch || width > pitch) return RESOLVE_INVALID;
     uintptr_t value=(uintptr_t)ptr;
-    for(size_t i=0;i<G6A_MAX_ALLOCS;++i){ VirtualAllocation *a=&g_allocs[i]; if(!a->live||a->session_generation!=g_active_session_generation)continue; if(value<a->virtual_base||value-a->virtual_base>a->size)continue; size_t off=(size_t)(value-a->virtual_base); if(checked_2d_extent(off,pitch,width,height,a->size)!=0)return RESOLVE_OOB; resolved->allocation_id=a->allocation_id; resolved->byte_offset=off; return RESOLVE_OK; }
+    for(size_t i=0;i<G6A_MAX_ALLOCS;++i){ VirtualAllocation *a=&g_allocs[i]; if(!a->live||a->session_generation!=g_active_session_generation)continue; if(value<a->virtual_base||value-a->virtual_base>a->size)continue; if(a->graph_id && !a->graph_active)return RESOLVE_GRAPH_RESERVED; size_t off=(size_t)(value-a->virtual_base); if(checked_2d_extent(off,pitch,width,height,a->size)!=0)return RESOLVE_OOB; resolved->allocation_id=a->allocation_id; resolved->byte_offset=off; return RESOLVE_OK; }
     return RESOLVE_INVALID;
 }
 
@@ -2448,9 +2482,9 @@ static int checked_3d_region(size_t base_offset, cudaPos position, size_t pitch,
     return 0;
 }
 
-static ResolveResult resolve_remote_3d_region(const void *ptr, cudaPos position,
+static ResolveResult resolve_remote_3d_region_mode(const void *ptr, cudaPos position,
                                               size_t pitch, size_t slice_pitch,
-                                              cudaExtent extent, ResolvedRemotePtr *resolved)
+                                              cudaExtent extent, ResolvedRemotePtr *resolved,int graph_resources)
 {
     if(!ptr||!resolved) return RESOLVE_INVALID;
     uintptr_t value=(uintptr_t)ptr;
@@ -2458,6 +2492,7 @@ static ResolveResult resolve_remote_3d_region(const void *ptr, cudaPos position,
         VirtualAllocation *a=&g_allocs[i];
         if(!a->live||a->session_generation!=g_active_session_generation)continue;
         if(value<a->virtual_base||value-a->virtual_base>a->size)continue;
+        if(!graph_resources && a->graph_id && !a->graph_active) return RESOLVE_GRAPH_RESERVED;
         size_t offset=0;
         if(checked_3d_region((size_t)(value-a->virtual_base),position,pitch,slice_pitch,extent,a->size,&offset)!=0) return RESOLVE_OOB;
         resolved->allocation_id=a->allocation_id; resolved->byte_offset=offset;
@@ -2465,6 +2500,10 @@ static ResolveResult resolve_remote_3d_region(const void *ptr, cudaPos position,
     }
     return RESOLVE_INVALID;
 }
+
+static ResolveResult resolve_remote_3d_region(const void *ptr,cudaPos pos,size_t pitch,size_t slice,
+    cudaExtent extent,ResolvedRemotePtr *out)
+{ return resolve_remote_3d_region_mode(ptr,pos,pitch,slice,extent,out,0); }
 
 static cudaError_t cudaMemset3D_locked(cudaPitchedPtr pointer, int value,
                                       cudaExtent extent, cudaStream_t stream, int async)
@@ -3456,17 +3495,7 @@ static void *host_callback_worker(void *opaque)
     return NULL;
 }
 
-static cudaError_t submit_host_callback_locked(cudaStream_t stream,
-    void (*host)(void *), void (*callback)(cudaStream_t, cudaError_t, void *), void *data)
-{
-    if(capture_active_locked())return capture_reject_locked();
-
-    if (!host && !callback) G6E_RETURN(cudaErrorInvalidValue);
-    cudaError_t init = ensure_runtime();
-    if (init != cudaSuccess) G6E_RETURN(init);
-    G6EStreamView view;
-    if (get_stream_view(stream, &view) != 0) G6E_RETURN(cudaErrorInvalidResourceHandle);
-    apply_legacy_default_ordering(&view);
+static cudaError_t prepare_host_callback_worker_locked(void) {
     CorexRuntimeContext *context = corex_runtime_context_get();
     if (!context->callback_worker_started) {
         pthread_t worker;
@@ -3475,6 +3504,20 @@ static cudaError_t submit_host_callback_locked(cudaStream_t stream,
         pthread_detach(worker);
         context->callback_worker_started = 1;
     }
+    return cudaSuccess;
+}
+static cudaError_t submit_host_callback_locked(cudaStream_t stream,
+    void (*host)(void *), void (*callback)(cudaStream_t, cudaError_t, void *), void *data)
+{
+    if(capture_active_locked())return capture_reject_locked();
+    if (!host && !callback) G6E_RETURN(cudaErrorInvalidValue);
+    cudaError_t init = ensure_runtime();
+    if (init != cudaSuccess) G6E_RETURN(init);
+    G6EStreamView view;
+    if (get_stream_view(stream, &view) != 0) G6E_RETURN(cudaErrorInvalidResourceHandle);
+    apply_legacy_default_ordering(&view);
+    init=prepare_host_callback_worker_locked();if(init)return init;
+    CorexRuntimeContext *context = corex_runtime_context_get();
     context->callback_stream = stream;
     context->callback_stream_id = view.stream_id;
     memcpy(context->callback_frontier, view.frontier, sizeof(context->callback_frontier));
@@ -4673,7 +4716,7 @@ static void g7c_finalize_registrations_after_session_close(void)
 
 static cudaError_t serialize_kernel_launch(const void *func, dim3 gridDim, dim3 blockDim,
                                            void **args, size_t sharedMem, uint64_t stream_id,
-                                           unsigned char **payload_out, uint32_t *length_out) {
+                                           unsigned char **payload_out, uint32_t *length_out,int graph_resources) {
     corexRemoteKernelHandle *kh = resolve_kernel_reference(func);
     if (!kh)
         G6E_RETURN(cudaErrorInvalidResourceHandle);
@@ -4730,7 +4773,7 @@ static cudaError_t serialize_kernel_launch(const void *func, dim3 gridDim, dim3 
             memcpy(&device_ptr, args[i], sizeof(device_ptr));
 
             ResolvedRemotePtr remote;
-            ResolveResult rr = resolve_remote_ptr(device_ptr, 1, &remote);
+            ResolveResult rr = resolve_remote_ptr_mode(device_ptr, 1, &remote,graph_resources);
             if (rr != RESOLVE_OK) {
                 result = map_resolve_error(rr);
                 goto out;
@@ -4791,7 +4834,7 @@ static cudaError_t cudaLaunchKernel_locked(const void *func, dim3 gridDim, dim3 
     unsigned char *payload = NULL;
     uint32_t len = 0;
     cudaError_t result = serialize_kernel_launch(func, gridDim, blockDim, args, sharedMem,
-                                                 sv.stream_id, &payload, &len);
+                                                 sv.stream_id, &payload, &len,0);
     if (result != cudaSuccess)
         return result;
     if (rpc(g_fd, OP_LAUNCH_GENERIC, payload, len, NULL, NULL) != 0)
@@ -4847,6 +4890,8 @@ const char *cudaGetErrorString(cudaError_t error)
     case cudaErrorStreamCaptureInvalidated: return "cudaErrorStreamCaptureInvalidated";
     case cudaErrorStreamCaptureWrongThread: return "cudaErrorStreamCaptureWrongThread";
     case cudaErrorGraphExecUpdateFailure: return "cudaErrorGraphExecUpdateFailure";
+    case cudaErrorOperatingSystem:
+        return "cudaErrorOperatingSystem";
     case cudaErrorUnknown:
         return "cudaErrorUnknown";
     default:
@@ -6524,6 +6569,7 @@ static cudaError_t free_async_locked(void *ptr,cudaStream_t stream)
     cudaError_t result=pool_runtime_locked();if(result!=cudaSuccess)return result;
     VirtualAllocation *slot=find_exact_live_base(ptr);
     if(!slot || slot->parent_module_id)G6E_RETURN(cudaErrorInvalidDevicePointer);
+    if(slot->graph_id && !slot->graph_active)G6E_RETURN(cudaErrorNotSupported);
     G6EStreamView view;
     if(get_stream_view(stream,&view))G6E_RETURN(cudaErrorInvalidResourceHandle);
     apply_legacy_default_ordering(&view);
@@ -6532,7 +6578,8 @@ static cudaError_t free_async_locked(void *ptr,cudaStream_t stream)
     if(corex_generated_call_cudaFreeAsync(generated_rpc_call,&request,&response))
         G6E_RETURN(map_last_rpc_error(cudaErrorUnknown));
     uint64_t seq=++(*view.next_transfer_seq);view.frontier[view.slot_index]=seq;
-    slot->live=0;slot->allocation_id=0;
+    if(slot->graph_id){slot->graph_active=0;retire_client_graph_allocations();}
+    else {slot->live=0;slot->allocation_id=0;}
     return cudaSuccess;
 }
 

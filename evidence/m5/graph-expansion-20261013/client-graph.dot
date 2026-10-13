@@ -1,0 +1,3 @@
+digraph cuda_graph {
+  n1 [label="Memset"];
+}

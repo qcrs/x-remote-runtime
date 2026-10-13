@@ -253,6 +253,18 @@ CUresult corex_backend_graph_add_child(CUgraphNode *node, CUgraph graph, const C
 { return cuGraphAddChildGraphNode(node, graph, deps, count, child); }
 CUresult corex_backend_graph_child(CUgraphNode node, CUgraph *graph)
 { return cuGraphChildGraphNodeGetGraph(node, graph); }
+CUresult corex_backend_graph_add_alloc(CUgraphNode *node,CUgraph graph,const CUgraphNode *deps,size_t count,CUDA_MEM_ALLOC_NODE_PARAMS *params)
+{return cuGraphAddMemAllocNode(node,graph,deps,count,params);}
+CUresult corex_backend_graph_add_free(CUgraphNode *node,CUgraph graph,const CUgraphNode *deps,size_t count,CUdeviceptr ptr)
+{return cuGraphAddMemFreeNode(node,graph,deps,count,ptr);}
+CUresult corex_backend_graph_upload(CUgraphExec exec,CUstream stream)
+{
+    /* CoreX declares cuGraphUpload but omits its ELF export. The official
+     * Driver entry-point lookup provides the measured native primitive. */
+    void *entry=NULL;CUresult r=cuGetProcAddress("cuGraphUpload",&entry,11010,0);
+    if(r || !entry)return CUDA_ERROR_NOT_SUPPORTED;
+    return ((CUresult (*)(CUgraphExec,CUstream))entry)(exec,stream);
+}
 CUresult corex_backend_graph_set_wait(CUgraphNode node, CUevent event)
 { return cuGraphEventWaitNodeSetEvent(node, event); }
 CUresult corex_backend_graph_exec_set_record(CUgraphExec exec, CUgraphNode node, CUevent event)
@@ -263,6 +275,8 @@ CUresult corex_backend_capture_begin(CUstream stream, CUstreamCaptureMode mode)
 {
     return cuStreamBeginCapture(stream, mode);
 }
+CUresult corex_backend_capture_exchange(CUstreamCaptureMode *mode)
+{return cuThreadExchangeStreamCaptureMode(mode);}
 CUresult corex_backend_capture_begin_to_graph(CUstream stream, CUgraph graph, const CUgraphNode *deps, size_t count)
 { return cuStreamBeginCaptureToGraph(stream, graph, deps, NULL, count, CU_STREAM_CAPTURE_MODE_THREAD_LOCAL); }
 CUresult corex_backend_capture_dependencies(CUstream stream, CUgraphNode *deps, size_t count, unsigned flags)

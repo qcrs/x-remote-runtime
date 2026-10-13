@@ -16,11 +16,11 @@ with remote copies. Session reset, pre-resource context flags, basic extended
 launches and client host callbacks are supported within the documented limits.
 Native memory pools and stream-ordered allocation share the existing remote
 allocation, stream ordering and session lifetime machinery.
-Native graphs support device operation DAGs, event query/mutation, executable
-snapshots, bounded child graphs and replay. Bounded native stream capture supports existing graphs
-and dependency updates; native graph memory controls expose backend accounting.
-The capture layer reuses those graphs;
-its scope and lifetime model are in [Graph/Capture](docs/GRAPH_CAPTURE_MODEL.md).
+Native graphs support device DAGs, event mutation, independent exec snapshots,
+child graphs, native graph allocation/free, client host tails and upload. Bounded
+stream capture supports existing graphs, dependency updates and thread-local
+interaction control. The [Graph/Capture model](docs/GRAPH_CAPTURE_MODEL.md)
+records the ownership rules and supported limits.
 Array allocation, texture objects, and managed allocation are unavailable on the
 measured CoreX backend.
 

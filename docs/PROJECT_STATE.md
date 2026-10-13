@@ -1,21 +1,17 @@
 # Project State
 
-The post-baseline Graph/Capture expansion is active at
-`0383270696516c003743e4784f3c5795168052f6`. The 40 supported APIs at that HEAD
-count as zero progress for this expansion. Its first implementation checkpoint
-adds **11 supported APIs**: six graph event query/mutation APIs, capture into an
-existing graph, capture dependency updates, and three graph memory controls.
-Eight are IMPLEMENTED and three PARTIAL_IMPLEMENTED. Native probes, independent
-public localhost CRX9 integration, bounded protocol tests, build/ABI/schema,
-lifecycle and session isolation pass. Baseline snapshots and continuing work are
-in `evidence/m5/graph-expansion-20261013/`; this checkpoint does **not** complete
-the goal. A second checkpoint adds three PARTIAL_IMPLEMENTED child graph APIs,
-bringing NEW_SUPPORTED_DELTA to **14**. Borrowed child graphs have independent
-node identities; executable updates rematerialize saved native definitions to
-avoid CoreX silently ignoring composite updates before first launch. The public
-test verifies kernel/copy execution, source destruction, parameter/enable-state
-preservation and repeated quiescent updates. Graph memory nodes and bounded
-client-process host nodes remain active implementation work.
+The Graph/Capture expansion from
+`0383270696516c003743e4784f3c5795168052f6` adds **25 NEW supported public APIs**
+(8 IMPLEMENTED, 17 PARTIAL_IMPLEMENTED). The 40 APIs supported at that HEAD are
+baseline only. The expansion implements child graphs/independent exec updates,
+event query/mutation, native graph allocation/free and accounting, client host
+tails, native upload, capture-to-graph/dependency updates, bounded thread capture
+interaction, and client DOT output. Three user-object APIs are terminally
+GROUND_TRUTH_BLOCKED by the unestablished remote destructor lifecycle; their
+native reference/no-destructor-sync behavior is measured and is not counted.
+The baseline comparison, capability limits and completion audit are in
+`evidence/m5/graph-expansion-20261013/GOAL_AUDIT.md` and
+[GRAPH_CAPTURE_MODEL](GRAPH_CAPTURE_MODEL.md).
 
 The Native Graph and practical Stream Capture goal is complete on CoreX 4.4 /
 MR-V100, within the measured limits in the ledger: 40 additional public APIs
@@ -36,9 +32,9 @@ current requirements and evidence-version audit is in
 | Hardware / CoreX | MR-V100 / CoreX 4.4.0, aarch64 |
 | Protocol / ABI | CRX9/V3 / COREX_REMOTE_CUDART_1.0 and 1.1 |
 | Goal baseline | `154dde1` |
-| Last validated slice | Native Graph / bounded Stream Capture; 2026-10-13 |
+| Last validated slice | Graph/Capture expansion, native memory nodes and client host tails; 2026-10-13 |
 | Scope boundary | IPC, Peer/Multi-device and External Interop excluded |
-| Graph/Capture compatibility | 40-API target reached with native instantiate/launch and practical capture; broader node/capture families remain uninvestigated |
+| Graph/Capture compatibility | 40 baseline + 25 newly supported APIs; three user-object APIs blocked by remote destructor lifecycle |
 
 Compatibility and operations work are tracked independently. The compatibility
 track has completed M3-S8 and has implemented the bounded Memory Layout slice;

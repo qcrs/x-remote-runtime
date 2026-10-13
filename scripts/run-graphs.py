@@ -56,12 +56,14 @@ if not args.integration_only:
         probes=[("corex_graph_expansion_probe.c", "native-expansion", "cuda"),
                 ("corex_child_graph_execution_probe.c", "native-child-execution", "cuda"),
                 ("corex_graph_memory_probe.c", "native-memory", "cuda"),
-                ("corex_graph_expansion_runtime_probe.c", "native-runtime-expansion", "cudart")]
+                ("corex_graph_expansion_runtime_probe.c", "native-runtime-expansion", "cudart"),
+                ("corex_graph_remaining_probe.c", "native-remaining", "cuda")]
     for source, label, lib in probes:
         binary = work / label
         run(common + [f"-I{corex}/include", root / "tests/probes" / source,
-                      f"-L{corex}/lib64", f"-Wl,-rpath,{corex}/lib64", "-l" + lib, "-ldl", "-o", binary], label + "-compile")
-        run([binary] + ([image] if label in ("execution-probe","native-child-execution") else []), label)
+                      f"-L{corex}/lib64", f"-Wl,-rpath,{corex}/lib64", "-l" + lib, "-ldl","-pthread"]+
+                      (["-lcudart"] if label=="native-remaining" else [])+["-o", binary], label + "-compile")
+        run([binary] + ([image] if label in ("execution-probe","native-child-execution","native-memory") else []), label)
 if args.probes_only:
     print("GRAPH_PROBES=PASS",flush=True)
     raise SystemExit(0)
@@ -76,6 +78,21 @@ if args.expansion:
                   f"-L{root}/dist/lib", "-lcorex_remote_cudart", f"-Wl,-rpath,{root}/dist/lib", "-pthread", "-o", expansion_binary], "expansion-client-compile")
     run(common + ["-DCOREX_GRAPH_INTERNAL_ABI", f"-I{root}/include/internal", "-c",
                   root / "tests/integration/graph_expansion.c", "-o", work / "graph-expansion-abi.o"], "expansion-abi")
+    memory_binary=work / "graph-memory-app"
+    run(common+[f"-I{corex}/include",root / "tests/integration/graph_memory.c",f"-L{root}/dist/lib",
+                "-lcorex_remote_cudart",f"-Wl,-rpath,{root}/dist/lib","-o",memory_binary],"memory-client-compile")
+    run(common+["-DCOREX_GRAPH_INTERNAL_ABI",f"-I{root}/include/internal","-c",root / "tests/integration/graph_memory.c",
+                "-o",work / "graph-memory-abi.o"],"memory-abi")
+    host_binary=work / "graph-host-app"
+    run(common+[f"-I{corex}/include",root / "tests/integration/graph_host.c",f"-L{root}/dist/lib",
+                "-lcorex_remote_cudart",f"-Wl,-rpath,{root}/dist/lib","-pthread","-o",host_binary],"host-client-compile")
+    run(common+["-DCOREX_GRAPH_INTERNAL_ABI",f"-I{root}/include/internal","-c",root / "tests/integration/graph_host.c",
+                "-o",work / "graph-host-abi.o"],"host-abi")
+    control_binary=work / "graph-controls-app"
+    run(common+[f"-I{corex}/include",root / "tests/integration/graph_controls.c",f"-L{root}/dist/lib",
+                "-lcorex_remote_cudart",f"-Wl,-rpath,{root}/dist/lib","-pthread","-o",control_binary],"control-client-compile")
+    run(common+["-DCOREX_GRAPH_INTERNAL_ABI",f"-I{root}/include/internal","-c",root / "tests/integration/graph_controls.c",
+                "-o",work / "graph-controls-abi.o"],"control-abi")
 env = os.environ.copy()
 env["PYTHONDONTWRITEBYTECODE"] = "1"
 env["COREX_REMOTE_HOST"] = "127.0.0.1"
@@ -104,6 +121,9 @@ with (out / "server.stdout.log").open("w") as stdout, (out / "server.stderr.log"
         run([binary, image], "integration", env)
         if args.expansion:
             run([expansion_binary, image], "expansion-integration", env)
+            run([memory_binary,image],"memory-integration",env)
+            run([host_binary],"host-integration",env)
+            run([control_binary,out / "client-graph.dot"],"control-integration",env)
         run(["python3", root / "tests/integration/graphs_protocol.py"], "protocol-integration", env)
         if not args.integration_only or args.ownership_checks:
             lifecycle_env=env.copy();lifecycle_env["OUT"]=str(out / "lifecycle")

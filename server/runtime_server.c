@@ -57,6 +57,8 @@ typedef struct {
     CUdeviceptr ptr;
     size_t size;
     uint64_t parent_module_id; /* zero: owned allocation, otherwise module-owned */
+    uint64_t graph_id;
+    int graph_active, graph_paired;
     uint32_t layout_kind;
     size_t width;
     size_t height;
@@ -143,6 +145,7 @@ typedef struct {
     uint64_t next_graph_id, next_graph_node_id, next_graph_exec_id;
     uint64_t capture_stream, capture_graph;
     int capture_supplied_graph;
+    int capture_allow_alloc;
     uint64_t default_pool_id;
     uint64_t current_pool_id;
     uint64_t next_pool_id;
@@ -299,7 +302,7 @@ static int send_response(
  * ============================================================
  */
 
-static Allocation *find_allocation(ServerSession *session, uint64_t id)
+static Allocation *find_allocation_record(ServerSession *session, uint64_t id)
 {
     for (int i = 0; i < MAX_ALLOCS; ++i) {
         if (session->allocations[i].used && session->allocations[i].id == id)
@@ -308,6 +311,13 @@ static Allocation *find_allocation(ServerSession *session, uint64_t id)
 
     return NULL;
 }
+static Allocation *find_allocation(ServerSession *s,uint64_t id)
+{
+    Allocation *a=find_allocation_record(s,id);
+    return a && (!a->graph_id || a->graph_active) ? a : NULL;
+}
+static void graph_allocation_freed(ServerSession *,Allocation *,uint64_t,int);
+static void retire_graph_memory(ServerSession *,int);
 
 static Allocation *new_allocation_slot(ServerSession *session)
 {
@@ -723,7 +733,8 @@ static void cleanup_session(ServerSession *session)
             "cleanup allocation_id=%llu\n",
             (unsigned long long)session->allocations[i].id);
 
-        if (session->allocations[i].ptr && !session->allocations[i].parent_module_id)
+        if (session->allocations[i].ptr && !session->allocations[i].parent_module_id &&
+            (!session->allocations[i].graph_id || session->allocations[i].graph_active))
             corex_backend_mem_free(session->allocations[i].ptr);
 
         memset(&session->allocations[i], 0, sizeof(session->allocations[i]));
@@ -1381,7 +1392,8 @@ static int handle_free(
         req_id,
         (unsigned long long)allocation_id);
 
-    memset(a, 0, sizeof(*a));
+    if(a->graph_id) graph_allocation_freed(session,a,0,0);
+    else memset(a, 0, sizeof(*a));
 
     return send_response(fd, OP_FREE, req_id, ST_OK, NULL, 0);
 }
@@ -1393,7 +1405,6 @@ static int handle_sync(
     const unsigned char *payload,
     uint32_t len)
 {
-    (void)session;
     CorexGeneratedcudaDeviceSynchronizeRequest request;
     if (corex_generated_decode_cudaDeviceSynchronize_request(payload, len, &request) != 0)
         return send_response(fd, OP_SYNC, req_id, ST_BAD_REQUEST, NULL, 0);
@@ -1402,6 +1413,7 @@ static int handle_sync(
 
     if (r != CUDA_SUCCESS)
         return send_response(fd, OP_SYNC, req_id, ST_CUDA_ERROR, NULL, 0);
+    retire_graph_memory(session,1);
 
     printf("SYNC request=%u\n", req_id);
 
@@ -2803,7 +2815,10 @@ static int handle_free_async(ServerSession *session,int fd,uint32_t req_id,const
     CUresult result=corex_backend_mem_free_async(allocation->ptr,stream);
     /* A submitted free invalidates identity immediately. TransferID staging
      * remains independent and is consumed at its normal frontier retirement. */
-    if (result==CUDA_SUCCESS) memset(allocation,0,sizeof(*allocation));
+    if(result==CUDA_SUCCESS) {
+        if(allocation->graph_id) graph_allocation_freed(session,allocation,request.stream,1);
+        else memset(allocation,0,sizeof(*allocation));
+    }
     return send_response(fd,OP_FREE_ASYNC,req_id,pool_status(result),NULL,0);
 }
 
@@ -3294,7 +3309,7 @@ typedef struct {
 } DecodedKernelLaunch;
 
 static uint32_t decode_kernel_launch(ServerSession *session, const unsigned char *payload,
-                                    uint32_t len, DecodedKernelLaunch *decoded)
+                                    uint32_t len, DecodedKernelLaunch *decoded, int graph_resources)
 {
     memset(decoded, 0, sizeof(*decoded));
     if (len < 48)
@@ -3426,7 +3441,8 @@ static uint32_t decode_kernel_launch(ServerSession *session, const unsigned char
         case ARG_REMOTE_PTR: {
             uint64_t allocation_id = corex_protocol_read_u64(payload + pos);
             uint64_t offset64      = corex_protocol_read_u64(payload + pos + 8);
-            Allocation *a = find_allocation(session, allocation_id);
+            Allocation *a = graph_resources ? find_allocation_record(session, allocation_id)
+                                             : find_allocation(session, allocation_id);
 
             if (!a) {
                 fail_status = ST_NOT_FOUND;
@@ -3509,7 +3525,7 @@ static int handle_launch_generic(ServerSession *session, int fd, uint32_t req_id
                                  const unsigned char *payload, uint32_t len)
 {
     DecodedKernelLaunch d;
-    uint32_t status = decode_kernel_launch(session, payload, len, &d);
+    uint32_t status = decode_kernel_launch(session, payload, len, &d,0);
     if (status != ST_OK)
         return send_response(fd, OP_LAUNCH_GENERIC, req_id, status, NULL, 0);
     printf("ABI_VALIDATE kernel=%s argc=%u result=PASS\n",d.kernel->name,d.argc);
@@ -4641,18 +4657,25 @@ static int serve_session(ServerSession *session, int fd)
                 break;
             }
         }
-        if (session->capture_graph && !corex_graph_capture_safe_opcode(opcode)) {
+        int allow_alloc=session->capture_graph && session->capture_allow_alloc && opcode==OP_ALLOC;
+        session->capture_allow_alloc=0;
+        if (session->capture_graph && !corex_graph_capture_safe_opcode(opcode) && !allow_alloc) {
             int sent=send_response(fd,opcode,req_id,ST_CAPTURE_UNSUPPORTED,NULL,0);
             free(payload);if(sent!=0)return -1;continue;
         }
         const ServerHandlerEntry *entry =
             opcode < sizeof(g_handlers) / sizeof(g_handlers[0]) &&
             g_handlers[opcode].handler ? &g_handlers[opcode] : NULL;
-        int rc = generated_schema_error
+        CUstreamCaptureMode previous=CU_STREAM_CAPTURE_MODE_RELAXED;
+        CUresult capture_mode_result=allow_alloc ? corex_backend_capture_exchange(&previous) : CUDA_SUCCESS;
+        int rc = capture_mode_result!=CUDA_SUCCESS
+            ? send_response(fd,opcode,req_id,ST_CUDA_ERROR,NULL,0)
+            : generated_schema_error
             ? send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0)
             : entry
             ? entry->handler(session, fd, req_id, payload, payload_len)
             : send_response(fd, opcode, req_id, ST_BAD_REQUEST, NULL, 0);
+        if(allow_alloc && capture_mode_result==CUDA_SUCCESS)corex_backend_capture_exchange(&previous);
         int close_after_response = opcode == OP_CLOSE && payload_len == 0;
 
         free(payload);

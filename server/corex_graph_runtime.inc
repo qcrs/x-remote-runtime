@@ -14,7 +14,7 @@ static GraphNodeEntry *find_graph_node(ServerSession *s, uint64_t id) {
 }
 static GraphExecEntry *find_graph_exec(ServerSession *s, uint64_t id) {
   for (size_t i = 0; i < CRX_GRAPH_MAX_EXECS; ++i)
-    if (s->graph_execs[i].used && s->graph_execs[i].id == id)
+    if (s->graph_execs[i].used && !s->graph_execs[i].retired && s->graph_execs[i].id == id)
       return &s->graph_execs[i];
   return NULL;
 }
@@ -27,6 +27,62 @@ static GraphNodeEntry *exec_graph_node(GraphExecEntry *e, uint64_t id) {
 static void release_graph_node(GraphNodeEntry *n) {
   free(n->params);
   memset(n, 0, sizeof(*n));
+}
+static int graph_has_memory(ServerSession *s,uint64_t graph) {
+  for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
+    if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==graph &&
+       (s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC || s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_FREE))return 1;
+  return 0;
+}
+static void release_graph_exec(GraphExecEntry *e) {
+  corex_backend_graph_exec_destroy(e->exec);
+  if(e->definition)corex_backend_graph_destroy(e->definition);
+  for(size_t i=0;i<e->count;++i)release_graph_node(&e->nodes[i]);
+  memset(e,0,sizeof(*e));
+}
+/* Graph allocations keep their AllocationID while their graph or a live exec
+ * may replay them. A retired exec holds native mapping ownership for an active
+ * unpaired allocation, since CoreX unmaps it at physical ExecDestroy. */
+static void retire_graph_memory(ServerSession *s,int gpu_done) {
+  for(size_t i=0;i<CRX_GRAPH_MAX_EXECS;++i) {
+    GraphExecEntry *e=&s->graph_execs[i];if(!e->used || !e->retired)continue;
+    int hold=0;
+    for(size_t j=0;j<e->count;++j) {
+      if(e->nodes[j].kind!=CU_GRAPH_NODE_TYPE_MEM_ALLOC)continue;
+      Allocation *a=find_allocation_record(s,corex_protocol_read_u64(e->nodes[j].params));
+      if(a && a->graph_active)hold=1;
+      if(e->free_pending[j] && !gpu_done) {
+        CUstream stream=NULL;
+        if(!resolve_stream_id(s,e->free_streams[j],&stream) && corex_backend_stream_query(stream)!=CUDA_SUCCESS)hold=1;
+      }
+    }
+    if(e->launched && !gpu_done) {
+      CUstream stream=NULL;
+      if(!resolve_stream_id(s,e->last_stream,&stream) && corex_backend_stream_query(stream)!=CUDA_SUCCESS)hold=1;
+    }
+    if(!hold)release_graph_exec(e);
+  }
+  for(size_t i=0;i<MAX_ALLOCS;++i) {
+    Allocation *a=&s->allocations[i];if(!a->used || !a->graph_id || a->graph_active)continue;
+    int owner=find_graph(s,a->graph_id)!=NULL;
+    for(size_t j=0;!owner && j<CRX_GRAPH_MAX_EXECS;++j) {
+      GraphExecEntry *e=&s->graph_execs[j];if(!e->used || e->retired)continue;
+      for(size_t k=0;k<e->count;++k)
+        if(e->nodes[k].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC && corex_protocol_read_u64(e->nodes[k].params)==a->id)owner=1;
+    }
+    if(!owner)memset(a,0,sizeof(*a));
+  }
+}
+static void graph_allocation_freed(ServerSession *s,Allocation *a,uint64_t stream,int async) {
+  a->graph_active=0;
+  for(size_t i=0;i<CRX_GRAPH_MAX_EXECS;++i) {
+    GraphExecEntry *e=&s->graph_execs[i];if(!e->used)continue;
+    for(size_t j=0;j<e->count;++j)
+      if(e->nodes[j].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC && corex_protocol_read_u64(e->nodes[j].params)==a->id) {
+        e->free_pending[j]=(unsigned char)async;e->free_streams[j]=stream;
+      }
+  }
+  retire_graph_memory(s,!async);
 }
 static void release_borrowed_child(ServerSession *s, uint64_t owner) {
   for (size_t i=0;i<CRX_GRAPH_MAX_GRAPHS;++i) {
@@ -58,15 +114,17 @@ static void cleanup_graphs(ServerSession *s) {
   /* Native graph launches may use default/nonblocking streams. Complete
    * them before releasing executable snapshots and their resource owners. */
   corex_backend_context_sync();
+  for(size_t i=0;i<MAX_ALLOCS;++i) {
+    Allocation *a=&s->allocations[i];
+    if(a->used && a->graph_id && a->graph_active) {
+      corex_backend_mem_free(a->ptr);a->graph_active=0;
+    }
+  }
   for (size_t i = 0; i < CRX_GRAPH_MAX_EXECS; ++i) {
     GraphExecEntry *e = &s->graph_execs[i];
     if (!e->used)
       continue;
-    corex_backend_graph_exec_destroy(e->exec);
-    if(e->definition) corex_backend_graph_destroy(e->definition);
-    for (size_t j = 0; j < e->count; ++j)
-      release_graph_node(&e->nodes[j]);
-    memset(e, 0, sizeof(*e));
+    release_graph_exec(e);
   }
   for (size_t i = 0; i < CRX_GRAPH_MAX_GRAPHS; ++i) {
     if (s->graphs[i].used && !s->graphs[i].owner_node_id)
@@ -75,6 +133,7 @@ static void cleanup_graphs(ServerSession *s) {
   }
   for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i)
     release_graph_node(&s->graph_nodes[i]);
+  retire_graph_memory(s,1);
 }
 static uint32_t graph_result(CUresult r) {
   if (r == CUDA_SUCCESS)
@@ -112,11 +171,11 @@ static int handle_graph_mem_set(ServerSession *s, int fd, uint32_t req_id,
 }
 static int handle_graph_mem_trim(ServerSession *s, int fd, uint32_t req_id,
                                   const unsigned char *payload, uint32_t len) {
-  (void)s;
   CorexGeneratedcudaDeviceGraphMemTrimRequest q;
   if(corex_generated_decode_cudaDeviceGraphMemTrim_request(payload,len,&q))
     return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,ST_BAD_REQUEST,NULL,0);
   if(q.device != 0) return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,ST_INVALID_DEVICE,NULL,0);
+  retire_graph_memory(s,0);
   return send_response(fd,OP_GRAPH_MEM_TRIM,req_id,graph_result(corex_backend_graph_mem_trim(g_device)),NULL,0);
 }
 typedef struct {
@@ -129,6 +188,14 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
                                     const unsigned char *p, uint32_t len,
                                     GraphNativeParams *d) {
   memset(d, 0, sizeof(*d));
+  if(kind==CU_GRAPH_NODE_TYPE_HOST)return len==0 ? ST_OK : ST_BAD_REQUEST;
+  if(kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC || kind==CU_GRAPH_NODE_TYPE_MEM_FREE) {
+    if(len!=(kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC ? 16u : 8u))return ST_BAD_REQUEST;
+    Allocation *a=find_allocation_record(s,corex_protocol_read_u64(p));
+    if(!a || !a->graph_id)return ST_NOT_FOUND;
+    if(kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC && corex_protocol_read_u64(p+8)!=a->size)return ST_BAD_REQUEST;
+    return ST_OK;
+  }
   if (kind == CU_GRAPH_NODE_TYPE_GRAPH) {
     if (len<4 || len>CRX_GRAPH_PARAM_BYTES) return ST_BAD_REQUEST;
     uint32_t count=corex_protocol_read_u32(p);size_t pos=4;
@@ -170,7 +237,7 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
   if (kind == CU_GRAPH_NODE_TYPE_KERNEL) {
     if (len < 48 || corex_protocol_read_u64(p + 8) != 0)
       return ST_BAD_REQUEST;
-    return decode_kernel_launch(s, p, len, &d->kernel);
+    return decode_kernel_launch(s, p, len, &d->kernel,1);
   }
   if (kind == CU_GRAPH_NODE_TYPE_MEMCPY) {
     if (len != 88)
@@ -178,7 +245,7 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
     uint64_t v[11];
     for (size_t i = 0; i < 11; ++i)
       v[i] = corex_protocol_read_u64(p + 8 * i);
-    Allocation *dst = find_allocation(s, v[0]), *src = find_allocation(s, v[4]);
+    Allocation *dst = find_allocation_record(s, v[0]), *src = find_allocation_record(s, v[4]);
     if (!dst || !src)
       return ST_NOT_FOUND;
     if (!v[8] || !v[9] || !v[10] ||
@@ -202,7 +269,7 @@ static uint32_t decode_graph_params(ServerSession *s, uint32_t kind,
   if (kind == CU_GRAPH_NODE_TYPE_MEMSET) {
     if (len != 48)
       return ST_BAD_REQUEST;
-    Allocation *a = find_allocation(s, corex_protocol_read_u64(p));
+    Allocation *a = find_allocation_record(s, corex_protocol_read_u64(p));
     if (!a)
       return ST_NOT_FOUND;
     uint64_t off = corex_protocol_read_u64(p + 8),
@@ -236,6 +303,7 @@ static void release_graph_params(uint32_t kind, GraphNativeParams *p) {
   if (kind == CU_GRAPH_NODE_TYPE_KERNEL)
     release_raw_kernel_args(p->kernel.raw, p->kernel.argc);
 }
+static size_t graph_node_allocations(const GraphNodeEntry *,uint64_t *);
 /* The child native graph owns copied leaves. Its canonical packed owner DTO
  * is copied again into each executable; no source GraphID is retained there. */
 static uint32_t pack_child_snapshot(ServerSession *s, GraphEntry *g,
@@ -254,6 +322,9 @@ static uint32_t pack_child_snapshot(ServerSession *s, GraphEntry *g,
     uint32_t status=decode_graph_params(s,n->kind,n->params,n->length,&d);
     if(status) return status;
     release_graph_params(n->kind,&d);
+    uint64_t ids[MAX_ARGS];size_t referenced=graph_node_allocations(n,ids);
+    for(size_t j=0;j<referenced;++j)if(find_allocation_record(s,ids[j])->graph_id)return ST_NOT_SUPPORTED;
+
     corex_protocol_write_u32(out,&pos,n->kind);
     corex_protocol_write_u32(out,&pos,n->length);
     memcpy(out+pos,n->params,n->length);pos+=n->length;
@@ -293,12 +364,64 @@ static uint32_t snapshot_graph_edges(CUgraph graph,GraphNodeEntry *nodes,size_t 
 }
 static uint32_t materialize_graph_snapshot(ServerSession *,GraphNodeEntry *,size_t,
     const unsigned char [CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES],CUgraph *,CUgraphNode *);
+static size_t graph_node_allocations(const GraphNodeEntry *n,uint64_t *ids) {
+  if(n->kind==CU_GRAPH_NODE_TYPE_MEMSET){ids[0]=corex_protocol_read_u64(n->params);return 1;}
+  if(n->kind==CU_GRAPH_NODE_TYPE_MEMCPY){ids[0]=corex_protocol_read_u64(n->params);ids[1]=corex_protocol_read_u64(n->params+32);return 2;}
+  if(n->kind!=CU_GRAPH_NODE_TYPE_KERNEL)return 0;
+  size_t count=0,pos=48;uint32_t argc=corex_protocol_read_u32(n->params+44);
+  for(size_t i=0;i<argc;++i) {
+    uint32_t kind=corex_protocol_read_u32(n->params+pos),bytes=corex_protocol_read_u32(n->params+pos+4);pos+=8;
+    if(kind==ARG_REMOTE_PTR)ids[count++]=corex_protocol_read_u64(n->params+pos);
+    pos+=bytes;
+  }
+  return count;
+}
+static uint32_t validate_graph_memory(ServerSession *s,GraphNodeEntry *nodes,size_t count,
+    const unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES]) {
+  unsigned char reachable[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES];
+  memcpy(reachable,edges,sizeof(reachable));
+  for(size_t k=0;k<count;++k)for(size_t i=0;i<count;++i)for(size_t j=0;j<count;++j)
+    reachable[i][j]|=reachable[i][k] && reachable[k][j];
+  for(size_t i=0;i<count;++i) {
+    uint64_t ids[MAX_ARGS];size_t n=graph_node_allocations(&nodes[i],ids);
+    if(nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_FREE){ids[0]=corex_protocol_read_u64(nodes[i].params);n=1;}
+    for(size_t j=0;j<n;++j) {
+      Allocation *a=find_allocation_record(s,ids[j]);if(!a)return ST_NOT_FOUND;
+      if(!a->graph_id)continue;
+      size_t alloc=count,fre=count;
+      for(size_t k=0;k<count;++k) {
+        if(nodes[k].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC && corex_protocol_read_u64(nodes[k].params)==ids[j])alloc=k;
+        if(nodes[k].kind==CU_GRAPH_NODE_TYPE_MEM_FREE && corex_protocol_read_u64(nodes[k].params)==ids[j])fre=k;
+      }
+      if(alloc==count) {
+        if(!a->graph_active || a->graph_paired)return ST_NOT_SUPPORTED;
+      } else if(!reachable[alloc][i] || (fre!=count && fre!=i && !reachable[i][fre]))return ST_BAD_REQUEST;
+    }
+  }
+  return ST_OK;
+}
+static uint32_t validate_host_tail(GraphNodeEntry *nodes,size_t count,
+    const unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES]) {
+  size_t host=count;
+  for(size_t i=0;i<count;++i)if(nodes[i].kind==CU_GRAPH_NODE_TYPE_HOST) {
+    if(host!=count)return ST_NOT_SUPPORTED;
+    host=i;
+  }
+  if(host==count)return ST_OK;
+  unsigned char reaches[CRX_GRAPH_MAX_NODES]={0};reaches[host]=1;
+  for(size_t i=0;i<count;++i)if(edges[host][i])return ST_NOT_SUPPORTED;
+  for(size_t step=0;step<count;++step)for(size_t i=0;i<count;++i)
+    for(size_t j=0;j<count;++j)if(edges[i][j] && reaches[j])reaches[i]=1;
+  for(size_t i=0;i<count;++i)if(!reaches[i])return ST_NOT_SUPPORTED;
+  return ST_OK;
+}
 static uint32_t add_native_snapshot_node(ServerSession *s,GraphNodeEntry *n,CUgraph graph,
     const CUgraphNode *deps,size_t count,CUgraphNode *out) {
   GraphNativeParams d;uint32_t status=decode_graph_params(s,n->kind,n->params,n->length,&d);
   if(status)return status;
   CUresult r=CUDA_SUCCESS;
   switch(n->kind) {
+  case CU_GRAPH_NODE_TYPE_HOST:r=corex_backend_graph_add_empty(out,graph,deps,count);break;
   case CU_GRAPH_NODE_TYPE_EMPTY:r=corex_backend_graph_add_empty(out,graph,deps,count);break;
   case CU_GRAPH_NODE_TYPE_MEMSET:r=corex_backend_graph_add_fill(out,graph,deps,count,&d.fill,g_ctx);break;
   case CU_GRAPH_NODE_TYPE_MEMCPY:r=corex_backend_graph_add_copy(out,graph,deps,count,&d.copy,g_ctx);break;
@@ -450,15 +573,62 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       q.action != GRAPH_GET_EDGES && q.action != GRAPH_GET_DEPENDENCIES &&
       q.action != GRAPH_GET_DEPENDENTS && q.action != GRAPH_GET_TYPE &&
       q.action != GRAPH_GET_PARAMS && q.action != GRAPH_CAPTURE_DEPENDENCIES &&
+      q.action != GRAPH_CAPTURE_ALLOW_ALLOC &&
       !((q.action == GRAPH_ADD_NODE || q.action == GRAPH_ADD_DEPENDENCIES) &&
         g && g->id == s->capture_graph))
     return send_response(fd, OP_GRAPH, req_id, ST_NOT_SUPPORTED, NULL, 0);
   switch (q.action) {
+  case GRAPH_CAPTURE_ALLOW_ALLOC:
+    if(!g || g->id!=s->capture_graph || q.value!=OP_ALLOC || q.data_length){status=ST_BAD_REQUEST;break;}
+    s->capture_allow_alloc=1;
+    break;
+  case GRAPH_ADD_MEM_ALLOC:
+  case GRAPH_ADD_MEM_FREE: {
+    if(!g){status=ST_NOT_FOUND;break;}
+    if(g->owner_node_id || g->memory_frozen || q.kind){status=ST_NOT_SUPPORTED;break;}
+    if(q.data_length%8 || q.data_length/8>CRX_GRAPH_MAX_NODES){status=ST_BAD_REQUEST;break;}
+    for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
+      if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==g->id && s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_GRAPH)status=ST_NOT_SUPPORTED;
+    if(status)break;
+    size_t count=0;r=corex_backend_graph_nodes(g->graph,NULL,&count);if(r)break;
+    if(count>=CRX_GRAPH_MAX_NODES){status=ST_NO_RESOURCE;break;}
+    CUgraphNode deps[CRX_GRAPH_MAX_NODES];size_t dep_count=q.data_length/8;
+    status=resolve_graph_dependencies(s,g->id,q.data,dep_count,deps);if(status)break;
+    GraphNodeEntry *slot=NULL;
+    for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)if(!s->graph_nodes[i].used){slot=&s->graph_nodes[i];break;}
+    if(!slot){status=ST_NO_RESOURCE;break;}
+    unsigned char *params=malloc(16);if(!params){status=ST_NO_RESOURCE;break;}
+    Allocation *a=NULL;
+    if(q.action==GRAPH_ADD_MEM_ALLOC) {
+      if(!q.value || q.value>SIZE_MAX){free(params);status=ST_BAD_REQUEST;break;}
+      a=new_allocation_slot(s);if(!a){free(params);status=ST_NO_RESOURCE;break;}
+      CUDA_MEM_ALLOC_NODE_PARAMS p={0};p.poolProps.allocType=CU_MEM_ALLOCATION_TYPE_PINNED;
+      p.poolProps.location.type=CU_MEM_LOCATION_TYPE_DEVICE;p.poolProps.location.id=g_device;p.bytesize=(size_t)q.value;
+      r=corex_backend_graph_add_alloc(&slot->node,g->graph,deps,dep_count,&p);
+      if(r){memset(a,0,sizeof(*a));free(params);break;}
+      a->ptr=p.dptr;a->size=(size_t)q.value;a->graph_id=g->id;
+    } else {
+      a=find_allocation_record(s,q.value);
+      if(!a || a->graph_id!=g->id){free(params);status=ST_BAD_REQUEST;break;}
+      if(a->graph_paired || a->graph_active){free(params);status=ST_BAD_REQUEST;break;}
+      r=corex_backend_graph_add_free(&slot->node,g->graph,deps,dep_count,a->ptr);
+      if(r){free(params);break;}a->graph_paired=1;
+    }
+    slot->used=1;slot->id=++s->next_graph_node_id;slot->graph_id=g->id;
+    slot->kind=q.action==GRAPH_ADD_MEM_ALLOC ? CU_GRAPH_NODE_TYPE_MEM_ALLOC : CU_GRAPH_NODE_TYPE_MEM_FREE;
+    size_t pos=0;corex_protocol_write_u64(params,&pos,a->id);
+    if(q.action==GRAPH_ADD_MEM_ALLOC)corex_protocol_write_u64(params,&pos,a->size);
+    slot->params=params;slot->length=(uint32_t)pos;
+    pos=0;corex_protocol_write_u64(out.data,&pos,a->id);out.data_length=(uint32_t)pos;out.object=slot->id;
+    break;
+  }
   case GRAPH_ADD_CHILD: {
     GraphEntry *source=find_graph(s,q.value), *borrowed=NULL;
     if(!g || !source) {status=ST_NOT_FOUND;break;}
     if(g==source) {status=ST_BAD_REQUEST;break;}
     if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
+    if(graph_has_memory(s,g->id)){status=ST_NOT_SUPPORTED;break;}
+
     if(q.data_length%8 || q.data_length/8>CRX_GRAPH_MAX_NODES) {status=ST_BAD_REQUEST;break;}
     size_t node_count=0;r=corex_backend_graph_nodes(g->graph,NULL,&node_count);
     if(r) break;
@@ -558,6 +728,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     StreamEntry *stream=find_stream(s,q.stream);
     if (!g || !stream) {status=ST_NOT_FOUND;break;}
     if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
+    if(graph_has_memory(s,g->id)){status=ST_NOT_SUPPORTED;break;}
+
     for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
       if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==g->id &&
          s->graph_nodes[i].kind==CU_GRAPH_NODE_TYPE_GRAPH) status=ST_NOT_SUPPORTED;
@@ -613,6 +785,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+
+    if(graph_has_memory(s,g->id)){status=ST_NOT_SUPPORTED;break;}
     GraphEntry *slot = NULL;
     for (size_t i = 0; i < CRX_GRAPH_MAX_GRAPHS; ++i)
       if (!s->graphs[i].used) {
@@ -721,6 +895,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+
+    if(graph_has_memory(s,g->id)){status=ST_NOT_SUPPORTED;break;}
     /* This measured slice accepts the original graph's node identities.
      * Recapture/clone correspondence is deliberately outside this update. */
     for (size_t i = 0; i < e->count; ++i) {
@@ -758,6 +934,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     CUgraphExecUpdateResult result = CU_GRAPH_EXEC_UPDATE_ERROR;
     unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES];
     if(!status)status=snapshot_graph_edges(g->graph,snapshots,count,edges);
+    if(!status)status=validate_host_tail(snapshots,count,edges);
     if (!status)
       r = corex_backend_graph_exec_update(e->exec, g->graph, &error, &result);
     printf("GRAPH_EXEC_UPDATE rc=%d result=%d\n", (int)r, (int)result);
@@ -991,6 +1168,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
         release_graph_node(&s->graph_nodes[i]);
       }
     memset(g, 0, sizeof(*g));
+    retire_graph_memory(s,0);
     break;
   case GRAPH_ADD_NODE: {
     if (!g) {
@@ -1093,6 +1271,18 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       break;
     }
     memcpy(saved, q.data, q.data_length);
+    GraphNodeEntry candidate[CRX_GRAPH_MAX_NODES];size_t candidate_count=0;
+    unsigned char edges[CRX_GRAPH_MAX_NODES][CRX_GRAPH_MAX_NODES];
+    if(e) {candidate_count=e->count;memcpy(candidate,e->nodes,e->count*sizeof(*candidate));memcpy(edges,e->edges,sizeof(edges));}
+    else {
+      for(size_t i=0;i<CRX_GRAPH_MAX_NODE_HANDLES;++i)
+        if(s->graph_nodes[i].used && s->graph_nodes[i].graph_id==n->graph_id)candidate[candidate_count++]=s->graph_nodes[i];
+      status=snapshot_graph_edges(owner->graph,candidate,candidate_count,edges);
+    }
+    for(size_t i=0;i<candidate_count;++i)if(candidate[i].id==n->id){candidate[i].params=saved;candidate[i].length=q.data_length;}
+    if(!status)status=validate_graph_memory(s,candidate,candidate_count,edges);
+    if(status){free(saved);release_graph_params(q.kind,&d);break;}
+
     if (q.kind == CU_GRAPH_NODE_TYPE_MEMCPY)
       r = e ? corex_backend_graph_exec_set_copy(e->exec, target->node, &d.copy,
                                                 g_ctx)
@@ -1111,6 +1301,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
     else if (q.kind == CU_GRAPH_NODE_TYPE_WAIT_EVENT)
       r = e ? corex_backend_graph_exec_set_wait(e->exec, target->node, d.event)
             : corex_backend_graph_set_wait(n->node, d.event);
+    else if(q.kind==CU_GRAPH_NODE_TYPE_HOST)r=CUDA_SUCCESS; /* fn/data stay client-side */
     else
       r = CUDA_ERROR_NOT_SUPPORTED;
     release_graph_params(q.kind, &d);
@@ -1141,6 +1332,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       break;
     }
     if(find_graph(s,n->graph_id)->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
+    if(graph_has_memory(s,n->graph_id)){status=ST_BAD_REQUEST;break;}
     r = corex_backend_graph_destroy_node(n->node);
     if (!r) {
       release_borrowed_child(s,n->id);
@@ -1167,6 +1359,10 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NO_RESOURCE;
       break;
     }
+    retire_graph_memory(s,0);
+    if(graph_has_memory(s,g->id)) for(size_t i=0;i<CRX_GRAPH_MAX_EXECS;++i)
+      if(s->graph_execs[i].used && s->graph_execs[i].source_graph_id==g->id)status=ST_NOT_SUPPORTED;
+    if(status)break;
     memset(slot, 0, sizeof(*slot));
     for (size_t i = 0; i < CRX_GRAPH_MAX_NODE_HANDLES; ++i) {
       GraphNodeEntry *src = &s->graph_nodes[i];
@@ -1188,6 +1384,8 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       memcpy(dst->params, src->params, src->length);
     }
     if(!status)status=snapshot_graph_edges(g->graph,slot->nodes,slot->count,slot->edges);
+    if(!status)status=validate_graph_memory(s,slot->nodes,slot->count,slot->edges);
+    if(!status)status=validate_host_tail(slot->nodes,slot->count,slot->edges);
     if (!status)
       r = corex_backend_graph_instantiate(&slot->exec, g->graph);
     if (status || r) {
@@ -1196,24 +1394,22 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       memset(slot, 0, sizeof(*slot));
       break;
     }
+    slot->source_graph_id=g->id;
+    if(graph_has_memory(s,g->id))g->memory_frozen=1;
     slot->used = 1;
     slot->id = ++s->next_graph_exec_id;
     out.object = slot->id;
     break;
   }
   case GRAPH_EXEC_DESTROY:
-    if (!e) {
-      status = ST_NOT_FOUND;
-      break;
-    }
-    r = corex_backend_graph_exec_destroy(e->exec);
-    if (r)
-      break;
-    if(e->definition)corex_backend_graph_destroy(e->definition);
-    for (size_t i = 0; i < e->count; ++i)
-      release_graph_node(&e->nodes[i]);
-    memset(e, 0, sizeof(*e));
+    if(!e){status=ST_NOT_FOUND;break;}
+    for(size_t i=0;i<e->count;++i)
+      if(e->nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC)e->retired=1;
+    if(e->retired)retire_graph_memory(s,0);
+    else release_graph_exec(e);
+    retire_graph_memory(s,0);
     break;
+  case GRAPH_UPLOAD:
   case GRAPH_LAUNCH: {
     if (!e) {
       status = ST_NOT_FOUND;
@@ -1238,9 +1434,39 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
         break;
       release_graph_params(v->kind, &d);
     }
+    if(!status)status=validate_graph_memory(s,e->nodes,e->count,e->edges);
+    int memory_upload=0;
+    if(!status && q.action==GRAPH_UPLOAD)for(size_t i=0;i<e->count;++i)
+      if(e->nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC) {
+        memory_upload=1;
+        Allocation *a=find_allocation_record(s,corex_protocol_read_u64(e->nodes[i].params));
+        if(a->graph_active || a->graph_paired)status=ST_NOT_SUPPORTED;
+      }
+    if(!status && memory_upload) {
+      CUstream previous=NULL;
+      if(corex_backend_stream_query(stream)!=CUDA_SUCCESS ||
+         (e->launched && (resolve_stream_id(s,e->last_stream,&previous) || corex_backend_stream_query(previous)!=CUDA_SUCCESS)))
+        status=ST_NOT_SUPPORTED;
+    }
+    if(!status && q.action==GRAPH_LAUNCH)for(size_t i=0;i<e->count;++i)if(e->nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC) {
+      Allocation *a=find_allocation_record(s,corex_protocol_read_u64(e->nodes[i].params));
+      if(a && a->graph_active)status=ST_BAD_REQUEST;
+    }
     if (!status)
-      r = corex_backend_graph_launch(e->exec, stream);
-    if(!status && !r) {e->last_stream=q.stream;e->launched=1;}
+      r = q.action==GRAPH_UPLOAD ? corex_backend_graph_upload(e->exec,stream) : corex_backend_graph_launch(e->exec, stream);
+    /* CoreX upload marks graph backing allocated before the alloc node runs.
+     * The measured native free restores the reserved state for first launch.
+     * These IDs/addresses stay graph-owned; this is not ordinary retirement. */
+    if(!status && !r && memory_upload)for(size_t i=0;i<e->count;++i)
+      if(e->nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC) {
+        Allocation *a=find_allocation_record(s,corex_protocol_read_u64(e->nodes[i].params));
+        r=corex_backend_mem_free(a->ptr);if(r)break;
+      }
+    if(!status && !r && q.action==GRAPH_LAUNCH)for(size_t i=0;i<e->count;++i)if(e->nodes[i].kind==CU_GRAPH_NODE_TYPE_MEM_ALLOC) {
+      Allocation *a=find_allocation_record(s,corex_protocol_read_u64(e->nodes[i].params));
+      a->graph_active=!a->graph_paired;e->free_pending[i]=0;
+    }
+    if(!status && !r && q.action==GRAPH_LAUNCH) {e->last_stream=q.stream;e->launched=1;}
     break;
   }
   case GRAPH_GET_NODES:
@@ -1312,6 +1538,7 @@ static int handle_graph(ServerSession *s, int fd, uint32_t req_id,
       status = ST_NOT_FOUND;
       break;
     }
+    if(q.action==GRAPH_REMOVE_DEPENDENCIES && graph_has_memory(s,g->id)){status=ST_BAD_REQUEST;break;}
     if(g->owner_node_id) {status=ST_NOT_SUPPORTED;break;}
     if (q.data_length % 16 || q.data_length / 16 > CRX_GRAPH_MAX_NODES) {
       status = ST_BAD_REQUEST;

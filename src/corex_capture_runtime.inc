@@ -2,6 +2,17 @@
 static int capture_active_locked(void) {
     return CLIENT_GRAPHS.capture.status != cudaStreamCaptureStatusNone;
 }
+static int capture_allow_allocation_locked(void) {
+    CorexGeneratedcudaGraphCreateRequest q={.action=GRAPH_CAPTURE_ALLOW_ALLOC,
+        .graph=CLIENT_GRAPHS.capture.graph->id,.value=OP_ALLOC};
+    CorexGeneratedcudaGraphCreateResponse reply;
+    return corex_generated_call_cudaGraphCreate(generated_rpc_call,&q,&reply);
+}
+static cudaError_t capture_exchange_locked(enum cudaStreamCaptureMode *mode) {
+    if(!mode || *mode<cudaStreamCaptureModeGlobal || *mode>cudaStreamCaptureModeRelaxed)return cudaErrorInvalidValue;
+    enum cudaStreamCaptureMode previous=g_capture_interaction;g_capture_interaction=*mode;*mode=previous;
+    return cudaSuccess;
+}
 static cudaError_t capture_reject_locked(void) {
     if (CLIENT_GRAPHS.capture.status == cudaStreamCaptureStatusInvalidated)
         return cudaErrorStreamCaptureInvalidated;
@@ -241,7 +252,8 @@ static cudaError_t capture_guard_graph_api(const char *name) {
     if (strstr(name, "Get") || strcmp(name, "cudaStreamIsCapturing") == 0 ||
         strcmp(name, "cudaStreamEndCapture") == 0 || strcmp(name, "cudaStreamBeginCapture") == 0 ||
         strcmp(name, "cudaStreamBeginCaptureToGraph") == 0 ||
-        strcmp(name, "cudaStreamUpdateCaptureDependencies") == 0 || strstr(name, "cudaGraphAdd"))
+        strcmp(name, "cudaStreamUpdateCaptureDependencies") == 0 ||
+        strcmp(name,"cudaThreadExchangeStreamCaptureMode")==0 || strstr(name, "cudaGraphAdd"))
         return cudaSuccess;
     return capture_reject_locked();
 }

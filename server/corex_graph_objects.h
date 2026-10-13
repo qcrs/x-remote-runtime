@@ -6,6 +6,7 @@ typedef struct {
     uint64_t id;
     CUgraph graph;
     uint64_t owner_node_id; /* borrowed native child; parent node owns destruction */
+    int memory_frozen;
 } GraphEntry;
 typedef struct {
     int used;
@@ -22,6 +23,10 @@ typedef struct {
     CUgraph definition; /* owned native definition for rebuilt executable nodes */
     uint64_t last_stream;
     int launched;
+    int retired;
+    uint64_t source_graph_id;
+    uint64_t free_streams[CRX_GRAPH_MAX_NODES];
+    unsigned char free_pending[CRX_GRAPH_MAX_NODES];
     size_t count;
     /* Executable snapshots survive destruction and mutation of source graphs. */
     GraphNodeEntry nodes[CRX_GRAPH_MAX_NODES];

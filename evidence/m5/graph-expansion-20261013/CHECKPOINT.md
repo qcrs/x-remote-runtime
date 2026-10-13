@@ -1,3 +1,6 @@
+Historical checkpoint at 8fc5feb. Superseded by GOAL_AUDIT.md and the final
+NEW_SUPPORTED_DELTA.csv; the 14-API count below describes that earlier commit.
+
 # Implementation checkpoint; Goal remains active
 
 BASE_HEAD: `0383270696516c003743e4784f3c5795168052f6`. The saved BASE_LEDGER matches the rows at that commit.

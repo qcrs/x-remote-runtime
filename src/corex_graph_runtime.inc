@@ -40,6 +40,20 @@ static void invalidate_client_graphs(void) {
         CLIENT_GRAPHS.nodes[i].arg_storage = NULL;
     }
 }
+static void retire_client_graph_allocations(void) {
+    for(size_t i=0;i<G6A_MAX_ALLOCS;++i) {
+        VirtualAllocation *a=&g_allocs[i];
+        if(!a->live || !a->graph_id || a->graph_active || a->session_generation!=g_active_session_generation)continue;
+        int owner=0;
+        for(size_t j=0;j<CLIENT_GRAPHS.graph_next;++j)
+            if(CLIENT_GRAPHS.graphs[j].live && CLIENT_GRAPHS.graphs[j].generation==g_active_session_generation && CLIENT_GRAPHS.graphs[j].id==a->graph_id)owner=1;
+        for(size_t j=0;!owner && j<CLIENT_GRAPHS.exec_next;++j) {
+            struct corexCudaGraphExecHandle *e=&CLIENT_GRAPHS.execs[j];if(!e->live)continue;
+            for(size_t k=0;k<e->allocation_count;++k)if(e->allocations[k]==a->allocation_id)owner=1;
+        }
+        if(!owner){a->live=0;a->allocation_id=0;}
+    }
+}
 static cudaError_t graph_runtime_locked(void) {
     cudaError_t r = ensure_runtime();
     if (r != cudaSuccess)
@@ -125,6 +139,7 @@ static cudaError_t graph_destroy_locked(cudaGraph_t h) {
             n->arg_storage = NULL;
         }
     }
+    retire_client_graph_allocations();
     return cudaSuccess;
 }
 typedef struct {
@@ -139,6 +154,11 @@ static cudaError_t graph_params_locked(uint32_t kind, const void *params, Client
         return cudaSuccess;
     if (!params)
         return cudaErrorInvalidValue;
+    if(kind==cudaGraphNodeTypeHost) {
+        const struct cudaHostNodeParams *p=params;
+        if(!p->fn)return cudaErrorInvalidValue;
+        out->cache.host=*p;return cudaSuccess;
+    }
     if (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent) {
         cudaEvent_t event = *(const cudaEvent_t *)params;
         struct corexCudaEventHandle *e = resolve_event_handle(event);
@@ -159,7 +179,7 @@ static cudaError_t graph_params_locked(uint32_t kind, const void *params, Client
         if (pitch < row || p->height - 1 > (SIZE_MAX - row) / pitch)
             return cudaErrorInvalidValue;
         ResolvedRemotePtr dst;
-        ResolveResult rr = resolve_remote_ptr(p->dst, (p->height - 1) * pitch + row, &dst);
+        ResolveResult rr = resolve_remote_ptr_mode(p->dst, (p->height - 1) * pitch + row, &dst,1);
         if (rr != RESOLVE_OK)
             return map_resolve_error(rr);
         if ((uintptr_t)p->dst % p->elementSize)
@@ -191,12 +211,12 @@ static cudaError_t graph_params_locked(uint32_t kind, const void *params, Client
             return cudaErrorInvalidValue;
         size_t ss = p->srcPtr.pitch * p->srcPtr.ysize, ds = p->dstPtr.pitch * p->dstPtr.ysize;
         ResolvedRemotePtr dst, src;
-        ResolveResult rr = resolve_remote_3d_region(p->dstPtr.ptr, p->dstPos, p->dstPtr.pitch, ds,
-                                                    p->extent, &dst);
+        ResolveResult rr = resolve_remote_3d_region_mode(p->dstPtr.ptr, p->dstPos, p->dstPtr.pitch, ds,
+                                                    p->extent, &dst,1);
         if (rr != RESOLVE_OK)
             return map_resolve_error(rr);
-        rr = resolve_remote_3d_region(p->srcPtr.ptr, p->srcPos, p->srcPtr.pitch, ss, p->extent,
-                                      &src);
+        rr = resolve_remote_3d_region_mode(p->srcPtr.ptr, p->srcPos, p->srcPtr.pitch, ss, p->extent,
+                                      &src,1);
         if (rr != RESOLVE_OK)
             return map_resolve_error(rr);
         uint64_t v[] = {dst.allocation_id, dst.byte_offset,  p->dstPtr.pitch, ds,
@@ -216,7 +236,7 @@ static cudaError_t graph_params_locked(uint32_t kind, const void *params, Client
         unsigned char *wire = NULL;
         uint32_t length = 0;
         cudaError_t r = serialize_kernel_launch(p->func, p->gridDim, p->blockDim, p->kernelParams,
-                                                p->sharedMemBytes, 0, &wire, &length);
+                                                p->sharedMemBytes, 0, &wire, &length,1);
         if (r)
             return r;
         if (length > sizeof(out->wire)) {
@@ -254,6 +274,7 @@ static void graph_commit_params(struct corexCudaGraphNodeHandle *n, ClientGraphP
     n->fill = p->cache.fill;
     n->copy = p->cache.copy;
     n->kernel = p->cache.kernel;
+    n->host=p->cache.host;
     memcpy(n->kernel_args, p->cache.kernel_args, sizeof(n->kernel_args));
     if (n->kind == cudaGraphNodeTypeKernel)
         n->kernel.kernelParams = n->kernel_args;
@@ -329,6 +350,7 @@ static cudaError_t graph_set_node_locked(cudaGraphExec_t exec, cudaGraphNode_t n
     struct corexCudaGraphExecHandle *e = exec ? resolve_graph_exec_handle(exec) : NULL;
     if (exec && !e)
         return cudaErrorInvalidResourceHandle;
+    if(e && kind==cudaGraphNodeTypeHost && e->host_node!=n->id)return cudaErrorInvalidValue;
     size_t event_index = 0;
     if (e && (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent)) {
         for (; event_index < e->event_count; ++event_index)
@@ -353,6 +375,7 @@ static cudaError_t graph_set_node_locked(cudaGraphExec_t exec, cudaGraphNode_t n
         graph_commit_params(n, &p);
     if (!r && e && (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent))
         e->events[event_index] = p.cache.event;
+    if(!r && e && kind==cudaGraphNodeTypeHost)e->host=p.cache.host;
     free(p.cache.arg_storage);
     return r;
 }
@@ -375,6 +398,7 @@ static cudaError_t graph_get_params_locked(cudaGraphNode_t node, uint32_t kind, 
         *(struct cudaKernelNodeParams *)params = n->kernel;
     else if (kind == cudaGraphNodeTypeEventRecord || kind == cudaGraphNodeTypeWaitEvent)
         *(cudaEvent_t *)params = n->event;
+    else if(kind==cudaGraphNodeTypeHost)*(struct cudaHostNodeParams *)params=n->host;
     return cudaSuccess;
 }
 static cudaError_t graph_instantiate_locked(cudaGraphExec_t *out, cudaGraph_t h,
@@ -416,6 +440,13 @@ static cudaError_t graph_instantiate_locked(cudaGraphExec_t *out, cudaGraph_t h,
     e->source_graph_id = g->id;
     for (size_t i = 0; i < CLIENT_GRAPHS.node_next; ++i) {
         struct corexCudaGraphNodeHandle *n = &CLIENT_GRAPHS.nodes[i];
+        if(n->live && n->generation==g_active_session_generation && n->graph_id==g->id && n->kind==cudaGraphNodeTypeHost) {
+            e->host=n->host;e->host_node=n->id;
+        }
+        if(n->live && n->generation==g_active_session_generation && n->graph_id==g->id && n->kind==cudaGraphNodeTypeMemAlloc) {
+            VirtualAllocation *a=find_exact_live_base(n->mem_alloc.dptr);
+            e->allocations[e->allocation_count++]=a->allocation_id;g->memory_frozen=1;
+        }
         if (n->live && n->generation == g_active_session_generation && n->graph_id == g->id &&
             (n->kind == cudaGraphNodeTypeEventRecord || n->kind == cudaGraphNodeTypeWaitEvent)) {
             e->events[e->event_count] = n->event;
@@ -440,6 +471,7 @@ static cudaError_t graph_exec_destroy_locked(cudaGraphExec_t h) {
         e->live = 0;
         free(e->frontier);
         e->frontier = NULL;
+        retire_client_graph_allocations();
     }
     return r;
 }
@@ -456,6 +488,7 @@ static cudaError_t graph_launch_locked(cudaGraphExec_t h, cudaStream_t stream) {
     for (size_t i = 0; i < e->event_count; ++i)
         if (!resolve_event_handle(e->events[i]))
             return cudaErrorInvalidResourceHandle;
+    if(e->host.fn){r=prepare_host_callback_worker_locked();if(r)return r;}
     apply_legacy_default_ordering(&sv);
     CorexGeneratedcudaGraphCreateRequest q = {
         .action = GRAPH_LAUNCH, .exec = e->id, .stream = sv.stream_id};
@@ -463,6 +496,10 @@ static cudaError_t graph_launch_locked(cudaGraphExec_t h, cudaStream_t stream) {
     r = graph_rpc(&q, &reply);
     if (r)
         return r;
+    for(size_t i=0;i<e->allocation_count;++i)for(size_t j=0;j<G6A_MAX_ALLOCS;++j) {
+        VirtualAllocation *a=&g_allocs[j];
+        if(a->live && a->session_generation==g_active_session_generation && a->allocation_id==e->allocations[i])a->graph_active=!a->graph_paired;
+    }
     /* Native serializes launches of the same executable, even across streams.
      * Propagate that ordering to existing hidden-transfer host retirement. */
     for (size_t i = 0; i < G6E_FRONTIER_SLOTS; ++i)
@@ -482,7 +519,16 @@ static cudaError_t graph_launch_locked(cudaGraphExec_t h, cudaStream_t stream) {
             memcpy(v->frontier, sv.frontier, G6E_FRONTIER_SLOTS * sizeof(uint64_t));
         }
     }
-    return cudaSuccess;
+    return e->host.fn ? submit_host_callback_locked(stream,e->host.fn,NULL,e->host.userData) : cudaSuccess;
+}
+static cudaError_t graph_upload_locked(cudaGraphExec_t exec,cudaStream_t stream) {
+    cudaError_t r=graph_runtime_locked();if(r)return r;
+    struct corexCudaGraphExecHandle *e=resolve_graph_exec_handle(exec);
+    if(!e)return cudaErrorInvalidResourceHandle;
+    G6EStreamView sv;if(get_stream_view(stream,&sv))return cudaErrorInvalidResourceHandle;
+    apply_legacy_default_ordering(&sv);
+    CorexGeneratedcudaGraphCreateRequest q={.action=GRAPH_UPLOAD,.exec=e->id,.stream=sv.stream_id};
+    CorexGeneratedcudaGraphCreateResponse reply;return graph_rpc(&q,&reply);
 }
 static cudaGraphNode_t graph_node_from_id(uint64_t id) {
     for (size_t i = 0; i < CLIENT_GRAPHS.node_next; ++i) {
@@ -765,6 +811,66 @@ static cudaError_t graph_exec_child_locked(cudaGraphExec_t exec,cudaGraphNode_t 
     CorexGeneratedcudaGraphCreateRequest q={.action=GRAPH_EXEC_SET_CHILD,.node=n->id,.exec=e->id,.value=g->id};
     CorexGeneratedcudaGraphCreateResponse reply;return graph_rpc(&q,&reply);
 }
+static cudaError_t graph_add_memory_locked(cudaGraphNode_t *out,cudaGraph_t graph,
+    const cudaGraphNode_t *deps,size_t count,struct cudaMemAllocNodeParams *params,void *ptr) {
+    if(!out || count>CRX_GRAPH_MAX_NODES || (count && !deps))return cudaErrorInvalidValue;
+    *out=NULL;
+    if(capture_active_locked())return capture_reject_locked();
+    cudaError_t r=graph_runtime_locked();if(r)return r;
+    struct corexCudaGraphHandle *g=resolve_graph_handle(graph);
+    if(!g)return cudaErrorInvalidResourceHandle;
+    if(g->owner_node_id || g->memory_frozen)return cudaErrorNotSupported;
+    if(CLIENT_GRAPHS.node_next==CRX_GRAPH_MAX_NODE_HANDLES)return cudaErrorMemoryAllocation;
+    VirtualAllocation *a=NULL;size_t span=0;
+    CorexGeneratedcudaGraphCreateRequest q={.graph=g->id};
+    if(params) {
+        if(!params->bytesize)return cudaErrorInvalidValue;
+        if(params->poolProps.allocType!=cudaMemAllocationTypePinned || params->poolProps.handleTypes ||
+           params->poolProps.location.type!=cudaMemLocationTypeDevice || params->poolProps.win32SecurityAttributes || params->accessDescCount)
+            return cudaErrorNotSupported;
+        if(params->poolProps.location.id!=0)return cudaErrorInvalidDevice;
+        for(size_t i=0;i<sizeof(params->poolProps.reserved);++i)
+            if(params->poolProps.reserved[i])return cudaErrorInvalidValue;
+        r=prepare_linear_identity(params->bytesize,&a,&span);if(r)return r;
+        q.action=GRAPH_ADD_MEM_ALLOC;q.value=params->bytesize;
+    } else {
+        a=find_exact_live_base(ptr);
+        if(!a || a->graph_id!=g->id || a->graph_paired || a->graph_active)return cudaErrorInvalidValue;
+        q.action=GRAPH_ADD_MEM_FREE;q.value=a->allocation_id;
+    }
+    size_t pos=0;
+    for(size_t i=0;i<count;++i) {
+        struct corexCudaGraphNodeHandle *n=resolve_graph_node_handle(deps[i]);
+        if(!n)return cudaErrorInvalidResourceHandle;
+        if(n->graph_id!=g->id)return cudaErrorInvalidValue;
+        for(size_t j=0;j<i;++j)if(deps[i]==deps[j])return cudaErrorInvalidValue;
+        corex_protocol_write_u64(q.data,&pos,n->id);
+    }
+    q.data_length=(uint32_t)pos;CorexGeneratedcudaGraphCreateResponse reply;
+    r=graph_rpc(&q,&reply);if(r)return r;
+    if(!reply.object || reply.data_length!=8 || !corex_protocol_read_u64(reply.data)) {
+        mark_session_failed_locked("INVALID_GRAPH_MEMORY_ID");return cudaErrorUnknown;
+    }
+    struct corexCudaGraphNodeHandle *n=&CLIENT_GRAPHS.nodes[CLIENT_GRAPHS.node_next++];
+    *n=(struct corexCudaGraphNodeHandle){.id=reply.object,.graph_id=g->id,
+        .generation=g_active_session_generation,.live=1,
+        .kind=params ? cudaGraphNodeTypeMemAlloc : cudaGraphNodeTypeMemFree};
+    if(params) {
+        commit_linear_identity(a,params->bytesize,corex_protocol_read_u64(reply.data),span,&params->dptr);
+        a->graph_id=g->id;n->mem_alloc=*params;n->mem_alloc.accessDescs=NULL;
+    } else {a->graph_paired=1;n->mem_free=ptr;}
+    *out=n;return cudaSuccess;
+}
+static cudaError_t graph_memory_params_locked(cudaGraphNode_t node,void *out,int alloc) {
+    if(!out)return cudaErrorInvalidValue;
+    cudaError_t r=graph_runtime_locked();if(r)return r;
+    struct corexCudaGraphNodeHandle *n=resolve_graph_node_handle(node);
+    if(!n)return cudaErrorInvalidResourceHandle;
+    if(n->kind!=(unsigned)(alloc ? cudaGraphNodeTypeMemAlloc : cudaGraphNodeTypeMemFree))return cudaErrorInvalidValue;
+    if(alloc)*(struct cudaMemAllocNodeParams *)out=n->mem_alloc;
+    else *(void **)out=n->mem_free;
+    return cudaSuccess;
+}
 static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t graph,
                                             cudaGraphNode_t *error,
                                             enum cudaGraphExecUpdateResult *result) {
@@ -796,6 +902,7 @@ static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t gr
     if (reply.value != cudaGraphExecUpdateSuccess)
         return cudaErrorGraphExecUpdateFailure;
     e->event_count = 0;
+    e->host=(struct cudaHostNodeParams){0};e->host_node=0;
     for (size_t i = 0; i < CLIENT_GRAPHS.node_next; ++i) {
         struct corexCudaGraphNodeHandle *n = &CLIENT_GRAPHS.nodes[i];
         if (n->live && n->generation == g_active_session_generation && n->graph_id == g->id &&
@@ -803,6 +910,9 @@ static cudaError_t graph_exec_update_locked(cudaGraphExec_t exec, cudaGraph_t gr
             e->events[e->event_count] = n->event;
             e->event_nodes[e->event_count] = n->id;
             e->event_kinds[e->event_count++] = n->kind;
+        }
+        if(n->live && n->generation==g_active_session_generation && n->graph_id==g->id && n->kind==cudaGraphNodeTypeHost) {
+            e->host=n->host;e->host_node=n->id;
         }
     }
     return cudaSuccess;
@@ -844,6 +954,27 @@ static cudaError_t graph_mem_trim_locked(int device) {
         return map_last_rpc_error(cudaErrorUnknown);
     return cudaSuccess;
 }
+static cudaError_t graph_dot_locked(cudaGraph_t graph,const char *path,unsigned flags) {
+    if(!path || !*path)return cudaErrorInvalidValue;
+    if(flags)return cudaErrorNotSupported;
+    cudaGraphNode_t nodes[CRX_GRAPH_MAX_NODES],from[4032],to[4032];
+    size_t count=CRX_GRAPH_MAX_NODES,edges=4032;
+    cudaError_t r=graph_inspect_locked(GRAPH_GET_NODES,graph,NULL,nodes,NULL,&count);if(r)return r;
+    r=graph_inspect_locked(GRAPH_GET_EDGES,graph,NULL,from,to,&edges);if(r)return r;
+    FILE *file=fopen(path,"w");if(!file)return cudaErrorOperatingSystem;
+    static const char *const names[]={"Kernel","Memcpy","Memset","Host","ChildGraph","Empty","EventWait","EventRecord"};
+    int failed=fprintf(file,"digraph cuda_graph {\n")<0;
+    for(size_t i=0;i<count;++i) {
+        unsigned kind=nodes[i]->kind;
+        const char *name=kind<8 ? names[kind] : kind==cudaGraphNodeTypeMemAlloc ? "MemAlloc" : "MemFree";
+        if(fprintf(file,"  n%llu [label=\"%s\"];\n",(unsigned long long)nodes[i]->id,name)<0)failed=1;
+    }
+    for(size_t i=0;i<edges;++i)
+        if(fprintf(file,"  n%llu -> n%llu;\n",(unsigned long long)from[i]->id,(unsigned long long)to[i]->id)<0)failed=1;
+    if(fprintf(file,"}\n")<0)failed=1;
+    if(fclose(file))failed=1;
+    return failed ? cudaErrorOperatingSystem : cudaSuccess;
+}
 #define GRAPH_API(name, signature, body)                                                           \
     cudaError_t name signature {                                                                   \
         CorexRuntimeContext *context = corex_runtime_context_get();                                \
@@ -855,6 +986,24 @@ static cudaError_t graph_mem_trim_locked(int device) {
         return record_error(graph_api_error);                                                      \
     }
 GRAPH_API(cudaGraphCreate, (cudaGraph_t * out, unsigned flags), graph_create_locked(out, flags))
+GRAPH_API(cudaGraphDebugDotPrint,(cudaGraph_t graph,const char *path,unsigned flags),graph_dot_locked(graph,path,flags))
+GRAPH_API(cudaGraphAddHostNode,(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,
+    size_t count,const struct cudaHostNodeParams *params),graph_add_node_locked(out,graph,deps,count,cudaGraphNodeTypeHost,params))
+GRAPH_API(cudaGraphHostNodeGetParams,(cudaGraphNode_t node,struct cudaHostNodeParams *params),
+    graph_get_params_locked(node,cudaGraphNodeTypeHost,params))
+GRAPH_API(cudaGraphHostNodeSetParams,(cudaGraphNode_t node,const struct cudaHostNodeParams *params),
+    graph_set_node_locked(NULL,node,cudaGraphNodeTypeHost,params))
+GRAPH_API(cudaGraphExecHostNodeSetParams,(cudaGraphExec_t exec,cudaGraphNode_t node,const struct cudaHostNodeParams *params),
+    graph_set_node_locked(exec,node,cudaGraphNodeTypeHost,params))
+GRAPH_API(cudaGraphAddMemAllocNode,(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,
+    size_t count,struct cudaMemAllocNodeParams *params),
+    params ? graph_add_memory_locked(out,graph,deps,count,params,NULL) : cudaErrorInvalidValue)
+GRAPH_API(cudaGraphAddMemFreeNode,(cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,void *ptr),
+    graph_add_memory_locked(out,graph,deps,count,NULL,ptr))
+GRAPH_API(cudaGraphMemAllocNodeGetParams,(cudaGraphNode_t node,struct cudaMemAllocNodeParams *params),
+    graph_memory_params_locked(node,params,1))
+GRAPH_API(cudaGraphMemFreeNodeGetParams,(cudaGraphNode_t node,void **ptr),
+    graph_memory_params_locked(node,ptr,0))
 GRAPH_API(cudaGraphAddChildGraphNode,
           (cudaGraphNode_t *out,cudaGraph_t graph,const cudaGraphNode_t *deps,size_t count,cudaGraph_t child),
           graph_add_child_locked(out,graph,deps,count,child))
@@ -916,6 +1065,7 @@ GRAPH_API(cudaGraphInstantiateWithFlags,
 GRAPH_API(cudaGraphExecDestroy, (cudaGraphExec_t exec), graph_exec_destroy_locked(exec))
 GRAPH_API(cudaGraphLaunch, (cudaGraphExec_t exec, cudaStream_t stream),
           graph_launch_locked(exec, stream))
+GRAPH_API(cudaGraphUpload,(cudaGraphExec_t exec,cudaStream_t stream),graph_upload_locked(exec,stream))
 GRAPH_API(cudaGraphGetNodes, (cudaGraph_t graph, cudaGraphNode_t *nodes, size_t *count),
           graph_inspect_locked(GRAPH_GET_NODES, graph, NULL, nodes, NULL, count))
 GRAPH_API(cudaGraphGetRootNodes, (cudaGraph_t graph, cudaGraphNode_t *nodes, size_t *count),
@@ -942,6 +1092,7 @@ GRAPH_API(cudaGraphNodeSetEnabled, (cudaGraphExec_t exec, cudaGraphNode_t node, 
           graph_node_enabled_locked(exec, node, &enabled, 1))
 GRAPH_API(cudaGraphNodeGetEnabled, (cudaGraphExec_t exec, cudaGraphNode_t node, unsigned *enabled),
           graph_node_enabled_locked(exec, node, enabled, 0))
+GRAPH_API(cudaThreadExchangeStreamCaptureMode,(enum cudaStreamCaptureMode *mode),capture_exchange_locked(mode))
 GRAPH_API(cudaStreamBeginCapture, (cudaStream_t stream, enum cudaStreamCaptureMode mode),
           capture_begin_locked(stream, mode))
 GRAPH_API(cudaStreamBeginCaptureToGraph,

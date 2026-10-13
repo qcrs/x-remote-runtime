@@ -186,3 +186,17 @@ cudaDeviceGraphMemTrim
 cudaGraphAddChildGraphNode
 cudaGraphChildGraphNodeGetGraph
 cudaGraphExecChildGraphNodeSetParams
+
+cudaGraphAddMemAllocNode
+cudaGraphAddMemFreeNode
+cudaGraphMemAllocNodeGetParams
+cudaGraphMemFreeNodeGetParams
+
+cudaGraphUpload
+cudaGraphAddHostNode
+cudaGraphHostNodeGetParams
+cudaGraphHostNodeSetParams
+cudaGraphExecHostNodeSetParams
+
+cudaThreadExchangeStreamCaptureMode
+cudaGraphDebugDotPrint
